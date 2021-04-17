@@ -44,7 +44,7 @@ class MovTranscoder:
                 newFolder = os.path.join(root, "videos")
                 toTranscode = os.path.join(root, file)
                 
-                creationTime = time.strftime('%Y-%m-%d_%H-%M-%S',time.localtime(os.path.getmtime(toTranscode)))
+                creationTime = time.strftime('%Y-%m-%d.T.%H.%M.%S',time.localtime(os.path.getmtime(toTranscode)))
                 
                 newFile = os.path.join(
                     newFolder,
