@@ -1,11 +1,12 @@
 #%%
-from image.imagehelper import getExifDateFrom
-
 import os
 from os.path import join, splitext
 import datetime as dt
-from shutil import copyfile, move
 from typing import List
+
+from image.imagefile import ImageFile
+from image.imagehelper import getExifDateFrom
+from image.imagefile import ImageFile
 
 #%%
 class ImageRenamer:
@@ -16,9 +17,6 @@ class ImageRenamer:
     move : if true, moves files, else copies them
     restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
     """
-
-    jpgFileEndings = [".jpg", ".JPG", ".jpeg", ".JPEG"]
-    rawFileEndings = [".ORF", ".NEF"]
 
     def getNewImageFileNameFor(file: str) -> str:
         date = getExifDateFrom(file)
@@ -50,14 +48,7 @@ class ImageRenamer:
         self.createDestinationDir()
         self.treatImages()
 
-        print("Finished!", "Renamed", self.treatedfiles, "files")
-
-        if len(self.skippedfiles) > 0:
-            print(
-                "Skipped the following files (could be due to file being already renamed (containing timestamp and _) in filename or because target existed already): "
-            )
-            for file in self.skippedfiles:
-                print(file)
+        self.printStatistic()
 
     def printIfVerbose(self, *s):
         if self.verbose:
@@ -73,45 +64,27 @@ class ImageRenamer:
         for root, _, files in os.walk(self.src):
             if root == self.dst or (not self.recursive and root != self.src):
                 continue
-            print(root)
+
             for file in files:
-                self.treat(root, file, files)
+                ifile = ImageFile(join(root, file))
+                if not ifile.isValid():
+                    continue
 
-    def treat(self, root: str, file: str, files: List[str]):
-        if not os.path.exists(join(root, file)):  # could have been moved
-            return
+                self.treat(ifile)
 
-        fileextension = os.path.splitext(file)[1]
-        if not fileextension in ImageRenamer.jpgFileEndings:
-            return
-
-        if "_" in file and ".T." in file:
-            self.printIfVerbose(
-                "Skip file ",
-                file,
-                "because it contains underscore and '.T.' . Maybe you already renamed it?",
-            )
-            self.skippedfiles.append(join(root, file))
-            return
-
-        print("Treat", root, file)
-
-        absPathJpg = join(root, file)
-        newName = self.getNewAbsPathOf(absPathJpg)
+    def treat(self, ifile: ImageFile):
+        newName = self.getRenamedFileFrom(ifile.getJpg())
         if newName is None:
             return
 
-        self.copyOrMoveFromTo(absPathJpg, newName)
-        self.treatedfiles += 1
+        if self.move:
+            ifile.moveTo(newName)
+        else:
+            ifile.copyTo(newName)
 
-        rawfile = ImageRenamer.getAssociatedRawFileOf(root, file, files)
-        if rawfile is not None:
-            self.copyOrMoveFromTo(
-                rawfile, os.path.splitext(newName)[0] + os.path.splitext(rawfile)[1]
-            )
-            self.treatedfiles += 1
+        self.treatedfiles += ifile.nrfiles
 
-    def getNewAbsPathOf(self, file: str) -> str:
+    def getRenamedFileFrom(self, file: str) -> str:
         newName = ""
         if self.restoreOldNames:
             splitted = os.path.basename(file).split("_")
@@ -119,6 +92,8 @@ class ImageRenamer:
                 return None
             newName = join(self.dst, splitted[1])
         else:
+            if self.filewasalreadyrenamed(file):
+                return
             newName = join(
                 self.dst, os.path.basename(ImageRenamer.getNewImageFileNameFor(file))
             )
@@ -127,29 +102,26 @@ class ImageRenamer:
             self.printIfVerbose("File", newName, "already exists. Skip this one.")
             self.skippedfiles.append(file)
             return None
+
         return newName
 
-    def copyOrMoveFromTo(self, From: str, To: str):
-        self.printIfVerbose(
-            "Copy" if not self.move else "Move",
-            os.path.splitext(From)[1] + "-File",
-            From,
-            "to",
-            To,
-        )
+    def filewasalreadyrenamed(self, file: str):
+        if "_" in file and ".T." in file:
+            self.printIfVerbose(
+                "Skip file ",
+                file,
+                "because it contains underscore and '.T.' . Maybe you already renamed it?",
+            )
+            self.skippedfiles.append(file)
+            return True
+        return False
 
-        if self.move:
-            move(From, To)
-        else:
-            copyfile(From, To)
+    def printStatistic(self):
+        print("Finished!", "Renamed", self.treatedfiles, "files")
 
-    def getAssociatedRawFileOf(root: str, file: str, files: List[str]):
-        basenameJpg = file
-        for f in files:
-            if (
-                os.path.splitext(f)[0] == os.path.splitext(basenameJpg)[0]
-                and basenameJpg != f
-                and os.path.splitext(f)[1] in ImageRenamer.rawFileEndings
-            ):
-                return join(root, f)
-        return None
+        if len(self.skippedfiles) > 0:
+            print(
+                "Skipped the following files (could be due to file being already renamed (containing timestamp and _) in filename or because target existed already): "
+            )
+            for file in self.skippedfiles:
+                print(file)
