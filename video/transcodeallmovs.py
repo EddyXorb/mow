@@ -1,4 +1,3 @@
-
 from tkinter.constants import MULTIPLE
 from transcodevideo import Transcoder
 from subprocess import run
@@ -43,9 +42,11 @@ class MovTranscoder:
                     continue
                 newFolder = os.path.join(root, "videos")
                 toTranscode = os.path.join(root, file)
-                
-                creationTime = time.strftime('%Y-%m-%d.T.%H.%M.%S',time.localtime(os.path.getmtime(toTranscode)))
-                
+
+                creationTime = time.strftime(
+                    "%Y-%m-%d.T.%H.%M.%S", time.localtime(os.path.getmtime(toTranscode))
+                )
+
                 newFile = os.path.join(
                     newFolder,
                     creationTime
@@ -56,7 +57,7 @@ class MovTranscoder:
                 print("Transcode " + toTranscode + " -> " + newFile + " ...")
                 self.transcoded[toTranscode] = newFile
                 Transcoder(toTranscode, newFile, self.quality)()
-                
+
         print("\n----------------------------------------------------\n")
         for key, value in self.transcoded.items():
             print("Transcoded " + key + " -> " + value)
