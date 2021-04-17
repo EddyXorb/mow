@@ -24,6 +24,20 @@ renameparser.add_argument(
     help="if true, moves files instead of copying them.",
 )
 
+renameparser.add_argument(
+    "-v",
+    "--verbose",
+    action="store_true",
+    help="more output.",
+)
+
+renameparser.add_argument(
+    "-i",
+    "--invert",
+    help="invert renaming direction, causing already renamed files to get their old names back.",
+    action="store_true",
+)
+
 if __name__ == "__main__":
     args = parser.parse_args()
 
@@ -41,4 +55,4 @@ if __name__ == "__main__":
         if args.dst is None:
             args.dst = os.path.join(args.src, "renamed")
 
-        ImageRenamer(args.src, args.dst, args.recursive, args.move)
+        ImageRenamer(args.src, args.dst, args.recursive, args.move, args.invert, args.verbose)

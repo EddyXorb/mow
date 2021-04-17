@@ -7,7 +7,6 @@ import datetime as dt
 from shutil import copyfile, move
 from typing import List
 
-
 #%%
 class ImageRenamer:
     """
@@ -15,6 +14,7 @@ class ImageRenamer:
     dst : directory where renamed files should be placed
     recursive : if true, dives into every subdir to look for image files
     move : if true, moves files, else copies them
+    restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
     """
 
     jpgFileEndings = [".jpg", ".JPG", ".jpeg", ".JPEG"]
@@ -32,45 +32,109 @@ class ImageRenamer:
         src: str,
         dst: str,
         recursive: bool = True,
-        move=False,
+        move: bool = False,
+        restoreOldNames=False,
+        verbose=False,
     ):
         self.src = os.path.abspath(src)
         self.dst = os.path.abspath(dst)
         self.recursive = recursive
         self.move = move
+        self.verbose = verbose
+        self.restoreOldNames = restoreOldNames
         self.skippedfiles = []
-        self.treatedjpgs = []
-        
-        self.run()
-        
+        self.treatedfiles = 0
+
+        self.printIfVerbose("Start renaming from source ", self.src, " into ", self.dst)
+
+        self.createDestinationDir()
+        self.treatImages()
+
+        print("Finished!", "Renamed", self.treatedfiles, "files")
+
         if len(self.skippedfiles) > 0:
-            print("Skipped the following files: ",self.skippedfiles)
+            print(
+                "Skipped the following files (could be due to file being already renamed (containing timestamp and _) in filename or because target existed already): "
+            )
+            for file in self.skippedfiles:
+                print(file)
+
+    def printIfVerbose(self, *s):
+        if self.verbose:
+            print(*s)
 
     def createDestinationDir(self):
+        if os.path.isdir(self.dst):
+            return
         os.makedirs(self.dst, exist_ok=True)
-        print("Created dir ", self.dst)
+        self.printIfVerbose("Created dir ", self.dst)
 
-    def hasCorrectExtensionToBeTreated(self, file):
+    def treatImages(self):
+        for root, _, files in os.walk(self.src):
+            if root == self.dst or (not self.recursive and root != self.src):
+                continue
+            print(root)
+            for file in files:
+                self.treat(root, file, files)
+
+    def treat(self, root: str, file: str, files: List[str]):
+        if not os.path.exists(join(root, file)):  # could have been moved
+            return
+
         fileextension = os.path.splitext(file)[1]
-        return fileextension in ImageRenamer.jpgFileEndings
+        if not fileextension in ImageRenamer.jpgFileEndings:
+            return
 
-    def getNewFullPath(self, file: str) -> str:
-        newName = join(
-            self.dst, os.path.basename(ImageRenamer.getNewImageFileNameFor(file))
-        )
+        if "_" in file and ".T." in file:
+            self.printIfVerbose(
+                "Skip file ",
+                file,
+                "because it contains underscore and '.T.' . Maybe you already renamed it?",
+            )
+            self.skippedfiles.append(join(root, file))
+            return
+
+        print("Treat", root, file)
+
+        absPathJpg = join(root, file)
+        newName = self.getNewAbsPathOf(absPathJpg)
+        if newName is None:
+            return
+
+        self.copyOrMoveFromTo(absPathJpg, newName)
+        self.treatedfiles += 1
+
+        rawfile = ImageRenamer.getAssociatedRawFileOf(root, file, files)
+        if rawfile is not None:
+            self.copyOrMoveFromTo(
+                rawfile, os.path.splitext(newName)[0] + os.path.splitext(rawfile)[1]
+            )
+            self.treatedfiles += 1
+
+    def getNewAbsPathOf(self, file: str) -> str:
+        newName = ""
+        if self.restoreOldNames:
+            splitted = os.path.basename(file).split("_")
+            if len(splitted) != 2:
+                return None
+            newName = join(self.dst, splitted[1])
+        else:
+            newName = join(
+                self.dst, os.path.basename(ImageRenamer.getNewImageFileNameFor(file))
+            )
+
         if os.path.exists(newName):
-            print("File ", newName, " already exists. Skip this one.")
+            self.printIfVerbose("File", newName, "already exists. Skip this one.")
             self.skippedfiles.append(file)
             return None
         return newName
 
     def copyOrMoveFromTo(self, From: str, To: str):
-        print(
-            "Copy " if not self.recursive else "Move ",
-            os.path.splitext(From)[1],
-            "-File ",
+        self.printIfVerbose(
+            "Copy" if not self.move else "Move",
+            os.path.splitext(From)[1] + "-File",
             From,
-            " to ",
+            "to",
             To,
         )
 
@@ -79,67 +143,13 @@ class ImageRenamer:
         else:
             copyfile(From, To)
 
-    def treatJpg(self, root: str, file: str, files: List[str]):
-        if not os.path.exists(join(root, file)):  # could have been moved
-            return
-        if not self.hasCorrectExtensionToBeTreated(file):
-            return
-
-        fullpath = join(root, file)
-
-        newName = self.getNewFullPath(fullpath)
-        if newName is None:
-            return
-
-        self.copyOrMoveFromTo(fullpath, newName)
-        self.treatedjpgs.append((fullpath, newName))
-
-    def treatRaw(self, candidate: str):
-        filenameonly = os.path.basename(candidate)
-        splitextension = os.path.splitext(filenameonly)
-        extension = splitextension[1]
-        withoutextension = splitextension[0]
-
-        if not extension in ImageRenamer.rawFileEndings:
-            return
-
-        associatedNewJpgName = None
-        for name in self.treatedjpgs:
-            if withoutextension in name[0]:
-                associatedNewJpgName = name[1]
-                break
-
-        if associatedNewJpgName is None:
-            return
-
-        newRawName = os.path.splitext(associatedNewJpgName)[0] + extension
-        self.copyOrMoveFromTo(candidate, newRawName)
-
-    def treatJpgs(self):
-        for root, _, files in os.walk(self.src):
-            if root == self.dst or (not self.recursive and root != self.dst):
-                continue
-            for file in files:
-                self.treatJpg(root, file, files)
-
-    def treatRaws(self):
-        for root, _, files in os.walk(self.src):
-            if root == self.dst or (not self.recursive and root != self.dst):
-                continue
-            for file in files:
-                self.treatRaw(join(root, file))
-
-    def run(self):
-        self.treatJpgs()
-        self.treatRaws()
-
-
-#%%
-testfile = (
-    "C:\\Users\\claud\\Nextcloud\\Photos\\Fotos\\2021\\_noch_einsortieren\\P9032695.JPG"
-)
-
-# %%
-testdir = "C:\\Users\\claud\\Nextcloud\\Photos\\Fotos\\2021\\_noch_einsortieren\\test\\"
-os.path.dirname(testdir)
-# %%
+    def getAssociatedRawFileOf(root: str, file: str, files: List[str]):
+        basenameJpg = file
+        for f in files:
+            if (
+                os.path.splitext(f)[0] == os.path.splitext(basenameJpg)[0]
+                and basenameJpg != f
+                and os.path.splitext(f)[1] in ImageRenamer.rawFileEndings
+            ):
+                return join(root, f)
+        return None
