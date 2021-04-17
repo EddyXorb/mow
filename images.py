@@ -55,4 +55,6 @@ if __name__ == "__main__":
         if args.dst is None:
             args.dst = os.path.join(args.src, "renamed")
 
-        ImageRenamer(args.src, args.dst, args.recursive, args.move, args.invert, args.verbose)
+        ImageRenamer(
+            args.src, args.dst, args.recursive, args.move, args.invert, args.verbose
+        )

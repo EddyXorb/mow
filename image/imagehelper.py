@@ -13,4 +13,3 @@ def getExifDateFrom(file: str) -> dt.datetime:
     else:
         date = img_exif[306]
         return dt.datetime.strptime(date, "%Y:%m:%d %H:%M:%S")
-
