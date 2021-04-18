@@ -30,6 +30,7 @@ class ImageClusterer(VerbosePrinterClass):
     def __init__(
         self,
         src: str,
+        dst: str = None,
         hoursmaxdiff: int = 24,
         move: bool = False,
         verbose=False,
@@ -42,7 +43,7 @@ class ImageClusterer(VerbosePrinterClass):
             raise Exception("Hoursmaxdiff is smaller than 1!")
 
         self.src = os.path.abspath(src)
-        self.dst = os.path.join(self.src, "clustered")
+        self.dst = dst if dst is not None else os.path.join(self.src, "clustered")
         self.secondsmaxdiff = 3600 * hoursmaxdiff
         self.move = move
         self.verbose = verbose

@@ -42,8 +42,8 @@ class ImageRenamer(VerbosePrinterClass):
         self.move = move
 
         self.restoreOldNames = restoreOldNames
-        self.skippedfiles = []
-        self.toTreat = []
+        self.skippedfiles: List[str] = []
+        self.toTreat: List[ImageFile] = []
         self.treatedfiles = 0
 
         self.printv("Start renaming from source ", self.src, " into ", self.dst)
@@ -76,7 +76,8 @@ class ImageRenamer(VerbosePrinterClass):
 
             newName = self.getRenamedFileFrom(im.getJpg())
             if newName is None:
-                self.skippedfiles.append(im)
+                self.skippedfiles.append(im.getJpg())
+                continue
 
             if self.move:
                 im.moveTo(newName)

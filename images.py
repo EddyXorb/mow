@@ -46,6 +46,11 @@ renameparser.add_argument(
 clusterparser.add_argument(
     "-s", "--src", help="source folder containing files to be clustered", type=str
 )
+
+clusterparser.add_argument(
+    "-d", "--dst", help="destination folder containing clustered files", type=str
+)
+
 clusterparser.add_argument(
     "-m",
     "--move",
@@ -53,7 +58,6 @@ clusterparser.add_argument(
     action="store_true",
 )
 clusterparser.add_argument(
-    "-d",
     "--diff",
     help="if two images have a creation time whose timedifference in hours is smaller than this value, they will belong to the same cluster else not.",
     default=24,
@@ -82,7 +86,11 @@ def getInputDir(title: str = "open") -> str:
 
 
 def call(args: any):
+    renamer = None
+
     if args.all:
+        args.src = getInputDir("Open source")
+        args.dst = os.path.join(args.src, "clustered")
         args.diff = 24
         args.move = False
         args.test = False
@@ -100,12 +108,17 @@ def call(args: any):
         ImageRenamer(
             args.src, args.dst, args.recursive, args.move, args.invert, args.verbose
         )
-    elif args.command == "cluster" or args.all:
+
+    if args.command == "cluster" or args.all:
         if args.src is None:
             args.src = getInputDir("Open source")
+        if args.all:
+            args.move = True
+            args.src = os.path.join(args.src, "clustered")
 
         ImageClusterer(
             src=args.src,
+            dst=args.dst,
             hoursmaxdiff=args.diff,
             move=args.move,
             verbose=args.verbose,
