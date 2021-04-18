@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 import os
 from shutil import copyfile, move
-from typing import List
+from typing import List, Callable
 
 
 class ImageFile:
@@ -13,7 +13,7 @@ class ImageFile:
         """
         file must be path to a jpg-file!
         """
-        self.basename = None
+        self.pathnoext = None
         self.jpgext = None
         self.rawext = None
         self.isvalidimagefile = True
@@ -29,7 +29,7 @@ class ImageFile:
             return
 
         split = os.path.splitext(os.path.abspath(file))
-        self.basename = split[0]
+        self.pathnoext = split[0]
         self.jpgext = split[1]
         self.nrfiles += 1
         self.isvalidimagefile = True
@@ -44,30 +44,33 @@ class ImageFile:
         return self.isvalidimagefile
 
     def getJpg(self) -> str:
-        return self.basename + self.jpgext
+        return self.pathnoext + self.jpgext
 
     def getRaw(self) -> str:
         if self.rawext is not None:
-            return self.basename + self.rawext
+            return self.pathnoext + self.rawext
         return None
 
-    def moveTo(self, to: str) -> ImageFile:
-        """
-        to : fullpath of new file. Extension will be ignored. After the operation the objects points to new location.
-        """
-        newBaseName = os.path.splitext(to)[0]
-        move(self.getJpg(), newBaseName + self.jpgext)
-        if self.rawext is not None:
-            move(self.getRaw(), newBaseName + self.rawext)
-        return ImageFile(newBaseName + self.jpgext)
+    def _relocate(self, dst: str, relocateFunc: Callable[[str, str], str]) -> str:
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
 
-    def copyTo(self, to: str) -> ImageFile:
-        """
-        to : fullpath of new file. Extension will be ignored.
-        """
-        newBaseName = os.path.splitext(to)[0]
-        copyfile(self.getJpg(), newBaseName + self.jpgext)
+        newBaseName = os.path.splitext(dst)[0]
+        relocateFunc(self.getJpg(), newBaseName + self.jpgext)
         if self.rawext is not None:
-            copyfile(self.getRaw(), newBaseName + self.rawext)
+            relocateFunc(self.getRaw(), newBaseName + self.rawext)
 
+        return newBaseName
+
+    def moveTo(self, dst: str) -> ImageFile:
+        """
+        dst : fullpath of new file. Extension will be ignored. After the operation the objects points to the new location.
+        """
+        self.pathnoext = self._relocate(dst, move)
+        return self
+
+    def copyTo(self, dst: str) -> ImageFile:
+        """
+        dst : fullpath of new file. Extension will be ignored.
+        """
+        newBaseName = self._relocate(dst, copyfile)
         return ImageFile(newBaseName + self.jpgext)
