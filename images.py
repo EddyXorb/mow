@@ -1,13 +1,23 @@
-from image.imagerenamer import ImageRenamer
-
 import argparse
 import os
 import sys
 
+from image.imagerenamer import ImageRenamer
+from image.imageclusterer import ImageClusterer
 
 parser = argparse.ArgumentParser("Images")
+
+parser.add_argument("-v", "--verbose", help="print more output", action="store_true")
+parser.add_argument(
+    "-a",
+    "--all",
+    help="perform image renaming and clustering in one step with default parameters. Asks for directory.",
+    action="store_true",
+)
+
 subparsers = parser.add_subparsers(help="commands", dest="command")
 renameparser = subparsers.add_parser("rename")
+clusterparser = subparsers.add_parser("cluster")
 
 renameparser.add_argument("-s", "--src", help="source dir", type=str)
 renameparser.add_argument(
@@ -15,6 +25,8 @@ renameparser.add_argument(
     "--dst",
     help="destination dir. Must be different from src. If not specified, takes src/renamed.",
     type=str,
+    const="call_filedialog",
+    nargs="?",
 )
 renameparser.add_argument("-r", "--recursive", action="store_true")
 renameparser.add_argument(
@@ -23,14 +35,6 @@ renameparser.add_argument(
     action="store_true",
     help="if true, moves files instead of copying them.",
 )
-
-renameparser.add_argument(
-    "-v",
-    "--verbose",
-    action="store_true",
-    help="more output.",
-)
-
 renameparser.add_argument(
     "-i",
     "--invert",
@@ -38,23 +42,78 @@ renameparser.add_argument(
     action="store_true",
 )
 
-if __name__ == "__main__":
-    args = parser.parse_args()
 
-    if args.command == "rename":
+clusterparser.add_argument(
+    "-s", "--src", help="source folder containing files to be clustered", type=str
+)
+clusterparser.add_argument(
+    "-m",
+    "--move",
+    help="if true, images will be moved into new locations instead of copied.",
+    action="store_true",
+)
+clusterparser.add_argument(
+    "-d",
+    "--diff",
+    help="if two images have a creation time whose timedifference in hours is smaller than this value, they will belong to the same cluster else not.",
+    default=24,
+    type=int,
+)
+
+clusterparser.add_argument(
+    "-t",
+    "--test",
+    help="if set, print only what would be done.",
+    action="store_true",
+)
+
+
+def getInputDir(title: str = "open") -> str:
+    from tkinter import filedialog
+    import tkinter as tk
+
+    root = tk.Tk()
+    root.withdraw()
+    folder = filedialog.askdirectory(title=title)
+    if not os.path.isdir(folder):
+        print("No dir specified, do nothing.")
+        sys.exit()
+    return folder
+
+
+def call(args: any):
+    if args.all:
+        args.diff = 24
+        args.move = False
+        args.test = False
+        args.recursive = False
+        args.invert = False
+
+    if args.command == "rename" or args.all:
         if args.src is None:
-            from tkinter import filedialog
-            import tkinter as tk
-
-            root = tk.Tk()
-            root.withdraw()
-            args.src = filedialog.askdirectory()
-            if not os.path.isdir(args.src):
-                print("No dir specified, do nothing.")
-                sys.exit()
+            args.src = getInputDir("Open source")
         if args.dst is None:
             args.dst = os.path.join(args.src, "renamed")
+        elif args.dst == "call_filedialog":
+            args.dst = getInputDir("Open destination")
 
         ImageRenamer(
             args.src, args.dst, args.recursive, args.move, args.invert, args.verbose
         )
+    elif args.command == "cluster" or args.all:
+        if args.src is None:
+            args.src = getInputDir("Open source")
+
+        ImageClusterer(
+            src=args.src,
+            hoursmaxdiff=args.diff,
+            move=args.move,
+            verbose=args.verbose,
+            test=args.test,
+        )
+
+
+if __name__ == "__main__":
+    args = parser.parse_args()
+    print(args)
+    call(args)

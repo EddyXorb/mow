@@ -7,9 +7,10 @@ from typing import List
 from image.imagefile import ImageFile
 from image.imagehelper import getExifDateFrom
 from image.imagefile import ImageFile
+from general.verboseprinterclass import VerbosePrinterClass
 
 #%%
-class ImageRenamer:
+class ImageRenamer(VerbosePrinterClass):
     """
     src : directory which will be search for files
     dst : directory where renamed files should be placed
@@ -34,55 +35,55 @@ class ImageRenamer:
         restoreOldNames=False,
         verbose=False,
     ):
+        super().__init__(verbose)
         self.src = os.path.abspath(src)
         self.dst = os.path.abspath(dst)
         self.recursive = recursive
         self.move = move
-        self.verbose = verbose
+
         self.restoreOldNames = restoreOldNames
         self.skippedfiles = []
+        self.toTreat = []
         self.treatedfiles = 0
 
-        self.printIfVerbose("Start renaming from source ", self.src, " into ", self.dst)
+        self.printv("Start renaming from source ", self.src, " into ", self.dst)
 
         self.createDestinationDir()
+        self.collectImagesToTreat()
         self.treatImages()
 
         self.printStatistic()
-
-    def printIfVerbose(self, *s):
-        if self.verbose:
-            print(*s)
 
     def createDestinationDir(self):
         if os.path.isdir(self.dst):
             return
         os.makedirs(self.dst, exist_ok=True)
-        self.printIfVerbose("Created dir ", self.dst)
+        self.printv("Created dir ", self.dst)
 
-    def treatImages(self):
+    def collectImagesToTreat(self):
         for root, _, files in os.walk(self.src):
-            if root == self.dst or (not self.recursive and root != self.src):
+            if not self.recursive and root != self.src:
                 continue
 
             for file in files:
                 ifile = ImageFile(join(root, file))
                 if not ifile.isValid():
                     continue
+                self.toTreat.append(ifile)
 
-                self.treat(ifile)
+    def treatImages(self):
+        for im in self.toTreat:
 
-    def treat(self, ifile: ImageFile):
-        newName = self.getRenamedFileFrom(ifile.getJpg())
-        if newName is None:
-            return
+            newName = self.getRenamedFileFrom(im.getJpg())
+            if newName is None:
+                self.skippedfiles.append(im)
 
-        if self.move:
-            ifile.moveTo(newName)
-        else:
-            ifile.copyTo(newName)
+            if self.move:
+                im.moveTo(newName)
+            else:
+                im.copyTo(newName)
 
-        self.treatedfiles += ifile.nrfiles
+            self.treatedfiles += im.nrfiles
 
     def getRenamedFileFrom(self, file: str) -> str:
         newName = ""
@@ -99,7 +100,7 @@ class ImageRenamer:
             )
 
         if os.path.exists(newName):
-            self.printIfVerbose("File", newName, "already exists. Skip this one.")
+            self.printv("File", newName, "already exists. Skip this one.")
             self.skippedfiles.append(file)
             return None
 
@@ -107,7 +108,7 @@ class ImageRenamer:
 
     def filewasalreadyrenamed(self, file: str):
         if "_" in file and ".T." in file:
-            self.printIfVerbose(
+            self.printv(
                 "Skip file ",
                 file,
                 "because it contains underscore and '.T.' . Maybe you already renamed it?",
@@ -117,7 +118,7 @@ class ImageRenamer:
         return False
 
     def printStatistic(self):
-        print("Finished!", "Renamed", self.treatedfiles, "files")
+        print("Finished!", "Renamed", self.treatedfiles, "files.")
 
         if len(self.skippedfiles) > 0:
             print(
