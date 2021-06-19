@@ -1,4 +1,4 @@
-from video.transcodevideo import Transcoder
+from .transcodevideo import Transcoder
 from subprocess import run
 import argparse
 import os
@@ -57,17 +57,19 @@ class MovTranscoder:
         for key, value in self.transcoded.items():
             print("Transcoded " + key + " -> " + value)
 
-def call(args:any):
+
+def call(args: any):
     if args.src is None:
         import tkinter as tk
         from tkinter import filedialog
+
         root = tk.Tk()
         root.withdraw()
         args.src = filedialog.askdirectory()
 
     MovTranscoder(root=args.src, quality=args.quality)
-    
+
+
 if __name__ == "__main__":
     args = parser.parse_args()
     call(args)
-
