@@ -1,4 +1,6 @@
 import os
+import sys
+
 from general.tkinterhelper import getInputDir
 
 from image.imagerenamer import ImageRenamer
@@ -9,10 +11,8 @@ from image.imageparser import parser
 def call(args: any):
     if args.all:
         setargsforoption_all(args)
-
     if args.command == "rename" or args.all:
         executeRenaming(args)
-
     if args.command == "cluster" or args.all:
         executeClustering(args)
 
@@ -50,7 +50,7 @@ def executeRenaming(args):
 def setargsforoption_all(args):
     args.src = getInputDir("Open source")
     args.dst = os.path.join(args.src, "clustered")
-    args.diff = 24
+    args.diff = 12
     args.move = False
     args.test = False
     args.recursive = False
@@ -59,4 +59,6 @@ def setargsforoption_all(args):
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    if len(sys.argv) == 1: # no args given
+        args.all = True
     call(args)
