@@ -1,5 +1,5 @@
-
 import argparse
+
 parser = argparse.ArgumentParser("Images")
 
 parser.add_argument("-v", "--verbose", help="print more output", action="store_true")
@@ -13,6 +13,7 @@ parser.add_argument(
 subparsers = parser.add_subparsers(help="commands", dest="command")
 renameparser = subparsers.add_parser("rename")
 clusterparser = subparsers.add_parser("cluster")
+searchparser = subparsers.add_parser("search")
 
 renameparser.add_argument("-s", "--src", help="source dir", type=str)
 renameparser.add_argument(
@@ -64,4 +65,20 @@ clusterparser.add_argument(
     "--test",
     help="if set, print only what would be done.",
     action="store_true",
+)
+
+searchparser.add_argument(
+    "-s",
+    "--source",
+    help="Directory of which files are suspected to be missing.",
+    dest="search_source",
+    type=str,
+)
+
+searchparser.add_argument(
+    "-t",
+    "--target",
+    help="Where to look after files that are suspected to be missing.",
+    dest="search_target",
+    type=str,
 )

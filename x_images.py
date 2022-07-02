@@ -6,6 +6,7 @@ from general.tkinterhelper import getInputDir
 from image.imagerenamer import ImageRenamer
 from image.imageclusterer import ImageClusterer
 from image.imageparser import parser
+from image.imagesearcher import ImageSearcher
 
 
 def call(args: any):
@@ -15,6 +16,21 @@ def call(args: any):
         executeRenaming(args)
     if args.command == "cluster" or args.all:
         executeClustering(args)
+    if args.command == "search":
+        executeSearch(args)
+
+
+def executeSearch(args):
+    if args.search_source is None:
+        args.search_source = getInputDir(
+            "Open search source of files that are expected to be missing."
+        )
+    if args.search_target is None:
+        args.search_target = getInputDir(
+            "Open target folder where to look for missing files."
+        )
+
+    ImageSearcher(args.search_source, args.search_target, []).findMissingFiles()
 
 
 def executeClustering(args):
@@ -59,6 +75,6 @@ def setargsforoption_all(args):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    if len(sys.argv) == 1: # no args given
+    if len(sys.argv) == 1:  # no args given
         args.all = True
     call(args)

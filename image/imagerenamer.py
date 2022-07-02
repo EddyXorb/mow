@@ -95,7 +95,7 @@ class ImageRenamer(VerbosePrinterClass):
             newName = join(self.dst, splitted[1])
         else:
             if self.filewasalreadyrenamed(file):
-                return
+                return None
             newName = join(
                 self.dst, os.path.basename(ImageRenamer.getNewImageFileNameFor(file))
             )
