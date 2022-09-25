@@ -95,7 +95,9 @@ Der finale Sicherungsort ist bisher und soll es weiterhin sein ein Ordner wie z.
 ## Skizze eines neuen Workflows
 Die mit einem **\*** gekennzeichnet Schritte sind optional.
 
- 1. **Kopieren**: Mediendateien werden von Quell (QV)- ins Intermediärverzeichnis (IV) kopiert, im Quellverzeichnis wird eine Datei [source.cr](http://source.cr) angelegt mit einer noch zu definierenden Struktur aus der hervorgeht welche Dateien bereits kopiert wurden.
+1. **Kopieren**: Mediendateien werden von Quell (QV)- ins Intermediärverzeichnis (IV) kopiert, im Quellverzeichnis wird eine Datei [source.cr](http://source.cr) angelegt mit einer noch zu definierenden Struktur aus der hervorgeht welche Dateien bereits kopiert wurden. 
+   
+   *Idee:* Es wäre Wünschenswert, wenn man am Ende des Prozesses einen Abgleich machen kann, ob alle Dateien die als bereits kopiert gekennzeichnet wurden, auch verarbeitet wurden. Das Problem dabei sind die im Aussortiersschritt gelöschten Fotos, die natürlich nicht als fehlend markiert werden sollen bei diesem Abgleich. Eine Möglichkeit wäre es, die zum Löschen ausgewählten Fotos in einer Liste "deleted.yml" abzulegen, dies ist händisch aber nur schlecht möglich und würde das Ziel, interoperabel zu sein, gefährden.
 
 1. **Umbenennen\***: Im IV mit noch zu definierendem Ort und Namen werden die Dateien entsprechend des Erstelldatums umbenannt, so dass sie „YYYY-MM-DD_HH.MM.SS\_#.“ heißen, mit #=alter Name und sie ihre alte Endung behalten, wobei jedoch die Endung je Medientyp immer nur eine Variante haben soll (jpeg->jpg, MP4->mp4, etc). Falls die Änderung des Dateinamens erfolgt, soll in einem passenden XMP-Tag der originale Name hinterlegt werden:
       * die Ursprüngliche Aufnahmezeit soll in *dc:date* abgelegt werden
@@ -109,7 +111,7 @@ Die mit einem **\*** gekennzeichnet Schritte sind optional.
 
    Es sollen alle Medien dieses Ereignisses einen XMP-Tag befüllen, dessen Inhalt dem Namen des Ereignisses entspricht. Dies wird in dem [Dublin-Core (dc) XMP Namespace](https://de.wikipedia.org/wiki/Dublin_Core) abgelegt unter `description`.
 
-2. **XMP-Metadaten befüllen:**
+4. **XMP-Metadaten befüllen:**
 
    *Begründung:* Exif als Metadatenspeicher kommt nicht in Frage, weil damit nicht alle Formate abgehandelt werden können wie z.B. `.ORF` und `.mp4`.
    1. **Bewerten/Löschen**: der XMP-Eintrag „Rating“ jedes Mediums wird angelegt und mit Werten von 0 bis 5 versehen. Dabei heißt
@@ -132,13 +134,13 @@ Die mit einem **\*** gekennzeichnet Schritte sind optional.
       
    3. **Lokalisieren\***: Medien bekommen einen Ort in die Metadaten geschrieben. Hier wird zwischen einem Ort für alle Medien desselben Ereignisses unterschieden und je einem genauen Ort für jedes Foto. Dies hängt davon ab, ob es einen GPS-Track gibt, der auf die Medien angewendet werden kann und wenn nein, ob es eine einfache Möglichkeit gibt auf einer Karte für ein Ereignis einen ungefähren Ort zu markieren.
 
- 4. **Aggregieren**: die RAWs werden entsprechend dem obigen Ratingschema in den Ereignisordner kopiert bzw. gelöscht. Zugleich werden die in den beiden vorhergehenden Schritten erzeugten XMP-Tags in die RAW-Dateien kopiert. Der Abschluss davon wird ebenso in [progress.cr](http://progress.cr) festgehalten.
+ 2. **Aggregieren**: die RAWs werden entsprechend dem obigen Ratingschema in den Ereignisordner kopiert bzw. gelöscht. Zugleich werden die in den beiden vorhergehenden Schritten erzeugten XMP-Tags in die RAW-Dateien kopiert. Der Abschluss davon wird ebenso in [progress.cr](http://progress.cr) festgehalten.
 
- 5. **Ablegen**: Ereignisse die bis zu dieser Stufe behandelt wurden, können als grundsätzlich fertig abgearbeitet betrachtet werden und deren Ordner werden in den finalen Ablageort verschoben, was ebenso in [progress.cr](http://progress.cr) markiert wird, bevor es zum Ablegen kommt.
+ 3. **Ablegen**: Ereignisse die bis zu dieser Stufe behandelt wurden, können als grundsätzlich fertig abgearbeitet betrachtet werden und deren Ordner werden in den finalen Ablageort verschoben, was ebenso in [progress.cr](http://progress.cr) markiert wird, bevor es zum Ablegen kommt.
 
-3.  **Sichern**: Hierbei soll zwischen einem einzigen Haupt- und potenziell mehreren Nebensicherungsorten unterschieden werden. Der finale Ablageort ist automatisch der Hauptsicherungsort. Änderungen am finalen Ablageort (Z.B. durch die nächste Stufe) sollen einseitig an die Sicherungsorte durchgereicht werden (so dass die Sicherungsorte möglichst stets gespiegelt zu dem Ablageort sind). Dies wäre keine gute Sicherungsstrategie, wenn die Sicherungen nicht Versionierungen beherrschen würden. Es muss also sichergestellt sein, dass mit dem einseitigen Synchronisieren der Sicherungsorte zumindest eine Zeitlang noch alle Medien wiederhergestellt werden können. Dies sicherzustellen ist nicht Aufgabe dieses Workflows.
+5.  **Sichern**: Hierbei soll zwischen einem einzigen Haupt- und potenziell mehreren Nebensicherungsorten unterschieden werden. Der finale Ablageort ist automatisch der Hauptsicherungsort. Änderungen am finalen Ablageort (Z.B. durch die nächste Stufe) sollen einseitig an die Sicherungsorte durchgereicht werden (so dass die Sicherungsorte möglichst stets gespiegelt zu dem Ablageort sind). Dies wäre keine gute Sicherungsstrategie, wenn die Sicherungen nicht Versionierungen beherrschen würden. Es muss also sichergestellt sein, dass mit dem einseitigen Synchronisieren der Sicherungsorte zumindest eine Zeitlang noch alle Medien wiederhergestellt werden können. Dies sicherzustellen ist nicht Aufgabe dieses Workflows.
 
-4. **Nachbearbeiten\***: jedes Foto mit RAW-Dateien kann nun mit dem Programm der Wahl entwickelt werden. Ein dergestalt nachbearbeitetes Foto sollte sowohl im RAW als auch im jpg hinterlegt bekommen, dass dies geschehen ist, damit beim Wiederaufnehmen der Tätigkeit klar ist, was noch ansteht. Zusätzlich kann in [progress.cr](http://progress.cr) noch stehen welche Fotos noch bearbeitet gehören.
+6. **Nachbearbeiten\***: jedes Foto mit RAW-Dateien kann nun mit dem Programm der Wahl entwickelt werden. Ein dergestalt nachbearbeitetes Foto sollte sowohl im RAW als auch im jpg hinterlegt bekommen, dass dies geschehen ist, damit beim Wiederaufnehmen der Tätigkeit klar ist, was noch ansteht. Zusätzlich kann in [progress.cr](http://progress.cr) noch stehen welche Fotos noch bearbeitet gehören.
 
 Die Reihenfolge muss nicht fest sein, aber folgendes muss gelten. Dabei bezeichne W die Menge aller Schritte, wie sie oben definiert wurden, und O die Teilmenge davon, die als optional (**\***) markiert ist.
 
