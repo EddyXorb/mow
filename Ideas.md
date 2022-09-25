@@ -97,14 +97,21 @@ Die mit einem **\*** gekennzeichnet Schritte sind optional.
 
  1. **Kopieren**: Mediendateien werden von Quell (QV)- ins Intermediärverzeichnis (IV) kopiert, im Quellverzeichnis wird eine Datei [source.cr](http://source.cr) angelegt mit einer noch zu definierenden Struktur aus der hervorgeht welche Dateien bereits kopiert wurden.
 
-1. **Umbenennen\***: Im IV mit noch zu definierendem Ort und Namen werden die Dateien entsprechend des Erstelldatums umbenannt, so dass sie „YYYY-MM-DD_HH.MM.SS\_#.“ heißen, mit #=alter Name und sie ihre alte Endung behalten, wobei jedoch die Endung je Medientyp immer nur eine Variante haben soll (jpeg->jpg, MP4->mp4, etc). Falls die Änderung des Dateinamens erfolgt, soll in einem passenden XMP-Tag der originale Name hinterlegt werden.
+1. **Umbenennen\***: Im IV mit noch zu definierendem Ort und Namen werden die Dateien entsprechend des Erstelldatums umbenannt, so dass sie „YYYY-MM-DD_HH.MM.SS\_#.“ heißen, mit #=alter Name und sie ihre alte Endung behalten, wobei jedoch die Endung je Medientyp immer nur eine Variante haben soll (jpeg->jpg, MP4->mp4, etc). Falls die Änderung des Dateinamens erfolgt, soll in einem passenden XMP-Tag der originale Name hinterlegt werden:
+      * die Ursprüngliche Aufnahmezeit soll in *dc:date* abgelegt werden
+      * der ursprüngliche Dateiname soll unter *dc:source* abelegt werden
 
- 2. **Konvertieren\***: Ausgewählte Medien (insbesondere Videos) werden in diesem Schritt kleinergerechnet. Die originalen Medien (nur IV) werden sofort gelöscht. Konvertierte Dateien bekommen das Suffix „\_converted“ im Dateinamen, um sofort zu sehen welche Medien noch nicht konvertiert wurden.
+2. **Konvertieren\***: Ausgewählte Medien (insbesondere Videos) werden in diesem Schritt kleinergerechnet. Die originalen Medien (nur IV) werden sofort gelöscht. Konvertierte Dateien bekommen das Suffix „\_converted“ im Dateinamen, um sofort zu sehen welche Medien noch nicht konvertiert wurden.
 
- 3. **Gruppieren**: Medien desselben Ereignisses werden zusammengefasst, indem für jedes Ereignis ein Unterordner angelegt wird, der YYYY-MM-DD_HH #“ heißt, mit der Zeit entsprechend dem Aufnahmezeitpunkt des ersten Mediums und #=Name des Ereignisses. Eine Datei [progress.cr](http://progress.cr) wird in demselben Ordner angelegt bei Fertigstellung oder Unterbrechung der Gruppierung, aus der hervorgeht dass man fertig mit damit ist bzw. wo man zuletzt war oder was noch zu tun ist (z.B. Aufteilen des Ordners oder Ergänzen um weitere Medien). Optional werden nur die Videos und die *.jpgs* in die Ereignisordner gepackt, die Raws verbleiben vorerst im Wurzelverzeichnis des IV. Dies erleichtert das Scrollen und nachfolgende Bewerten.
+3. **Gruppieren**: Medien desselben Ereignisses werden zusammengefasst, indem für jedes Ereignis ein Unterordner angelegt wird, der YYYY-MM-DD_HH #“ heißt, mit der Zeit entsprechend dem Aufnahmezeitpunkt des ersten Mediums und #=Name des Ereignisses. Optional werden nur die Videos und die *.jpgs* in die Ereignisordner gepackt, die Raws verbleiben vorerst im Wurzelverzeichnis des IV. Dies erleichtert das Scrollen und nachfolgende Bewerten.
 
-2. **XMP-Metadaten befüllen**
+   Nach Fertigstellung wird eine leere versteckte Datei `.clustered` angelegt, die anzeigt, dass man fertig ist mit dem Gruppieren.
 
+   Es sollen alle Medien dieses Ereignisses einen XMP-Tag befüllen, dessen Inhalt dem Namen des Ereignisses entspricht. Dies wird in dem [Dublin-Core (dc) XMP Namespace](https://de.wikipedia.org/wiki/Dublin_Core) abgelegt unter `description`.
+
+2. **XMP-Metadaten befüllen:**
+
+   *Begründung:* Exif als Metadatenspeicher kommt nicht in Frage, weil damit nicht alle Formate abgehandelt werden können wie z.B. `.ORF` und `.mp4`.
    1. **Bewerten/Löschen**: der XMP-Eintrag „Rating“ jedes Mediums wird angelegt und mit Werten von 0 bis 5 versehen. Dabei heißt
       * 0 = unklar, aber behalte raw und jpg
       * 1 = schlecht, behalte nur jpg
@@ -119,8 +126,8 @@ Die mit einem **\*** gekennzeichnet Schritte sind optional.
 
       Sollte man den Prozess mittendrin unterbrechen müssen, ist dies dadurch klar, dass nicht alle Medien ein Rating haben.
 
-      Nach Abschluss dieser Stufe wird in [progress.cr](http://progress.cr) markiert, dass die Bewertung abgeschlossen ist, was Zeit spart und auf den ersten Blick erlaubt händisch zu sehen, dass dies der Fall ist. Weiters sollen alle Medien dieses Ereignisses einen noch zu definierenden XMP-Tag befüllen, dessen Inhalt dem Namen des Ereignisses entspricht.
-
+      Nach Abschluss dieser Stufe wird durch eine leere versteckte Datei namens `.rated` markiert, dass die Bewertung abgeschlossen ist, was Zeit spart und auf den ersten Blick erlaubt händisch zu sehen, dass dies der Fall ist. Versteckt deshalb, weil es meist nicht erforderlich ist sie zu sehen, und weil es so in der Dateisystemauflistung ganz oben steht.
+      
    2. **Kategorisieren\***: den Medien können beliebige Kategorien wie „greifen“, „drucken“, „Kirchen“ etc. zugeordnet werden entsprechend meiner fotografischen Projekte. Diese Kategorien werden in einen noch zu definierenden geeigneten XMP-Tag untergebracht. Weiters können hier die mit dem Ereignis verbundenen Personennamen hier aufgenommen werden. Es können in diesem Schritt auch Tools wie [Excire](https://excire.com) Schlagworte erstellen, die in XMP eingebettet werden.
       
    3. **Lokalisieren\***: Medien bekommen einen Ort in die Metadaten geschrieben. Hier wird zwischen einem Ort für alle Medien desselben Ereignisses unterschieden und je einem genauen Ort für jedes Foto. Dies hängt davon ab, ob es einen GPS-Track gibt, der auf die Medien angewendet werden kann und wenn nein, ob es eine einfache Möglichkeit gibt auf einer Karte für ein Ereignis einen ungefähren Ort zu markieren.
@@ -138,4 +145,4 @@ Die Reihenfolge muss nicht fest sein, aber folgendes muss gelten. Dabei bezeichn
 * 1 < w für alle w aus W\\{1}
 * 4 < 5 < 8 < 9 < 10
 * 2,3 < 5 um zu verhindern, dass beim Konvertieren/Umbenennen XMP-Tags gelöscht/nicht mehr zuordnenbar sind
-* 6,7 < 8, damit die gesetzten Tags auch in die RAWs kommen
+* 6,7 < 8, damit die gesetzten Tags auch in die RAWs komme
