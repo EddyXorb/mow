@@ -21,7 +21,7 @@ class ImageRenamer(VerbosePrinterClass):
 
     def getNewImageFileNameFor(file: str) -> str:
         date = getExifDateFrom(file)
-        prefixDate = f"{date:%Y-%m-%d.T.%H.%M.%S}"
+        prefixDate = f"{date:%Y-%m-%d_%H.%M.%S}"
         return os.path.join(
             os.path.dirname(file), prefixDate + "_" + os.path.basename(file)
         )
