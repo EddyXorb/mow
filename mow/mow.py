@@ -1,4 +1,7 @@
-class Fluxus:
+class Mow:
+    """
+    Stands for "M(edia) (fl)OW" - a design to structure your media workflow, be it photos, videos or audio data.
+    """
     def __init__(self, settingsfile: str):
         self.settingsfile = settingsfile
 
