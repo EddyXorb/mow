@@ -81,6 +81,7 @@ Die mit einem **\*** gekennzeichnet Schritte sind optional. In eckigen Klammern 
 
    In XMP zu hinterlegen:
    * der Ereignisnamen (= der Name des beinhaltenden Ordnern) wird abelegt unter *dc:description*
+
 5. **XMP-Metadaten befüllen:**
 
    *Begründung:* Exif als Metadatenspeicher kommt nicht in Frage, weil damit nicht alle Formate abgehandelt werden können wie z.B. `.ORF` und `.mp4`.

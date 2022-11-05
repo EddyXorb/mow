@@ -1,0 +1,1 @@
+6. **Aggregieren [aggregate]**\: die RAWs werden entsprechend dem obigen Ratingschema in den Ereignisordner kopiert bzw. gelöscht. Zugleich werden die in den beiden vorhergehenden Schritten erzeugten XMP-Tags in die RAW-Dateien kopiert. 
