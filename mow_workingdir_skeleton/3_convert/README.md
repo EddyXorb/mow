@@ -1,1 +1,0 @@
-3. **Konvertieren\* [convert]**\: Ausgewählte Medien (insbesondere Videos) werden in diesem Schritt kleinergerechnet. Die originalen Medien (nur IV) können sofort gelöscht werden um Speicherplatz zu sparen. Konvertierte Dateien bekommen das Suffix „\_converted“ im Dateinamen, um sofort zu sehen welche Medien noch nicht konvertiert wurden.

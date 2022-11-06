@@ -1,0 +1,1 @@
+7. **Ablegen [archive]**\: Ereignisse die bis zu dieser Stufe behandelt wurden, können als grundsätzlich fertig abgearbeitet betrachtet werden und deren Ordner werden in den finalen Ablageort verschoben.

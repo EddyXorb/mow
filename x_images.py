@@ -1,12 +1,12 @@
 import os
 import sys
 
-from general.tkinterhelper import getInputDir
+from modules.general.tkinterhelper import getInputDir
 
-from image.imagerenamer import ImageRenamer
-from image.imageclusterer import ImageClusterer
-from image.imageparser import parser
-from image.imagesearcher import ImageSearcher
+from modules.image.imagerenamer import ImageRenamer
+from modules.image.imageclusterer import ImageClusterer
+from modules.image.imageparser import parser
+from modules.image.imagesearcher import ImageSearcher
 
 
 def call(args: any):
