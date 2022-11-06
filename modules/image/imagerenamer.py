@@ -137,11 +137,11 @@ class ImageRenamer(VerbosePrinterClass):
         return newName
 
     def fileWasAlreadyRenamed(self, file: str):
-        if "_" in file and ".T." in file:
+        if "_" in file and "@" in file:
             self.printv(
                 "Skip file ",
                 file,
-                "because it contains underscore and '.T.' . Maybe you already renamed it?",
+                "because it contains underscore and '@' . Maybe you already renamed it?",
             )
             self.skippedfiles.append(file)
             return True
