@@ -2,8 +2,17 @@ import yaml
 from ..general.tkinterhelper import getInputDir
 from os import path
 from os.path import join
-
+import os
 from ..image.imagerenamer import ImageRenamer
+
+
+def remove_empty_subfolders_of(path_to_remove):
+    to_remove = os.path.abspath(path_to_remove)
+    for path, _, _ in os.walk(to_remove, topdown=False):
+        if path == to_remove:
+            continue
+        if len(os.listdir(path)) == 0:
+            os.rmdir(path)
 
 
 class Mow:
@@ -57,6 +66,7 @@ class Mow:
             self.stageToFolder[self._getStageAfter("rename")],
         )
         ImageRenamer(src, dst, move=True, verbose=True, maintainFolderStructure=True)()
+        remove_empty_subfolders_of(src)
 
     def group(self):
         pass

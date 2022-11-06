@@ -26,3 +26,10 @@ def test_filewasmoved():
     Mow(settingsfile=settingsfile).rename()
     assert not exists(srcfile)
     assert exists(expectedtargetsrcfile)
+
+
+def test_emptyDirsAreremovedInRenameFolder():
+    prepareTest()
+    assert exists(join(renamedir, "subfolder"))
+    Mow(settingsfile=settingsfile).rename()
+    assert not exists(join(renamedir, "subfolder"))
