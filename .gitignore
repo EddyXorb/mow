@@ -1,7 +1,7 @@
 __pycache*
 .vscode*
-test/test_renamed
+tests/test_renamed
 .mowsettings.yml
-test/filestorename
+tests/filestorename
 .mow_test_settings.yml
 tests/mow_test_workingdir

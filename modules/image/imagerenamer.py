@@ -119,6 +119,10 @@ class ImageRenamer(VerbosePrinterClass):
             if newJpgName is None:
                 self.skippedfiles.append(oldJpgName)
                 continue
+            if os.path.exists(newJpgName):
+                print(f"New filename {newJpgName} exists already. Skip this one.")
+                self.skippedfiles.append(oldJpgName)
+                continue
 
             self.oldToNewMapping[oldJpgName] = newJpgName
 

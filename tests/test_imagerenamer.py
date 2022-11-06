@@ -28,12 +28,8 @@ def test_subfolderaremaintained():
     renamer = ImageRenamer(
         src,
         dst,
-        recursive=True,
         move=False,
-        restoreOldNames=False,
         verbose=True,
-        maintainFolderStructure=True,
-        dry=True,
     )
     renamer()
     print(renamer.oldToNewMapping)
@@ -55,12 +51,8 @@ def test_copyworks():
     renamer = ImageRenamer(
         src,
         dst,
-        recursive=True,
         move=False,
-        restoreOldNames=False,
         verbose=True,
-        maintainFolderStructure=True,
-        dry=False,
     )
 
     renamer()
@@ -81,12 +73,8 @@ def test_moveworks():
     renamer = ImageRenamer(
         src,
         dst,
-        recursive=True,
         move=True,
-        restoreOldNames=False,
         verbose=True,
-        maintainFolderStructure=True,
-        dry=False,
     )
 
     renamer()
@@ -103,12 +91,8 @@ def test_nonemptyDestinationIsNoProblem():
     renamer = ImageRenamer(
         src,
         dst,
-        recursive=True,
         move=True,
-        restoreOldNames=False,
         verbose=True,
-        maintainFolderStructure=True,
-        dry=False,
     )
     renamer()
 
@@ -140,7 +124,6 @@ def test_writeXMPDateAndCreationWorks():
     renamer = ImageRenamer(
         src,
         dst,
-        recursive=True,
         move=True,
         verbose=True,
         writeXMP=True,
@@ -153,3 +136,29 @@ def test_writeXMPDateAndCreationWorks():
         print(tags)
         assert tags["XMP:Source"] == "test3.JPG"
         assert tags["XMP:Date"] == "2022:07:27 21:55:55"
+
+
+def test_alreadyexistentfileisnotoverwritten():
+    prepareTest()
+
+    assert (
+        len(os.listdir(join(src, "subsubfolder"))) == 1
+    )  # source should contain only one file
+
+    renamer = ImageRenamer(
+        src,
+        dst,
+        move=False,
+        verbose=True,
+    )
+
+    renamer()
+    assert len(renamer.skippedfiles) == 0
+    renamer = ImageRenamer(
+        src,
+        dst,
+        move=False,
+        verbose=True,
+    )
+    renamer()
+    assert len(renamer.skippedfiles) == 1
