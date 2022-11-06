@@ -109,10 +109,10 @@ class MediaFileRenamer(VerbosePrinterClass):
                     "%Y:%m:%d %H:%M:%S"
                 )
                 try:
-                    et.set_tags(
+                    done = et.set_tags(
                         file,
                         {"XMP-dc:Date": creationDate, "XMP-dc:Source": filename},
-                        params=["-P", "-overwrite_original"],
+                        params=["-P", "-overwrite_original"],  # , "-v2"],
                     )
                 except Exception as e:
                     print(

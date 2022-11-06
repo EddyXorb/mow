@@ -67,9 +67,10 @@ class Mow:
             self.settings["workingdir"],
             self.stageToFolder[self._getStageAfter("rename")],
         )
-        
+
         renamers = [ImageRenamer, VideoRenamer]
         for renamer in renamers:
+            print(f"######  Apply renamer: {renamer.__name__} ######")
             renamer(
                 src,
                 dst,

@@ -27,6 +27,6 @@ def prepareTest():
 def test_fileisrenamed():
     prepareTest()
 
-    renamer = VideoRenamer(src, dst, move=True, verbose=True)
+    renamer = VideoRenamer(src, dst, move=True, verbose=True, writeXMP=True)
     renamer()
     assert len(os.listdir(targetDir)) > 0
