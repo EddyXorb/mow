@@ -8,7 +8,7 @@ def getInputDir(title: str = "open") -> str:
 
     root = tk.Tk()
     root.withdraw()
-    folder = filedialog.askdirectory(title=title)
+    folder = filedialog.askdirectory(title=title, initialdir=os.getcwd())
     if not os.path.isdir(folder):
         print("No dir specified, do nothing.")
         sys.exit()
