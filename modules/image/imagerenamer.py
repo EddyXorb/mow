@@ -9,6 +9,7 @@ from .imagefile import ImageFile
 from .imagehelper import getExifDateFrom
 from .imagefile import ImageFile
 from ..general.verboseprinterclass import VerbosePrinterClass
+from tqdm import tqdm
 
 #%%
 class ImageRenamer(VerbosePrinterClass):
@@ -76,6 +77,7 @@ class ImageRenamer(VerbosePrinterClass):
         self.printv("Created dir ", self.dst)
 
     def collectImagesToTreat(self):
+        self.printv("Collect images to rename..")
         for root, _, files in os.walk(self.src):
             if not self.recursive and root != self.src:
                 continue
@@ -86,16 +88,18 @@ class ImageRenamer(VerbosePrinterClass):
                 if not ifile.isValid():
                     continue
                 self.toTreat.append(ifile)
+        self.printv(f"Collected {len(self.toTreat)} images for renaming.")
 
     def addOptionalXMPData(self):
         if not self.writeXMP:
             return
 
+        self.printv("Add XMP-metadata to imagefiles..")
         from exiftool import ExifToolHelper
 
         with ExifToolHelper() as et:
             oldfiles = list(self.oldToNewMapping.keys())
-            for file in oldfiles:
+            for file in tqdm(oldfiles):
                 filename = os.path.basename(file)
                 creationDate = et.get_tags(file, "EXIF:DateTimeOriginal")[0][
                     "EXIF:DateTimeOriginal"
@@ -105,10 +109,11 @@ class ImageRenamer(VerbosePrinterClass):
                     {"XMP-dc:date": creationDate, "XMP-dc:Source": filename},
                     params=["-P", "-overwrite_original"],
                 )
-                print("Write", creationDate)
+        self.printv("Added XMP metadata to images to rename.")
 
     def createNewNames(self):
-        for im in self.toTreat:
+        self.printv("Create new names for images..")
+        for im in tqdm(self.toTreat):
             oldJpgName = im.getJpg()
             newJpgName = self.getRenamedFileFrom(im.getJpg())
             if newJpgName is None:
@@ -117,8 +122,11 @@ class ImageRenamer(VerbosePrinterClass):
 
             self.oldToNewMapping[oldJpgName] = newJpgName
 
+        self.printv("Created new names for images..")
+
     def executeRenaming(self):
-        for im in self.toTreat:
+        self.printv("Execute renaming..")
+        for im in tqdm(self.toTreat):
             if im.getJpg() in self.skippedfiles:
                 continue
 
@@ -132,6 +140,8 @@ class ImageRenamer(VerbosePrinterClass):
                 im.copyTo(newName)
 
             self.treatedfiles += im.nrfiles
+
+        self.printv("Finshed renaming images.")
 
     def getRenamedFileFrom(self, file: str) -> str:
         newName = ""
