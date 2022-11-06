@@ -20,6 +20,7 @@ class ImageRenamer(VerbosePrinterClass):
     restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
     maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
     dry: don't actually rename files
+    writeXMP: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
     """
 
     def getNewImageFileNameFor(file: str) -> str:
@@ -39,6 +40,7 @@ class ImageRenamer(VerbosePrinterClass):
         verbose=False,
         maintainFolderStructure=True,
         dry=False,
+        writeXMP=False,
     ):
         super().__init__(verbose)
         self.src = os.path.abspath(src)
@@ -47,6 +49,7 @@ class ImageRenamer(VerbosePrinterClass):
         self.move = move
         self.maintainFolderStructure = maintainFolderStructure
         self.dry = dry
+        self.writeXMP = writeXMP
 
         self.restoreOldNames = restoreOldNames
         self.skippedfiles: List[str] = []
@@ -60,6 +63,7 @@ class ImageRenamer(VerbosePrinterClass):
         self.createDestinationDir()
         self.collectImagesToTreat()
         self.createNewNames()
+        self.addOptionalXMPData()
 
         self.executeRenaming()
 
@@ -82,6 +86,26 @@ class ImageRenamer(VerbosePrinterClass):
                 if not ifile.isValid():
                     continue
                 self.toTreat.append(ifile)
+
+    def addOptionalXMPData(self):
+        if not self.writeXMP:
+            return
+
+        from exiftool import ExifToolHelper
+
+        with ExifToolHelper() as et:
+            oldfiles = list(self.oldToNewMapping.keys())
+            for file in oldfiles:
+                filename = os.path.basename(file)
+                creationDate = et.get_tags(file, "EXIF:DateTimeOriginal")[0][
+                    "EXIF:DateTimeOriginal"
+                ]
+                et.set_tags(
+                    file,
+                    {"XMP-dc:date": creationDate, "XMP-dc:Source": filename},
+                    params=["-P", "-overwrite_original"],
+                )
+                print("Write", creationDate)
 
     def createNewNames(self):
         for im in self.toTreat:
@@ -133,7 +157,7 @@ class ImageRenamer(VerbosePrinterClass):
         if os.path.exists(newName):
             self.printv("File", newName, "already exists.")
             return None
-        
+
         return newName
 
     def fileWasAlreadyRenamed(self, file: str):

@@ -4,6 +4,7 @@ from os import path
 from os.path import join
 import os
 from ..image.imagerenamer import ImageRenamer
+from exiftool import ExifToolHelper
 
 
 def remove_empty_subfolders_of(path_to_remove):
@@ -65,7 +66,14 @@ class Mow:
             self.settings["workingdir"],
             self.stageToFolder[self._getStageAfter("rename")],
         )
-        ImageRenamer(src, dst, move=True, verbose=True, maintainFolderStructure=True)()
+        ImageRenamer(
+            src,
+            dst,
+            move=True,
+            verbose=True,
+            maintainFolderStructure=True,
+            writeXMP=True,
+        )()
         remove_empty_subfolders_of(src)
 
     def group(self):
