@@ -6,7 +6,7 @@ from typing import List, Dict
 from pathlib import Path
 
 from .imagefile import ImageFile
-from .imagehelper import getExifDateFrom
+from .imagehelper import getCreationDateFrom
 from .imagefile import ImageFile
 from ..general.verboseprinterclass import VerbosePrinterClass
 from tqdm import tqdm
@@ -25,7 +25,7 @@ class ImageRenamer(VerbosePrinterClass):
     """
 
     def getNewImageFileNameFor(file: str) -> str:
-        date = getExifDateFrom(file)
+        date = getCreationDateFrom(file)
         prefixDate = f"{date:%Y-%m-%d@%H%M%S}"
         return os.path.join(
             os.path.dirname(file), prefixDate + "_" + os.path.basename(file)
@@ -101,14 +101,21 @@ class ImageRenamer(VerbosePrinterClass):
             oldfiles = list(self.oldToNewMapping.keys())
             for file in tqdm(oldfiles):
                 filename = os.path.basename(file)
-                creationDate = et.get_tags(file, "EXIF:DateTimeOriginal")[0][
-                    "EXIF:DateTimeOriginal"
-                ]
-                et.set_tags(
-                    file,
-                    {"XMP-dc:date": creationDate, "XMP-dc:Source": filename},
-                    params=["-P", "-overwrite_original"],
-                )
+                creationDate = getCreationDateFrom(file).strftime("%Y:%m:%d %H:%M:%S")
+                try:
+                    et.set_tags(
+                        file,
+                        {"XMP-dc:Date": creationDate, "XMP-dc:Source": filename},
+                        params=["-P", "-overwrite_original"],
+                    )
+                except Exception as e:
+                    print(
+                        e,
+                        f"Problem setting XMP data to file {file} with exiftool. Skip this one.",
+                    )
+                    self.skippedfiles.append(file)
+                    self.oldToNewMapping.pop(file)
+
         self.printv("Added XMP metadata to images to rename.")
 
     def createNewNames(self):
