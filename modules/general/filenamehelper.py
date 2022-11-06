@@ -1,43 +1,32 @@
 import os
 import datetime as dt
 
-from PIL import Image, ExifTags
-from exiftool import ExifToolHelper
 import pathlib
 
+from ..image.imagefile import ImageFile
+from ..video.videofile import VideoFile
 
-def getFileCreationDateFrom(file: str) -> dt.datetime:
+
+def getFileModifyDateFrom(file: str) -> dt.datetime:
     fname = pathlib.Path(file)
-    return dt.datetime.fromtimestamp(fname.stat().st_ctime, tz=dt.timezone.utc)
+    return dt.datetime.fromtimestamp(fname.stat().st_mtime, tz=dt.timezone.utc)
 
 
 def getMediaCreationDateFrom(file: str, verbose=False) -> dt.datetime:
-    try:
-        date = None
-        img = Image.open(file)
-        img_exif = img.getexif()
-        exifvalueOriginalCreation = 36867
-        exifvalueChangedDate = 306
-        if img_exif is None or (
-            exifvalueOriginalCreation not in img_exif
-            and exifvalueChangedDate not in img_exif
-        ):
-            date = getFileCreationDateFrom(file)
-            if verbose:
-                print(
-                    f"Had to use file creation date {date} for file {file} due to missing metadata."
-                )
-            return date
-        else:
-            if exifvalueOriginalCreation in img_exif:
-                date = img_exif[exifvalueOriginalCreation]
-            else:
-                date = img_exif[exifvalueChangedDate]
+    result = None
+    toCheck = [ImageFile, VideoFile]
+    for mediatype in toCheck:
+        mediafile = mediatype(file)
+        if not mediafile.isValid():
+            continue
+        result = mediafile.readDateTime()
+        if result is not None:
+            return result
 
-        return dt.datetime.strptime(date, "%Y:%m:%d %H:%M:%S")
+    if result is None:
+        result = getFileModifyDateFrom(file)
 
-    except:
-        return getFileCreationDateFrom(file)
+    return result
 
 
 def getDateTimeFileNameFor(file: str) -> str:

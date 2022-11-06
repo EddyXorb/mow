@@ -90,7 +90,6 @@ class MediaFileRenamer(VerbosePrinterClass):
                 mfile = self.mediafilefactory(str(path))
                 if not mfile.isValid():
                     continue
-                print(f"Did not filter out {mfile}")
                 self.toTreat.append(mfile)
 
         self.printv(f"Collected {len(self.toTreat)} files for renaming.")

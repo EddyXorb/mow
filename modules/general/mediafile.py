@@ -3,6 +3,7 @@ from typing import Callable
 import os
 from shutil import copyfile, move
 from os.path import *
+import datetime as dt
 
 
 class MediaFile:
@@ -56,3 +57,6 @@ class MediaFile:
         """
         newBaseName = self._relocate(dst, copyfile)
         return MediaFile(newBaseName + self.extensions[0])
+
+    def readDateTime(self) -> dt.datetime:
+        raise NotImplementedError()

@@ -5,6 +5,11 @@ from shutil import copyfile, move
 from typing import List, Callable
 
 from ..general.mediafile import MediaFile
+import datetime as dt
+
+from PIL import Image, ExifTags
+from exiftool import ExifToolHelper
+import pathlib
 
 
 class ImageFile(MediaFile):
@@ -36,3 +41,25 @@ class ImageFile(MediaFile):
     def copyTo(self, dst: str) -> ImageFile:
         newBaseName = self._relocate(dst, copyfile)
         return ImageFile(newBaseName + self.extensions[0])
+
+    def readDateTime(self):
+        try:
+            date = None
+            img = Image.open(self.getJpg())
+            img_exif = img.getexif()
+            exifvalueOriginalCreation = 36867
+            exifvalueChangedDate = 306
+            if img_exif is None or (
+                exifvalueOriginalCreation not in img_exif
+                and exifvalueChangedDate not in img_exif
+            ):
+                return None
+            else:
+                if exifvalueOriginalCreation in img_exif:
+                    date = img_exif[exifvalueOriginalCreation]
+                else:
+                    date = img_exif[exifvalueChangedDate]
+
+            return dt.datetime.strptime(date, "%Y:%m:%d %H:%M:%S")
+        except:
+            return None

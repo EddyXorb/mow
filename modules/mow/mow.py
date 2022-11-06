@@ -4,6 +4,7 @@ from os import path
 from os.path import join
 import os
 from ..image.imagerenamer import ImageRenamer
+from ..video.videorenamer import VideoRenamer
 from exiftool import ExifToolHelper
 
 
@@ -66,14 +67,17 @@ class Mow:
             self.settings["workingdir"],
             self.stageToFolder[self._getStageAfter("rename")],
         )
-        ImageRenamer(
-            src,
-            dst,
-            move=True,
-            verbose=True,
-            maintainFolderStructure=True,
-            writeXMP=True,
-        )()
+        
+        renamers = [ImageRenamer, VideoRenamer]
+        for renamer in renamers:
+            renamer(
+                src,
+                dst,
+                move=True,
+                verbose=True,
+                writeXMP=True,
+            )()
+
         remove_empty_subfolders_of(src)
 
     def group(self):
