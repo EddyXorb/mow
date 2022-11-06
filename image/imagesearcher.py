@@ -2,9 +2,9 @@ import os
 from typing import DefaultDict, Dict, List
 from collections import defaultdict
 
-from general.verboseprinterclass import VerbosePrinterClass
-from image.imagefile import ImageFile
-from image.imagerenamer import ImageRenamer
+from ..general.verboseprinterclass import VerbosePrinterClass
+from .imagefile import ImageFile
+from .imagerenamer import ImageRenamer
 
 
 class ImageSearcher(VerbosePrinterClass):

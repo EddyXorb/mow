@@ -2,12 +2,13 @@
 import os
 from os.path import join, splitext
 import datetime as dt
-from typing import List
+from typing import List, Dict
+from pathlib import Path
 
-from image.imagefile import ImageFile
-from image.imagehelper import getExifDateFrom
-from image.imagefile import ImageFile
-from general.verboseprinterclass import VerbosePrinterClass
+from .imagefile import ImageFile
+from .imagehelper import getExifDateFrom
+from .imagefile import ImageFile
+from ..general.verboseprinterclass import VerbosePrinterClass
 
 #%%
 class ImageRenamer(VerbosePrinterClass):
@@ -17,11 +18,13 @@ class ImageRenamer(VerbosePrinterClass):
     recursive : if true, dives into every subdir to look for image files
     move : if true, moves files, else copies them
     restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
+    maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
+    dry: don't actually rename files
     """
 
     def getNewImageFileNameFor(file: str) -> str:
         date = getExifDateFrom(file)
-        prefixDate = f"{date:%Y-%m-%d_%H.%M.%S}"
+        prefixDate = f"{date:%Y-%m-%d@%H%M%S}"
         return os.path.join(
             os.path.dirname(file), prefixDate + "_" + os.path.basename(file)
         )
@@ -34,23 +37,31 @@ class ImageRenamer(VerbosePrinterClass):
         move: bool = False,
         restoreOldNames=False,
         verbose=False,
+        maintainFolderStructure=True,
+        dry=False,
     ):
         super().__init__(verbose)
         self.src = os.path.abspath(src)
         self.dst = os.path.abspath(dst)
         self.recursive = recursive
         self.move = move
+        self.maintainFolderStructure = maintainFolderStructure
+        self.dry = dry
 
         self.restoreOldNames = restoreOldNames
         self.skippedfiles: List[str] = []
         self.toTreat: List[ImageFile] = []
+        self.oldToNewMapping: Dict[str, str] = {}  # always jpg-names
         self.treatedfiles = 0
 
+    def __call__(self):
         self.printv("Start renaming from source ", self.src, " into ", self.dst)
 
         self.createDestinationDir()
         self.collectImagesToTreat()
-        self.treatImages()
+        self.createNewNames()
+
+        self.executeRenaming()
 
         self.printStatistic()
 
@@ -66,17 +77,29 @@ class ImageRenamer(VerbosePrinterClass):
                 continue
 
             for file in files:
-                ifile = ImageFile(join(root, file))
+                path = Path(join(root, file))
+                ifile = ImageFile(str(path))
                 if not ifile.isValid():
                     continue
                 self.toTreat.append(ifile)
 
-    def treatImages(self):
+    def createNewNames(self):
         for im in self.toTreat:
+            oldJpgName = im.getJpg()
+            newJpgName = self.getRenamedFileFrom(im.getJpg())
+            if newJpgName is None:
+                self.skippedfiles.append(oldJpgName)
+                continue
 
-            newName = self.getRenamedFileFrom(im.getJpg())
-            if newName is None:
-                self.skippedfiles.append(im.getJpg())
+            self.oldToNewMapping[oldJpgName] = newJpgName
+
+    def executeRenaming(self):
+        for im in self.toTreat:
+            if im.getJpg() in self.skippedfiles:
+                continue
+
+            newName = self.oldToNewMapping[im.getJpg()]
+            if self.dry:
                 continue
 
             if self.move:
@@ -88,26 +111,32 @@ class ImageRenamer(VerbosePrinterClass):
 
     def getRenamedFileFrom(self, file: str) -> str:
         newName = ""
+
         if self.restoreOldNames:
             splitted = os.path.basename(file).split("_")
             if len(splitted) != 2:
                 return None
             newName = join(self.dst, splitted[1])
         else:
-            if self.filewasalreadyrenamed(file):
+            if self.fileWasAlreadyRenamed(file):
                 return None
-            newName = join(
-                self.dst, os.path.basename(ImageRenamer.getNewImageFileNameFor(file))
-            )
+
+            newFileName = os.path.basename(ImageRenamer.getNewImageFileNameFor(file))
+            if self.maintainFolderStructure:
+                newName = join(
+                    self.dst,
+                    join(str(Path(file).relative_to(self.src).parent), newFileName),
+                )
+            else:
+                newName = join(self.dst, newFileName)
 
         if os.path.exists(newName):
-            self.printv("File", newName, "already exists. Skip this one.")
-            self.skippedfiles.append(file)
+            self.printv("File", newName, "already exists.")
             return None
-
+        
         return newName
 
-    def filewasalreadyrenamed(self, file: str):
+    def fileWasAlreadyRenamed(self, file: str):
         if "_" in file and ".T." in file:
             self.printv(
                 "Skip file ",

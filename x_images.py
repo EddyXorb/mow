@@ -60,7 +60,7 @@ def executeRenaming(args):
 
     ImageRenamer(
         args.src, args.dst, args.recursive, args.move, args.invert, args.verbose
-    )
+    )()
 
 
 def setargsforoption_all(args):
