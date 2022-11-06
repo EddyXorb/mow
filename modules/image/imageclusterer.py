@@ -6,7 +6,7 @@ import numpy as np
 from typing import List
 from collections import defaultdict
 
-from .imagehelper import getCreationDateFrom
+from ..general.filenamehelper import getMediaCreationDateFrom
 from .imagefile import ImageFile
 from general.verboseprinterclass import VerbosePrinterClass
 
@@ -15,7 +15,7 @@ class DateImageFile(ImageFile):
     def __init__(self, file):
         super().__init__(file)
         if self.isValid():
-            self.date: dt.datetime = getCreationDateFrom(self.getJpg())
+            self.date: dt.datetime = getMediaCreationDateFrom(self.getJpg())
             self.baseTime: dt.datetime = None
 
 

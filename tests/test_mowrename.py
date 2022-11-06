@@ -3,6 +3,7 @@ from ..modules.image.imagerenamer import *
 from ..modules.mow.mow import Mow
 import shutil
 from os.path import *
+import os
 
 testfolder = "tests"
 workingdir = abspath(join(testfolder, "mow_test_workingdir"))

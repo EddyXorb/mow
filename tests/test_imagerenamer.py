@@ -2,6 +2,7 @@ from datetime import datetime
 from ..modules.image.imagerenamer import *
 import shutil
 from os.path import join
+import os
 
 testfolder = "tests"
 tempsrcfolder = "filestorename"
@@ -153,7 +154,7 @@ def test_alreadyexistentfileisnotoverwritten():
     )
 
     renamer()
-    assert len(renamer.skippedfiles) == 0
+    assert len(renamer.skippedFiles) == 0
     renamer = ImageRenamer(
         src,
         dst,
@@ -161,4 +162,4 @@ def test_alreadyexistentfileisnotoverwritten():
         verbose=True,
     )
     renamer()
-    assert len(renamer.skippedfiles) == 1
+    assert len(renamer.skippedFiles) == 1
