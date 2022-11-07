@@ -1,17 +1,16 @@
+from dataclasses import dataclass
 import os
-from os.path import join, splitext
-import datetime as dt
-from typing import List, Dict
+from os.path import join
+from typing import Callable, Dict
 from pathlib import Path
 
-from ..general.mediafile import MediaFile
+from ..general.mediatransitioner import MediaTransitioner, TansitionerInput
 from .filenamehelper import getDateTimeFileNameFor, getMediaCreationDateFrom
-from ..general.verboseprinterclass import VerbosePrinterClass
 from tqdm import tqdm
-from typing import Callable
 
-#%%
-class MediaFileRenamer(VerbosePrinterClass):
+
+@dataclass(kw_only=True)
+class RenamerInput(TansitionerInput):
     """
     src : directory which will be search for files
     dst : directory where renamed files should be placed
@@ -23,76 +22,51 @@ class MediaFileRenamer(VerbosePrinterClass):
     writeXMP: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
     """
 
-    def __init__(
-        self,
-        src: str,
-        dst: str,
-        mediafilefactory: Callable[
-            [str], MediaFile
-        ],  # creates mediafile from path to file
-        filerenamer: Callable[
-            [str], str
-        ] = getDateTimeFileNameFor,  # creates new filename from path to file
-        recursive: bool = True,
-        move: bool = False,
-        restoreOldNames=False,
-        verbose=False,
-        maintainFolderStructure=True,
-        dry=False,
-        writeXMP=False,
-    ):
-        super().__init__(verbose)
-        self.mediafilefactory = mediafilefactory
-        self.renamer = filerenamer
+    writeXMP = False
+    maintainFolderStrucuture = True
+    restoreOldNames = False
+    filerenamer: Callable[[str], str] = None
 
-        self.src = os.path.abspath(src)
-        self.dst = os.path.abspath(dst)
-        self.recursive = recursive
-        self.move = move
-        self.maintainFolderStructure = maintainFolderStructure
-        self.dry = dry
-        self.writeXMP = writeXMP
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
-        self.restoreOldNames = restoreOldNames
-        self.skippedFiles: List[str] = []
-        self.toTreat: List[MediaFile] = []
+
+class MediaFileRenamer(MediaTransitioner):
+    """
+    src : directory which will be search for files
+    dst : directory where renamed files should be placed
+    recursive : if true, dives into every subdir to look for image files
+    move : if true, moves files, else copies them
+    restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
+    maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
+    dry: don't actually rename files
+    writeXMP: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
+    """
+
+    def __init__(self, input: RenamerInput):
+        super().__init__(input)
+        if input.mediatype is None:
+            raise Exception("Mediatype was not given to MediaRenamer!")
+        if input.filerenamer is None:
+            raise Exception("Filerenamer was not given to MediaRenamer!")
+
+        self.renamer = input.filerenamer
+        self.maintainFolderStructure = input.maintainFolderStrucuture
+        self.writeXMP = input.writeXMP
+        self.restoreOldNames = input.restoreOldNames
+
         self.oldToNewMapping: Dict[
             str, str
         ] = {}  # always a string representation of mediafiles
-        self.treatedfiles = 0
 
-    def __call__(self):
-        self.printv("Start renaming from source ", self.src, " into ", self.dst)
-
-        self.createDestinationDir()
-        self.collectMediaFilesToTreat()
+    def execute(self):
         self.createNewNames()
         self.addOptionalXMPData()
 
         self.executeRenaming()
 
         self.printStatistic()
-
-    def createDestinationDir(self):
-        if os.path.isdir(self.dst):
-            return
-        os.makedirs(self.dst, exist_ok=True)
-        self.printv("Created dir ", self.dst)
-
-    def collectMediaFilesToTreat(self):
-        self.printv("Collect files to rename..")
-        for root, _, files in os.walk(self.src):
-            if not self.recursive and root != self.src:
-                continue
-
-            for file in files:
-                path = Path(join(root, file))
-                mfile = self.mediafilefactory(str(path))
-                if not mfile.isValid():
-                    continue
-                self.toTreat.append(mfile)
-
-        self.printv(f"Collected {len(self.toTreat)} files for renaming.")
 
     def addOptionalXMPData(self):
         if not self.writeXMP:
@@ -109,7 +83,7 @@ class MediaFileRenamer(VerbosePrinterClass):
                     "%Y:%m:%d %H:%M:%S"
                 )
                 try:
-                    done = et.set_tags(
+                    et.set_tags(
                         file,
                         {"XMP-dc:Date": creationDate, "XMP-dc:Source": filename},
                         params=["-P", "-overwrite_original"],  # , "-v2"],
@@ -119,7 +93,7 @@ class MediaFileRenamer(VerbosePrinterClass):
                         e,
                         f"Problem setting XMP data to file {file} with exiftool. Skip this one.",
                     )
-                    self.skippedFiles.append(file)
+                    self.skippedFiles.add(file)
                     self.oldToNewMapping.pop(file)
 
         self.printv("Added XMP metadata to files to rename.")
@@ -130,11 +104,11 @@ class MediaFileRenamer(VerbosePrinterClass):
             oldName = str(file)
             newName = self.getRenamedFileFrom(oldName)
             if newName is None:
-                self.skippedFiles.append(oldName)
+                self.skippedFiles.add(oldName)
                 continue
             if os.path.exists(newName):
-                print(f"New filename {newName} exists already. Skip this one.")
-                self.skippedFiles.append(oldName)
+                self.printv(f"New filename {newName} exists already. Skip this one.")
+                self.skippedFiles.add(oldName)
                 continue
 
             self.oldToNewMapping[oldName] = newName
@@ -158,7 +132,7 @@ class MediaFileRenamer(VerbosePrinterClass):
 
             self.treatedfiles += file.nrFiles
 
-        self.printv("Finshed renaming files.")
+        self.printv("Finished renaming files.")
 
     def getRenamedFileFrom(self, file: str) -> str:
         newName = ""
@@ -170,6 +144,10 @@ class MediaFileRenamer(VerbosePrinterClass):
             newName = join(self.dst, splitted[1])
         else:
             if self.fileWasAlreadyRenamed(file):
+                self.printv(
+                    f"Skip file {file} because it appears to be already renamed."
+                )
+                self.skippedFiles.add(file)
                 return None
 
             renamed = self.renamer(file)
@@ -178,7 +156,8 @@ class MediaFileRenamer(VerbosePrinterClass):
             if self.maintainFolderStructure:
                 newName = join(
                     self.dst,
-                    join(str(Path(file).relative_to(self.src).parent), newFileName),
+                    str(Path(file).relative_to(self.src).parent),
+                    newFileName,
                 )
             else:
                 newName = join(self.dst, newFileName)
@@ -187,21 +166,15 @@ class MediaFileRenamer(VerbosePrinterClass):
 
     def fileWasAlreadyRenamed(self, file: str):
         if "_" in file and "@" in file:
-            self.printv(
-                "Skip file ",
-                file,
-                "because it contains underscore and '@' . Maybe you already renamed it?",
-            )
-            self.skippedFiles.append(file)
             return True
         return False
 
     def printStatistic(self):
-        print("Finished!", "Renamed", self.treatedfiles, "files.")
+        self.printv("Finished!", "Renamed", self.treatedfiles, "files.")
 
         if len(self.skippedFiles) > 0:
-            print(
+            self.printv(
                 "Skipped the following files (could be due to file being already renamed (containing timestamp and _) in filename or because target existed already): "
             )
             for file in self.skippedFiles:
-                print(file)
+                self.printv(file)

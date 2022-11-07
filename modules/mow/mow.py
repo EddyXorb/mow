@@ -1,8 +1,11 @@
 import yaml
-from ..general.tkinterhelper import getInputDir
+
 from os import path
 from os.path import join
 import os
+
+from ..general.tkinterhelper import getInputDir
+from ..general.mediafilerenamer import RenamerInput
 from ..image.imagerenamer import ImageRenamer
 from ..video.videorenamer import VideoRenamer
 from exiftool import ExifToolHelper
@@ -72,14 +75,13 @@ class Mow:
         for renamer in renamers:
             print(f"######  Apply renamer: {renamer.__name__} ######")
             renamer(
-                src,
-                dst,
-                move=True,
-                verbose=True,
-                writeXMP=True,
+                RenamerInput(src=src, dst=dst, move=True, verbose=True, writeXMP=True)
             )()
 
         remove_empty_subfolders_of(src)
+
+    def convert(self):
+        pass
 
     def group(self):
         pass

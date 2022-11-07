@@ -13,6 +13,21 @@ srcfile = join(src, "subsubfolder", "test3.JPG")
 expectedtargetfile = join(targetDir, "2022-07-27@215555_test3.JPG")
 
 
+def executeRenamingWith(writeXMP=False, move=True) -> ImageRenamer:
+    renamer = ImageRenamer(
+        RenamerInput(
+            src=src,
+            dst=dst,
+            writeXMP=writeXMP,
+            move=move,
+            verbose=True,
+            maintainFolderStrucuture=True,
+        )
+    )
+    renamer()
+    return renamer
+
+
 def prepareTest():
     shutil.rmtree(src, ignore_errors=True)
     shutil.rmtree(dst, ignore_errors=True)
@@ -26,18 +41,10 @@ def prepareTest():
 def test_subfolderaremaintained():
     prepareTest()
 
-    renamer = ImageRenamer(
-        src,
-        dst,
-        move=False,
-        verbose=True,
-    )
-    renamer()
-    print(renamer.oldToNewMapping)
+    renamer = executeRenamingWith()
 
     assert len(renamer.toTreat) == 1
     for old, new in renamer.oldToNewMapping.items():
-        print(old, new)
         assert os.path.dirname(srcfile) in old
         assert join(testfolder, "test_renamed", "subsubfolder") in new
 
@@ -49,14 +56,7 @@ def test_copyworks():
         len(os.listdir(join(src, "subsubfolder"))) == 1
     )  # source should contain only one file
 
-    renamer = ImageRenamer(
-        src,
-        dst,
-        move=False,
-        verbose=True,
-    )
-
-    renamer()
+    executeRenamingWith(move=False)
 
     assert (
         len(os.listdir(join(src, "subsubfolder"))) == 1
@@ -71,14 +71,7 @@ def test_moveworks():
         len(os.listdir(join(src, "subsubfolder"))) == 1
     )  # source should contain only one file
 
-    renamer = ImageRenamer(
-        src,
-        dst,
-        move=True,
-        verbose=True,
-    )
-
-    renamer()
+    executeRenamingWith(move=True)
 
     assert (
         len(os.listdir(os.path.dirname(srcfile))) == 0
@@ -89,29 +82,18 @@ def test_moveworks():
 def test_nonemptyDestinationIsNoProblem():
     prepareTest()
     os.makedirs(dst, exist_ok=True)
-    renamer = ImageRenamer(
-        src,
-        dst,
-        move=True,
-        verbose=True,
-    )
-    renamer()
+
+    executeRenamingWith()
 
     assert len(os.listdir(targetDir)) == 1  # should contain a new file after copying
 
 
 def test_timeStampIsCorrect():
     prepareTest()
-    renamer = ImageRenamer(
-        src,
-        dst,
-        recursive=True,
-        move=True,
-        verbose=True,
-    )
-    renamer()
 
-    for old, new in renamer.oldToNewMapping.items():
+    renamer = executeRenamingWith()
+
+    for _, new in renamer.oldToNewMapping.items():
         timestamp = os.path.basename(new).split("_")[
             0
         ]  # we assume YYYY-MM-DD@HHMMSS_OLDNAME e.g. "2022-07-27@215555_test3"
@@ -122,19 +104,11 @@ def test_timeStampIsCorrect():
 def test_writeXMPDateAndCreationWorks():
     prepareTest()
 
-    renamer = ImageRenamer(
-        src,
-        dst,
-        move=True,
-        verbose=True,
-        writeXMP=True,
-    )
-    renamer()
+    executeRenamingWith(writeXMP=True)
     from exiftool import ExifToolHelper
 
     with ExifToolHelper() as et:
         tags = et.get_tags(expectedtargetfile, ["XMP-dc:Source", "XMP-dc:date"])[0]
-        print(tags)
         assert tags["XMP:Source"] == "test3.JPG"
         assert tags["XMP:Date"] == "2022:07:27 21:55:55"
 
@@ -146,20 +120,10 @@ def test_alreadyexistentfileisnotoverwritten():
         len(os.listdir(join(src, "subsubfolder"))) == 1
     )  # source should contain only one file
 
-    renamer = ImageRenamer(
-        src,
-        dst,
-        move=False,
-        verbose=True,
-    )
+    renamer = executeRenamingWith(move=False)
 
-    renamer()
     assert len(renamer.skippedFiles) == 0
-    renamer = ImageRenamer(
-        src,
-        dst,
-        move=False,
-        verbose=True,
-    )
-    renamer()
+
+    renamer = executeRenamingWith(move=False)
+
     assert len(renamer.skippedFiles) == 1
