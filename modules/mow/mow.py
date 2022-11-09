@@ -5,7 +5,7 @@ from os.path import join
 import os
 
 from ..general.tkinterhelper import getInputDir
-from ..general.mediafilerenamer import RenamerInput
+from ..general.mediarenamer import RenamerInput
 from ..image.imagerenamer import ImageRenamer
 from ..video.videorenamer import VideoRenamer
 from exiftool import ExifToolHelper

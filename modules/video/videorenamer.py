@@ -1,10 +1,10 @@
 from .videofile import VideoFile
 from ..general.filenamehelper import getDateTimeFileNameFor
 from ..general.mediafile import MediaFile
-from ..general.mediafilerenamer import MediaFileRenamer, RenamerInput
+from ..general.mediarenamer import MediaRenamer, RenamerInput
 
 
-class VideoRenamer(MediaFileRenamer):
+class VideoRenamer(MediaRenamer):
     def __init__(self, input: RenamerInput):
         input.mediatype = VideoFile
         input.filerenamer = getDateTimeFileNameFor

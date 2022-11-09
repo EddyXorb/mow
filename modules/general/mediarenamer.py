@@ -4,7 +4,7 @@ from os.path import join
 from typing import Callable, Dict
 from pathlib import Path
 
-from ..general.mediatransitioner import MediaTransitioner, TansitionerInput
+from .mediatransitioner import MediaTransitioner, TansitionerInput
 from .filenamehelper import getDateTimeFileNameFor, getMediaCreationDateFrom
 from tqdm import tqdm
 
@@ -32,7 +32,7 @@ class RenamerInput(TansitionerInput):
             setattr(self, key, value)
 
 
-class MediaFileRenamer(MediaTransitioner):
+class MediaRenamer(MediaTransitioner):
     """
     src : directory which will be search for files
     dst : directory where renamed files should be placed
