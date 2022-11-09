@@ -13,7 +13,9 @@ srcfile = join(src, "subsubfolder", "test3.JPG")
 expectedtargetfile = join(targetDir, "2022-07-27@215555_test3.JPG")
 
 
-def executeRenamingWith(writeXMP=False, move=True) -> ImageRenamer:
+def executeRenamingWith(
+    writeXMP=False, move=True, recursive=True, maintainFolderStructure=True
+) -> ImageRenamer:
     renamer = ImageRenamer(
         RenamerInput(
             src=src,
@@ -21,7 +23,8 @@ def executeRenamingWith(writeXMP=False, move=True) -> ImageRenamer:
             writeXMP=writeXMP,
             move=move,
             verbose=True,
-            maintainFolderStrucuture=True,
+            maintainFolderStrucuture=maintainFolderStructure,
+            recursive=recursive,
         )
     )
     renamer()
@@ -127,3 +130,22 @@ def test_alreadyexistentfileisnotoverwritten():
     renamer = executeRenamingWith(move=False)
 
     assert len(renamer.skippedFiles) == 1
+
+
+def test_recursiveDisablingWorks():
+    prepareTest()
+
+    renamer = executeRenamingWith(move=False, recursive=False)
+
+    assert len(renamer.toTreat) == 0
+
+
+def test_disableMaintainFolderStructureWorks():
+    prepareTest()
+
+    renamer = executeRenamingWith(
+        move=False, recursive=True, maintainFolderStructure=False
+    )
+
+    assert len(renamer.toTreat) == 1
+    assert os.path.exists(join(dst, os.path.basename(expectedtargetfile)))

@@ -68,7 +68,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.printv("Collect files..")
         for root, _, files in os.walk(self.src):
             if not self.recursive and root != self.src:
-                continue
+                return
 
             for file in files:
                 path = Path(join(root, file))
