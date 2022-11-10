@@ -5,3 +5,4 @@ tests/test_renamed
 tests/filestorename
 .mow_test_settings.yml
 tests/mow_test_workingdir
+filestotreat
