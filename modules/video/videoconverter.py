@@ -25,7 +25,7 @@ def convertVideo(
             )
             return False
 
-        Transcoder(str(source), convertedFilename, quality="hd")()
+        Transcoder(str(source), convertedFilename, quality="hd", qualityvalue=22.0)()
 
         sleep(1)  # otherwise the following check fails
         if not os.path.exists(convertedFilename):

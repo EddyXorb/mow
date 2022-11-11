@@ -19,7 +19,14 @@ parser.add_argument("-q", "--quality", type=str, choices=["hd", "sd", "android"]
 
 
 class Transcoder:
-    def __init__(self, input: str, output: str, quality: str):
+    """
+    quality: preset (one of 'hd','sd')
+    qualityvalue: lower values are higher quality, but this is only comparable between the same presets (e.g. the quality-setting)
+    """
+
+    def __init__(
+        self, input: str, output: str, quality: str, qualityvalue: float = 22.0
+    ):
         self.inputFile = input
         self.outputFile = output
         self.quality = quality
@@ -30,7 +37,7 @@ class Transcoder:
             "hd": '"H.265 MKV 2160p60"',
             "android": '"Android 720p30"',
         }
-        self.qualityValue = " -q 22.0 "  # can be used with -q flag in future. At the moment it is 24.0 for hd and 22.0 for sd. lower values are higher quality, but this is only comparable between the same presets.
+        self.qualityValue = f" -q {qualityvalue} "
 
         if self.inputFile is None or self.inputFile == "":
             print("Choose file..", flush=True)

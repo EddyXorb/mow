@@ -104,6 +104,7 @@ class Mow:
                     enforcePassthrough=False,
                     recursive=True,
                     maintainFolderStructure=True,
+                    videoquality = 22.0
                 )
             )()
 
