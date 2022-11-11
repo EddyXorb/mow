@@ -76,7 +76,7 @@ Die mit einem **\*** gekennzeichnet Schritte sind optional. In eckigen Klammern 
    In XMP zu hinterlegen (siehe [Dublin-Core (dc) XMP Namespace](https://de.wikipedia.org/wiki/Dublin_Core)):
    * die Ursprüngliche Aufnahmezeit soll in *dc:date* abgelegt werden
    * der ursprüngliche Dateiname soll unter *dc:source* abelegt werden
-3. **Konvertieren\* [convert]**\: Ausgewählte Medien (insbesondere Videos) werden in diesem Schritt kleinergerechnet. Die originalen Medien (nur IV) können sofort gelöscht werden um Speicherplatz zu sparen. Konvertierte Dateien bekommen das Suffix „\_converted“ im Dateinamen, um sofort zu sehen welche Medien noch nicht konvertiert wurden.
+3. **Konvertieren\* [convert]**\: Ausgewählte Medien (insbesondere Videos) werden in diesem Schritt kleinergerechnet. Die originalen Medien (nur IV) können sofort gelöscht werden um Speicherplatz zu sparen. Originale Dateien bekommen das Suffix „\_original im Dateinamen, falls die Originale behalten werden sollen.
 4. **Gruppieren [group]**\: Medien desselben Ereignisses werden zusammengefasst, indem für jedes Ereignis ein Unterordner angelegt wird, der YYYY-MM-DD_HH #“ heißt, mit der Zeit entsprechend dem Aufnahmezeitpunkt des ersten Mediums des Ereignisses und #=Name des Ereignisses. 
 
    In XMP zu hinterlegen:

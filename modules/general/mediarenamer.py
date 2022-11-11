@@ -22,6 +22,7 @@ class RenamerInput(TansitionerInput):
     writeXMP: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
     """
 
+    move = True
     writeXMP = False
     maintainFolderStrucuture = True
     restoreOldNames = False
@@ -51,6 +52,7 @@ class MediaRenamer(MediaTransitioner):
         if input.filerenamer is None:
             raise Exception("Filerenamer was not given to MediaRenamer!")
 
+        self.move = input.move
         self.renamer = input.filerenamer
         self.maintainFolderStructure = input.maintainFolderStrucuture
         self.writeXMP = input.writeXMP

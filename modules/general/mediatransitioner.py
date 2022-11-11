@@ -27,7 +27,6 @@ class TansitionerInput:
     recursive = True
     verbose = False
     dry = False
-    move = False
 
 
 class MediaTransitioner(VerbosePrinterClass):
@@ -40,7 +39,6 @@ class MediaTransitioner(VerbosePrinterClass):
         self.src = os.path.abspath(input.src)
         self.dst = os.path.abspath(input.dst)
         self.recursive = input.recursive
-        self.move = input.move
         self.dry = input.dry
         self.mediatype = input.mediatype
 
