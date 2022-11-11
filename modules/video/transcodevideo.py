@@ -3,6 +3,7 @@ import argparse
 from tkinter import filedialog
 import tkinter as tk
 import os
+import subprocess
 
 parser = argparse.ArgumentParser("Videotranscoder")
 
@@ -53,7 +54,7 @@ class Transcoder:
     def __call__(self):
         cmd = self.getCommand()
         print("Call Handbrake with arguments: " + cmd)
-        return check_output(cmd)
+        return check_output(cmd, stderr=subprocess.STDOUT)
 
 
 if __name__ == "__main__":

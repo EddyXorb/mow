@@ -58,7 +58,6 @@ class MediaConverter(MediaTransitioner):
             targetDir = self._getTargetDirectory(file)
             if not exists(targetDir):
                 os.makedirs(targetDir)
-            self.printv(f"Convert {file} into folder {targetDir}..")
             success = self.converter(file, targetDir)
             if not success:
                 self.printv(f"Skipped {str(file)} because conversion failed.")
