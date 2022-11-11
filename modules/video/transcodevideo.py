@@ -29,6 +29,7 @@ class Transcoder:
             "hd": '"H.265 MKV 2160p60"',
             "android": '"Android 720p30"',
         }
+        self.qualityValue = "22.0"  # can be used with -q flag in future. At the moment it is 24.0 for hd and 22.0 for sd. lower values are higher quality, but this is only comparable between the same presets.
 
         if self.inputFile is None or self.inputFile == "":
             print("Choose file..", flush=True)
