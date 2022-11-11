@@ -1,17 +1,22 @@
+from typing import Tuple
 import yaml
 
 from os import path
 from os.path import join
 import os
 
+
 from ..general.tkinterhelper import getInputDir
 from ..general.mediarenamer import RenamerInput
 from ..image.imagerenamer import ImageRenamer
+from ..image.imageconverter import ImageConverter
+from ..video.videoconverter import VideoConverter
 from ..video.videorenamer import VideoRenamer
+from ..general.mediaconverter import ConverterInput
 from exiftool import ExifToolHelper
 
 
-def remove_empty_subfolders_of(path_to_remove):
+def removeEmptySubfoldersOf(path_to_remove):
     to_remove = os.path.abspath(path_to_remove)
     for path, _, _ in os.walk(to_remove, topdown=False):
         if path == to_remove:
@@ -61,15 +66,19 @@ class Mow:
         with open(self.settingsfile, "r") as f:
             return yaml.safe_load(f)
 
+    def _getStageFolder(self, stagename: str) -> str:
+        return join(self.settings["workingdir"], self.stageToFolder[stagename])
+
+    def _getSrcDstForStage(self, stage: str) -> Tuple[str, str]:
+        return self._getStageFolder(stage), self._getStageFolder(
+            self._getStageAfter(stage)
+        )
+
     def copy(self):
         pass
 
     def rename(self):
-        src = join(self.settings["workingdir"], self.stageToFolder["rename"])
-        dst = join(
-            self.settings["workingdir"],
-            self.stageToFolder[self._getStageAfter("rename")],
-        )
+        src, dst = self._getSrcDstForStage("rename")
 
         renamers = [ImageRenamer, VideoRenamer]
         for renamer in renamers:
@@ -78,10 +87,27 @@ class Mow:
                 RenamerInput(src=src, dst=dst, move=True, verbose=True, writeXMP=True)
             )()
 
-        remove_empty_subfolders_of(src)
+        removeEmptySubfoldersOf(src)
 
     def convert(self):
-        pass
+        src, dst = self._getSrcDstForStage("convert")
+
+        converters = [ImageConverter, VideoConverter]
+        for converter in converters:
+            print(f"######  Apply converter: {converter.__name__} ######")
+            converter(
+                ConverterInput(
+                    src=src,
+                    dst=dst,
+                    verbose=True,
+                    deleteOriginals=False,
+                    enforcePassthrough=False,
+                    recursive=True,
+                    maintainFolderStructure=True,
+                )
+            )()
+
+        removeEmptySubfoldersOf(src)
 
     def group(self):
         pass
