@@ -50,7 +50,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.treatedfiles = 0
 
     def __call__(self):
-        self.printv("Start renaming from source ", self.src, " into ", self.dst)
+        self.printv(f"Start transition from source {self.src} into {self.dst}")
 
         self.createDestinationDir()
         self.collectMediaFilesToTreat()

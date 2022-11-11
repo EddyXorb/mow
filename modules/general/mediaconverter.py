@@ -1,15 +1,17 @@
 from dataclasses import dataclass
 from typing import Callable
 from tqdm import tqdm
-from os.path import join, basename
+from os.path import join, basename, exists
 from pathlib import Path
+import os
 
 from ..general.mediafile import MediaFile
 from ..general.mediatransitioner import MediaTransitioner, TansitionerInput
 
 
-def passthrough(source: MediaFile, target: str):
-    source.moveTo(target)
+def passthrough(source: MediaFile, targetDir: str):
+    source.moveTo(join(targetDir, basename(str(source))))
+    return True
 
 
 @dataclass(kw_only=True)
@@ -21,6 +23,7 @@ class ConverterInput(TansitionerInput):
 
     maintainFolderStructure = True
     deleteOriginals = False
+    enforcePassthrough = False
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -28,10 +31,14 @@ class ConverterInput(TansitionerInput):
 
 
 class MediaConverter(MediaTransitioner):
+    """
+    converter: Convert mediafile and put result into directory given with second argument
+    """
+
     def __init__(
         self,
         input: ConverterInput,
-        converter: Callable[[MediaFile, str], None] = passthrough,
+        converter: Callable[[MediaFile, str], bool] = passthrough,
     ):
         self.converter = converter
         self.deleteOriginals = input.deleteOriginals
@@ -39,22 +46,20 @@ class MediaConverter(MediaTransitioner):
         super().__init__(input)
 
     # can be put into base class probably
-    def getConvertedFilename(self, file: str) -> str:
+    def _getTargetDirectory(self, file: str) -> str:
         if self.maintainFolderStructure:
-            return join(
-                self.dst,
-                str(Path(str(file)).relative_to(self.src).parent),
-                basename(str(file)),
-            )
+            return join(self.dst, str(Path(str(file)).relative_to(self.src).parent))
         else:
-            return join(self.dst, basename(str(file)))
-
-    def callconverter(self, s, t):
-        self.converter(s, t)
+            return self.dst
 
     def execute(self):
         self.printv("Start conversion of files..")
         for file in tqdm(self.toTreat):
-            conversionTarget = self.getConvertedFilename(file)
-            self.converter(file, conversionTarget)
-            self.printv(f"Converted {file} to {conversionTarget}.")
+            targetDir = self._getTargetDirectory(file)
+            if not exists(targetDir):
+                os.makedirs(targetDir)
+            self.printv(f"Convert {file} into folder {targetDir}..")
+            success = self.converter(file, targetDir)
+            if not success:
+                self.printv(f"Skipped {str(file)} because conversion failed.")
+                self.skippedFiles.add(file)

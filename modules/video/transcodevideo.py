@@ -1,4 +1,4 @@
-from subprocess import run, PIPE
+from subprocess import check_output, run, PIPE
 import argparse
 from tkinter import filedialog
 import tkinter as tk
@@ -52,8 +52,8 @@ class Transcoder:
 
     def __call__(self):
         cmd = self.getCommand()
-        # print("Call Handbrake with arguments: " + cmd)
-        run(cmd, stdout=PIPE, stderr=PIPE)
+        print("Call Handbrake with arguments: " + cmd)
+        return check_output(cmd)
 
 
 if __name__ == "__main__":

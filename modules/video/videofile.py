@@ -1,3 +1,4 @@
+from shutil import copyfile
 from exiftool import ExifToolHelper
 from ..general.mediafile import MediaFile
 import datetime as dt

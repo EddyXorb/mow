@@ -49,14 +49,14 @@ class MediaFile:
         dst : fullpath of new file. Extension will be ignored. After the operation the objects points to the new location.
         """
         self.pathnoext = self._relocate(dst, move)
-        return self
+        # return self
 
-    def copyTo(self, dst: str) -> MediaFile:
+    def copyTo(self, dst: str) -> str:
         """
-        dst : fullpath of new file. Extension will be ignored.
+        dst : fullpath of new file. Extension will be ignored. Returns new path as string.
         """
         newBaseName = self._relocate(dst, copyfile)
-        return MediaFile(newBaseName + self.extensions[0])
+        return newBaseName + self.extensions[0]
 
     def readDateTime(self) -> dt.datetime:
         raise NotImplementedError()
