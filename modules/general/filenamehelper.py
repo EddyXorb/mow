@@ -6,6 +6,8 @@ import pathlib
 from ..image.imagefile import ImageFile
 from ..video.videofile import VideoFile
 
+timestampformat = "%Y-%m-%d@%H%M%S"
+
 
 def getFileModifyDateFrom(file: str) -> dt.datetime:
     fname = pathlib.Path(file)
@@ -31,7 +33,7 @@ def getMediaCreationDateFrom(file: str, verbose=False) -> dt.datetime:
 
 def getDateTimeFileNameFor(file: str) -> str:
     date = getMediaCreationDateFrom(file)
-    prefixDate = f"{date:%Y-%m-%d@%H%M%S}"
+    prefixDate = date.strftime(timestampformat)
     return os.path.join(
         os.path.dirname(file), prefixDate + "_" + os.path.basename(file)
     )

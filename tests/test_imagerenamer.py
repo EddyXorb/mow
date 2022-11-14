@@ -1,7 +1,7 @@
 from datetime import datetime
 from ..modules.image.imagerenamer import *
 import shutil
-from os.path import join
+from os.path import join,exists
 import os
 
 testfolder = "tests"
@@ -14,7 +14,11 @@ expectedtargetfile = join(targetDir, "2022-07-27@215555_test3.JPG")
 
 
 def executeRenamingWith(
-    writeXMP=False, move=True, recursive=True, maintainFolderStructure=True
+    writeXMP=False,
+    move=True,
+    recursive=True,
+    maintainFolderStructure=True,
+    useCurrentFilename=False,
 ) -> ImageRenamer:
     renamer = ImageRenamer(
         RenamerInput(
@@ -25,6 +29,7 @@ def executeRenamingWith(
             verbose=True,
             maintainFolderStrucuture=maintainFolderStructure,
             recursive=recursive,
+            useCurrentFilename=useCurrentFilename,
         )
     )
     renamer()
@@ -111,7 +116,7 @@ def test_writeXMPDateAndCreationWorks():
     from exiftool import ExifToolHelper
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(expectedtargetfile, ["XMP-dc:Source", "XMP-dc:date"])[0]
+        tags = et.get_tags(expectedtargetfile, ["XMP-dc:Source", "XMP-dc:Date"])[0]
         assert tags["XMP:Source"] == "test3.JPG"
         assert tags["XMP:Date"] == "2022:07:27 21:55:55"
 
@@ -149,3 +154,28 @@ def test_disableMaintainFolderStructureWorks():
 
     assert len(renamer.toTreat) == 1
     assert os.path.exists(join(dst, os.path.basename(expectedtargetfile)))
+
+
+def test_useFilenameAsSourceOfTruth():
+    prepareTest()
+
+    srcfile = join(src, "subsubfolder", "test3.JPG")
+    newfile = join(os.path.dirname(srcfile), "2022-11-11@111111_test3.JPG")
+    os.rename(srcfile, newfile)
+
+    assert exists(newfile)
+
+    executeRenamingWith(
+        useCurrentFilename=True,
+        writeXMP=True
+    )
+ 
+    renamedFile = join(targetDir,"2022-11-11@111111_test3.JPG")
+    assert exists(renamedFile)
+
+    from exiftool import ExifToolHelper
+
+    with ExifToolHelper() as et:
+        tags = et.get_tags(renamedFile, ["XMP-dc:Source", "XMP-dc:Date"])[0]
+        assert tags["XMP:Source"] == "2022-11-11@111111_test3.JPG"
+        assert tags["XMP:Date"] == "2022:11:11 11:11:11"

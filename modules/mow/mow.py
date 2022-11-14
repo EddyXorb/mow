@@ -77,14 +77,21 @@ class Mow:
     def copy(self):
         pass
 
-    def rename(self):
+    def rename(self, useCurrentFilename=False):
         src, dst = self._getSrcDstForStage("rename")
 
         renamers = [ImageRenamer, VideoRenamer]
         for renamer in renamers:
             print(f"######  Apply renamer: {renamer.__name__} ######")
             renamer(
-                RenamerInput(src=src, dst=dst, move=True, verbose=True, writeXMP=True)
+                RenamerInput(
+                    src=src,
+                    dst=dst,
+                    move=True,
+                    verbose=True,
+                    writeXMP=True,
+                    useCurrentFilename=useCurrentFilename,
+                )
             )()
 
         removeEmptySubfoldersOf(src)
@@ -104,7 +111,6 @@ class Mow:
                     enforcePassthrough=False,
                     recursive=True,
                     maintainFolderStructure=True,
-                    videoquality = 22.0
                 )
             )()
 

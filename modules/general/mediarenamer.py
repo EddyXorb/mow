@@ -3,9 +3,14 @@ import os
 from os.path import join
 from typing import Callable, Dict
 from pathlib import Path
+from datetime import datetime
 
 from .mediatransitioner import MediaTransitioner, TansitionerInput
-from .filenamehelper import getDateTimeFileNameFor, getMediaCreationDateFrom
+from .filenamehelper import (
+    getDateTimeFileNameFor,
+    getMediaCreationDateFrom,
+    timestampformat,
+)
 from tqdm import tqdm
 
 
@@ -27,6 +32,7 @@ class RenamerInput(TansitionerInput):
     maintainFolderStrucuture = True
     restoreOldNames = False
     filerenamer: Callable[[str], str] = None
+    useCurrentFilename = False
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -43,6 +49,7 @@ class MediaRenamer(MediaTransitioner):
     maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
     dry: don't actually rename files
     writeXMP: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
+    useCurrentFilename: file will only be moved/copied, not renamed again, and use filename as source of truth for XMP
     """
 
     def __init__(self, input: RenamerInput):
@@ -57,6 +64,7 @@ class MediaRenamer(MediaTransitioner):
         self.maintainFolderStructure = input.maintainFolderStrucuture
         self.writeXMP = input.writeXMP
         self.restoreOldNames = input.restoreOldNames
+        self.useCurrentFilename = input.useCurrentFilename
 
         self.oldToNewMapping: Dict[
             str, str
@@ -81,14 +89,19 @@ class MediaRenamer(MediaTransitioner):
             oldfiles = list(self.oldToNewMapping.keys())
             for file in tqdm(oldfiles):
                 filename = os.path.basename(file)
-                creationDate = getMediaCreationDateFrom(file).strftime(
-                    "%Y:%m:%d %H:%M:%S"
-                )
+                if self.useCurrentFilename:
+                    creationDate = datetime.strptime(filename[0:17], timestampformat).strftime(
+                        "%Y:%m:%d %H:%M:%S"
+                    )
+                else:
+                    creationDate = getMediaCreationDateFrom(file).strftime(
+                        "%Y:%m:%d %H:%M:%S"
+                    )
                 try:
                     et.set_tags(
                         file,
                         {"XMP-dc:Date": creationDate, "XMP-dc:Source": filename},
-                        params=["-P", "-overwrite_original"],  # , "-v2"],
+                        params=["-P", "-overwrite_original"]# , "-v2"],
                     )
                 except Exception as e:
                     print(
@@ -145,15 +158,19 @@ class MediaRenamer(MediaTransitioner):
                 return None
             newName = join(self.dst, splitted[1])
         else:
-            if self.fileWasAlreadyRenamed(file):
+            if not self.useCurrentFilename and self.fileWasAlreadyRenamed(file):
                 self.printv(
                     f"Skip file {file} because it appears to be already renamed."
                 )
                 self.skippedFiles.add(file)
                 return None
 
-            renamed = self.renamer(file)
-            newFileName = os.path.basename(renamed)
+            newFileName = ""
+            if self.useCurrentFilename:
+                newFileName = os.path.basename(file)
+            else:
+                renamed = self.renamer(file)
+                newFileName = os.path.basename(renamed)
 
             if self.maintainFolderStructure:
                 newName = join(

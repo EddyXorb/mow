@@ -6,3 +6,5 @@ tests/filestorename
 .mow_test_settings.yml
 tests/mow_test_workingdir
 filestotreat
+tests/test_converted*
+tests/test_treated/*
