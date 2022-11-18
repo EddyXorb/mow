@@ -53,7 +53,8 @@ def test_GroupWithoutDescriptionIsRejected():
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
-    assert False
+
+
 
 def test_GroupWithVeryShortDescriptionIsAccepted():
     groupname = "2022-12-12@121212_T"
@@ -406,3 +407,246 @@ def test_undoGroupingDoesNotTouchTODO_GroupsWithDescription():
 
     assert exists(fullname)
     assert not exists(join(src, "2022-12-12@120000_test.JPG"))
+
+
+def test_addMissingTimestampWorks():
+    fullname = join(src, "TEST", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=True,
+        )
+    )()
+
+    assert not exists(fullname)
+    assert exists(join(src, "2022-12-12@120000 TEST", "2022-12-12@120000_test.JPG"))
+
+
+def test_addMissingTimestampWorksRecursively():
+    fullname = join(src, "TEST", "TEST2", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=True,
+        )
+    )()
+
+    assert not exists(fullname)
+    assert exists(
+        join(
+            src,
+            "2022-12-12@120000 TEST",
+            "2022-12-12@120000 TEST2",
+            "2022-12-12@120000_test.JPG",
+        )
+    )
+
+
+def test_addMissingTimestampTakesLowestDatetime():
+    fullname = join(src, "TEST", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+    shutil.copy(
+        join(testfolder, "test3.JPG"),
+        join(src, "TEST", "2022-12-12@180000_test.JPG"),
+    )
+    shutil.copy(
+        join(testfolder, "test3.JPG"),
+        join(src, "TEST", "2022-11-12@180000_test.JPG"),
+    )
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=True,
+        )
+    )()
+
+    assert not exists(fullname)
+    assert exists(join(src, "2022-11-12@180000 TEST", "2022-12-12@120000_test.JPG"))
+    assert exists(join(src, "2022-11-12@180000 TEST", "2022-12-12@180000_test.JPG"))
+    assert exists(join(src, "2022-11-12@180000 TEST", "2022-11-12@180000_test.JPG"))
+
+
+def test_addMissingTimestampWillNotRenameIfDateIsPresent():
+    fullname = join(src, "2022-12-12 TEST", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=True,
+        )
+    )()
+
+    assert exists(fullname)
+    assert not exists(
+        join(src, "2022-12-12@120000 2022-12-12 TEST", "2022-12-12@120000_test.JPG")
+    )
+
+
+def test_addMissingTimestampWillNotRenameIfDateIsSomewhereInTheMiddle():
+    fullname = join(src, "TEST2022-12-12TEST", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=True,
+        )
+    )()
+
+    assert exists(fullname)
+    assert not exists(
+        join(src, "2022-12-12@120000 TEST2022-12-12TEST", "2022-12-12@120000_test.JPG")
+    )
+
+
+def test_addMissingTimestampWillNotRenameIfShortDateIsPresent():
+    fullname = join(src, "TEST22-12-12TEST", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=True,
+        )
+    )()
+
+    assert exists(fullname)
+    assert not exists(
+        join(src, "2022-12-12@120000 TEST22-12-12TEST", "2022-12-12@120000_test.JPG")
+    )
+
+
+def test_addMissingTimestampWillNotRenameIfAtIsPresent():
+    fullname = join(src, "TEST@", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=True,
+        )
+    )()
+
+    assert exists(fullname)
+    assert not exists(
+        join(src, "2022-12-12@120000 TEST@", "2022-12-12@120000_test.JPG")
+    )
+
+
+def test_addMissingTimestampWillWillWorkIfSomeNumberIsPresent():
+    fullname = join(src, "TEST12", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=True,
+        )
+    )()
+
+    assert not exists(fullname)
+    assert exists(join(src, "2022-12-12@120000 TEST12", "2022-12-12@120000_test.JPG"))
+
+
+def test_addMissingTimestampWillWillWorkIfSomeNumberAndNotDateDashesArePresent():
+    fullname = join(src, "TEST122-122-122", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=True,
+        )
+    )()
+
+    assert not exists(fullname)
+    assert exists(
+        join(src, "2022-12-12@120000 TEST122-122-122", "2022-12-12@120000_test.JPG")
+    )

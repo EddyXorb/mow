@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import DefaultDict, Dict, List
+from typing import DefaultDict, Dict, List, Tuple
 
 
 from .mediatransitioner import MediaTransitioner, TansitionerInput
@@ -11,6 +11,8 @@ from tqdm import tqdm
 from collections import defaultdict
 from exiftool import ExifToolHelper
 from math import sqrt
+import re
+
 
 from ..image.imagefile import ImageFile
 from ..video.videofile import VideoFile
@@ -24,7 +26,7 @@ class GrouperInput(TansitionerInput):
     automaticGrouping: creates group folders with prefix 'TODO_' for every mediafile that is not in a group
     undoAutomatedGrouping: copies all mediafiles from folders into src that are in group-like-folders with TODO_YYYY-MM-DD@HHMMSS - format
     separationDistanceInHours: when groupUngroupedFiles is active, will separate two iff their timestamp differs by more than this value in hours
-    addMissingTimestampsToSubfolders: if mediafiles in subfolders are found which do not have a timestamp (nowhere), will add timestamp to these folders
+    addMissingTimestampsToSubfolders: if mediafiles in subfolders without timestamp are found, will add timestamp to these folders taking the first time of files within this folder
     separationDistanceInHours: when groupUngroupedFiles is active, if time between two neighboring mediafiles is greater equal than this time in hours, they will be put into separate groups
     """
 
@@ -79,7 +81,8 @@ class MediaGrouper(MediaTransitioner):
             self.groupUngrouped()
             return
         if self.addMissingTimestampsToSubfolders:
-            pass
+            self.addMissingTimestamps()
+            return
 
         toTransition = self.getCorrectlyGroupedFiles()
 
@@ -116,6 +119,51 @@ class MediaGrouper(MediaTransitioner):
                 movedFiles += 1
 
             self.printv(f"Moved {movedFiles} files from {group} back to {self.src}.")
+
+    def getLowestDatetimeOfTimestampsIn(self, folder: str) -> datetime:
+        candidates = os.listdir(folder)
+        timestamps = []
+        for cand in candidates:
+            timestamp = self.extractDatetimeFrom(cand, verbose=False)
+            if timestamp is not None:
+                timestamps.append(timestamp)
+
+        if len(timestamps) == 0:
+            return None
+
+        timestamps.sort()
+        return timestamps[0]
+
+    def addMissingTimestamps(self):
+        renamed: List[Tuple(str, str)] = []
+        for root, folders, files in os.walk(self.src, topdown=False):
+            print(f"Looking into {root}..")
+            for folder in folders:
+                if "@" in folder or re.search(r"\d(\d+)-\d\d-\d\d", folder):
+                    continue
+                timestamp = self.getLowestDatetimeOfTimestampsIn(join(root, folder))
+                if timestamp is None:
+                    continue
+
+                source = join(root, folder)
+                target = join(
+                    root, f"{datetime.strftime(timestamp, timestampformat)} {folder}"
+                )
+
+                self.printv(f"Rename {source} to {target}..")
+                if os.path.exists(target):
+                    self.printv(
+                        f"Group with timestamp is already existent. Skip renaming of {source} to {target}."
+                    )
+                    continue
+                if not self.dry:
+                    os.rename(source, target)
+
+                renamed.append((source, target))
+
+        self.printv(
+            f"Renamed {len(renamed)} folders without timestamps to folders that have one."
+        )
 
     def printStatisticsOf(self, toTransition):
         self.printv(
@@ -258,10 +306,12 @@ class MediaGrouper(MediaTransitioner):
                         )
                         self.skippedFiles.add(str(file))
 
-    def extractDatetimeFrom(self, file: str) -> datetime:
+    def extractDatetimeFrom(self, file: str, verbose=True) -> datetime:
         try:
             return datetime.strptime(basename(file)[0:17], timestampformat)
         except Exception as e:
-            self.printv(
-                f"Could not get time from timestamp of file {file} because of {e}"
-            )
+            if verbose:
+                self.printv(
+                    f"Could not get time from timestamp of file {file} because of {e}"
+                )
+            return None
