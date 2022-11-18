@@ -40,6 +40,36 @@ def test_correctlyNamedGroupIsRecognized():
     assert exists(join(dst, groupname, "test.JPG"))
 
 
+def test_GroupWithoutDescriptionIsRejected():
+    groupname = "2022-12-12@121212_"
+    fullname = join(src, groupname, "test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(src=src, dst=dst, interactive=False, dry=False, verbose=True)
+    )()
+
+    assert exists(fullname)
+    assert not exists(join(dst, groupname, "test.JPG"))
+    assert False
+
+def test_GroupWithVeryShortDescriptionIsAccepted():
+    groupname = "2022-12-12@121212_T"
+    fullname = join(src, groupname, "test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(src=src, dst=dst, interactive=False, dry=False, verbose=True)
+    )()
+
+    assert not exists(fullname)
+    assert exists(join(dst, groupname, "test.JPG"))
+
+
 def test_correctlyNamedGroupIsRecognizedButDryDoesNotMove():
     groupname = "2022-12-12@121212_TEST"
     fullname = join(src, groupname, "test.JPG")

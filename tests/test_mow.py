@@ -7,6 +7,7 @@ import os
 
 testfolder = "tests"
 workingdir = abspath(join(testfolder, "mow_test_workingdir"))
+ratedir = join(workingdir, "5.1_rate")
 groupdir = join(workingdir, "4_group")
 convertdir = join(workingdir, "3_convert")
 renamedir = join(workingdir, "2_rename")
@@ -44,6 +45,19 @@ def prepareVideoConversionTest():
     )
 
 
+def prepareGroupingTest():
+    prepareTest(
+        targetdir=join(workingdir, "5_rate", "2022-12-12@121212 TEST"),
+        untouchedfile=join(testfolder, "test3.JPG"),
+        starttransitionfile=join(
+            workingdir,
+            "4_group",
+            "2022-12-12@121212 TEST",
+            "2022-12-12@121212_test3.JPG",
+        ),
+    )
+
+
 def test_filewasmoved():
     prepareRenameTest()
 
@@ -54,6 +68,23 @@ def test_filewasmoved():
     Mow(settingsfile=settingsfile).rename()
     assert not exists(srcfile)
     assert exists(join(convertdir, "subfolder", "2022-07-27@215555_test3.JPG"))
+
+
+def test_groupingMovesDirectoriesIntoRateFolder():
+    prepareGroupingTest()
+
+    srcfile = join(
+        workingdir, "4_group", "2022-12-12@121212 TEST", "2022-12-12@121212_test3.JPG"
+    )
+
+    assert exists(srcfile)
+
+    Mow(settingsfile=settingsfile).group(automate=False, distance=12, dry=False)
+
+    assert not exists(srcfile)
+    assert exists(
+        join(ratedir, "2022-12-12@121212 TEST", "2022-12-12@121212_test3.JPG")
+    )
 
 
 def test_emptyDirsAreremovedInRenameFolder():

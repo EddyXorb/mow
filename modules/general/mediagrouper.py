@@ -51,7 +51,7 @@ def createGroupableMediaFile(path: str) -> MediaFile:
 class MediaGrouper(MediaTransitioner):
     """
     The idea behind this transition is the following:
-    A folder is a correct groupname, if it has the format 'YYYY-MM-DD@HHMMSS#' where #=Groupname, which is an arbitrary string NOT containing the char '@'.
+    A folder is a correct groupname, if it has the format 'YYYY-MM-DD@HHMMSS#' where #=Groupname, which is an arbitrary string of length >= 2 NOT containing the char '@'.
     Every file that is directly below the src-dir is not correctly grouped. Every file that is in a some subsubfolder of src, where every folder in between
     src and the file is a valid groupname, is correctly grouped, and otherwise not.
 
@@ -77,6 +77,7 @@ class MediaGrouper(MediaTransitioner):
             return
         if self.groupUngroupedFiles:
             self.groupUngrouped()
+            return
         if self.addMissingTimestampsToSubfolders:
             pass
 
@@ -172,7 +173,9 @@ class MediaGrouper(MediaTransitioner):
 
     def isCorrectGroupName(self, candidate: str) -> bool:
         if len(candidate) <= 18:
-            self.printv(f"Candidate {candidate} has length <= 18 - dismissed")
+            self.printv(
+                f"Candidate {candidate} has no or too short description (should at least have length 2) - dismissed"
+            )
             return False
 
         if "@" in candidate[11:]:
