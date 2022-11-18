@@ -77,7 +77,8 @@ Die mit einem **\*** gekennzeichnet Schritte sind optional. In eckigen Klammern 
    * die Ursprüngliche Aufnahmezeit soll in *dc:date* abgelegt werden
    * der ursprüngliche Dateiname soll unter *dc:source* abelegt werden
 3. **Konvertieren\* [convert]**\: Ausgewählte Medien (insbesondere Videos) werden in diesem Schritt kleinergerechnet. Die originalen Medien (nur IV) können sofort gelöscht werden um Speicherplatz zu sparen. Originale Dateien bekommen das Suffix „\_original im Dateinamen, falls die Originale behalten werden sollen.
-4. **Gruppieren [group]**\: Medien desselben Ereignisses werden zusammengefasst, indem für jedes Ereignis ein Unterordner angelegt wird, der YYYY-MM-DD[@HH] #“ heißt, mit der Zeit entsprechend dem Aufnahmezeitpunkt des ersten Mediums des Ereignisses und #=Name des Ereignisses, und wo der Teil **[@HH]** optional ist. Solange die Ordner, in die man die Fotos gruppiert nicht dem Namensschema folgen gilt die Gruppierung als noch nicht abgeschlossen für den jeweiligen Ordner, andernfalls schon. Als Konvention wird ein Präfix **TODO_** festgelegt, um dies anzuzeigen.
+4. **Gruppieren [group]**\: Medien desselben Ereignisses werden zusammengefasst, indem für jedes Ereignis ein Unterordner angelegt wird, der YYYY-MM-DD@HHMMSS #“ heißt, mit der Zeit entsprechend dem Aufnahmezeitpunkt des ersten Mediums des Ereignisses und #=Name des Ereignisses. 
+Per Definition darf der Name des Ereignisses **KEIN** *@* enthalten. Solange die Ordner, in die man die Fotos gruppiert nicht dem Namensschema folgen gilt die Gruppierung als noch nicht abgeschlossen für den jeweiligen Ordner, andernfalls schon. Als Konvention wird ein Präfix **TODO_** festgelegt, um dies anzuzeigen.
 
    In XMP zu hinterlegen:
    * der Ereignisnamen (= der Name des beinhaltenden Ordnern) wird abgelegt unter *dc:description*

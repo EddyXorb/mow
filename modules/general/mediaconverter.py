@@ -21,7 +21,6 @@ class ConverterInput(TansitionerInput):
     maintainfolderstructure: output converted media files in the same subfolder they were in before conversion
     """
 
-    maintainFolderStructure = True
     deleteOriginals = False
     enforcePassthrough = False
 
@@ -42,23 +41,17 @@ class MediaConverter(MediaTransitioner):
     ):
         self.converter = converter
         self.deleteOriginals = input.deleteOriginals
-        self.maintainFolderStructure = input.maintainFolderStructure
         super().__init__(input)
-
-    # can be put into base class probably
-    def _getTargetDirectory(self, file: str) -> str:
-        if self.maintainFolderStructure:
-            return join(self.dst, str(Path(str(file)).relative_to(self.src).parent))
-        else:
-            return self.dst
 
     def execute(self):
         self.printv("Start conversion of files..")
         for file in tqdm(self.toTreat):
-            targetDir = self._getTargetDirectory(file)
+            targetDir = self.getTargetDirectory(file)
             if not exists(targetDir):
                 os.makedirs(targetDir)
-            success = self.converter(file, targetDir)
+            success = True
+            if not self.dry:
+                success = self.converter(file, targetDir)
             if not success:
                 self.printv(f"Skipped {str(file)} because conversion failed.")
                 self.skippedFiles.add(file)

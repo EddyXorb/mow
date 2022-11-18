@@ -27,6 +27,7 @@ class TansitionerInput:
     recursive = True
     verbose = False
     dry = False
+    maintainFolderStructure = True
 
 
 class MediaTransitioner(VerbosePrinterClass):
@@ -41,6 +42,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.recursive = input.recursive
         self.dry = input.dry
         self.mediatype = input.mediatype
+        self.maintainFolderStructure = input.maintainFolderStructure
 
         self.skippedFiles: Set[str] = set()
         self.toTreat: List[MediaFile] = []
@@ -53,8 +55,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.createDestinationDir()
         self.collectMediaFilesToTreat()
 
-        if not self.dry:
-            self.execute()
+        self.execute()
 
     def createDestinationDir(self):
         if os.path.isdir(self.dst):
@@ -76,6 +77,12 @@ class MediaTransitioner(VerbosePrinterClass):
                 self.toTreat.append(mfile)
 
         self.printv(f"Collected {len(self.toTreat)} files.")
+
+    def getTargetDirectory(self, file: str) -> str:
+        if self.maintainFolderStructure:
+            return join(self.dst, str(Path(str(file)).relative_to(self.src).parent))
+        else:
+            return self.dst
 
     def execute(self):
         raise NotImplementedError()

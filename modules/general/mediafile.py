@@ -5,7 +5,6 @@ from shutil import copyfile, move
 from os.path import *
 import datetime as dt
 
-
 class MediaFile:
     """
     Mediadata that can be represented by multiple files having different extensions but containing roughly the same media

@@ -61,7 +61,6 @@ class MediaRenamer(MediaTransitioner):
 
         self.move = input.move
         self.renamer = input.filerenamer
-        self.maintainFolderStructure = input.maintainFolderStrucuture
         self.writeXMP = input.writeXMP
         self.restoreOldNames = input.restoreOldNames
         self.useCurrentFilename = input.useCurrentFilename
