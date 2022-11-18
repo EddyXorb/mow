@@ -55,7 +55,6 @@ def test_GroupWithoutDescriptionIsRejected():
     assert not exists(join(dst, groupname, "test.JPG"))
 
 
-
 def test_GroupWithVeryShortDescriptionIsAccepted():
     groupname = "2022-12-12@121212_T"
     fullname = join(src, groupname, "test.JPG")
@@ -314,6 +313,43 @@ def test_XMPisWritten():
         tags = et.get_tags(newname, ["XMP-dc:Description"])[0]
         print(tags)
         assert tags["XMP:Description"] == "2022-12-12@120000 TEST"
+
+
+def test_XMPDescriptionContainsAllSuperfolders():
+    fullname = join(
+        src,
+        "2022-12-12@120000 TEST",
+        "2022-12-12@120000 TEST2",
+        "2022-12-12@120000_test.JPG",
+    )
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            dry=False,
+            verbose=True,
+            writeXMP=True,
+        )
+    )()
+
+    assert not exists(fullname)
+    newname = join(
+        dst,
+        "2022-12-12@120000 TEST",
+        "2022-12-12@120000 TEST2",
+        "2022-12-12@120000_test.JPG",
+    )
+    assert exists(newname)
+    with ExifToolHelper() as et:
+        tags = et.get_tags(newname, ["XMP-dc:Description"])[0]
+        print(tags)
+        assert (
+            tags["XMP:Description"] == "2022-12-12@120000 TEST/2022-12-12@120000 TEST2"
+        )
 
 
 def test_groupingMovesJpgAndRAWFiles():

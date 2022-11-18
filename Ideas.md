@@ -81,9 +81,10 @@ Die mit einem **\*** gekennzeichnet Schritte sind optional. In eckigen Klammern 
 Per Definition darf der Name des Ereignisses **KEIN** *@* enthalten. Solange die Ordner, in die man die Fotos gruppiert nicht dem Namensschema folgen gilt die Gruppierung als noch nicht abgeschlossen für den jeweiligen Ordner, andernfalls schon. Als Konvention wird ein Präfix **TODO_** festgelegt, um dies anzuzeigen.
 
    In XMP zu hinterlegen:
-   * der Ereignisnamen (= der Name des beinhaltenden Ordnern) wird abgelegt unter *dc:description*
+   * der Ereignisname (= der Name des beinhaltenden Ordners) wird abgelegt unter *dc:description*. Wenn mehrere Unterordner vorhanden sind, werden diese ebenso hinzugefügt (per slash miteinander verbunden, also z.B.
+   '2022-12-12@121212 Überordner/2022-12-12@131212 Unterordner')
 
-5. **XMP-Metadaten befüllen:**
+1. **XMP-Metadaten befüllen:**
 
    *Begründung:* Exif als Metadatenspeicher kommt nicht in Frage, weil damit nicht alle Formate abgehandelt werden können wie z.B. `.ORF` und `.mp4`.
    1. **Bewerten/Löschen [rate]**\: der XMP-Eintrag „Rating“ jedes Mediums wird angelegt und mit Werten von 0 bis 5 versehen. Dabei heißt
@@ -102,10 +103,10 @@ Per Definition darf der Name des Ereignisses **KEIN** *@* enthalten. Solange die
 
    2. **Kategorisieren\* [tag]**\: den Medien können beliebige Kategorien wie „greifen“, „drucken“, „Kirchen“ etc. zugeordnet werden entsprechend meiner fotografischen Projekte. Diese Kategorien werden in einen noch zu definierenden geeigneten XMP-Tag untergebracht. Weiters können hier die mit dem Ereignis verbundenen Personennamen hier aufgenommen werden. Es können in diesem Schritt auch Tools wie [Excire](https://excire.com) Schlagworte erstellen, die in XMP eingebettet werden.
    3. **Lokalisieren\* [localize]**\: Medien bekommen einen Ort in die Metadaten geschrieben. Hier wird zwischen einem Ort für alle Medien desselben Ereignisses unterschieden und je einem genauen Ort für jedes Foto. Dies hängt davon ab, ob es einen GPS-Track gibt, der auf die Medien angewendet werden kann und wenn nein, ob es eine einfache Möglichkeit gibt auf einer Karte für ein Ereignis einen ungefähren Ort zu markieren.
-6. **Aggregieren [aggregate]**\: die RAWs werden entsprechend dem obigen Ratingschema in den Ereignisordner kopiert bzw. gelöscht. Zugleich werden die in den beiden vorhergehenden Schritten erzeugten XMP-Tags in die RAW-Dateien kopiert/gespiegelt. 
-7. **Ablegen [archive]**\: Ereignisse die bis zu dieser Stufe behandelt wurden, können als grundsätzlich fertig abgearbeitet betrachtet werden und deren Ordner werden in den finalen Ablageort verschoben.
-8. **Nachbearbeiten\* [postedit]**\: jedes Foto mit RAW-Dateien kann nun mit dem Programm der Wahl entwickelt werden. Ein dergestalt nachbearbeitetes Foto sollte sowohl im RAW als auch im jpg per XMP-Tag hinterlegt bekommen, dass dies geschehen ist, damit beim Wiederaufnehmen der Tätigkeit klar ist, was noch ansteht.
-9.  **Sichern [backup]**\: kopiere die fertigen Ereignisordner an einen Sicherungsort, der regelmäßig automatisch gesichert wird und der 3-2-1 Regel (3 Kopien an 2 Orten und davon eine offline) eines guten Backups entspricht. 
+2. **Aggregieren [aggregate]**\: die RAWs werden entsprechend dem obigen Ratingschema in den Ereignisordner kopiert bzw. gelöscht. Zugleich werden die in den beiden vorhergehenden Schritten erzeugten XMP-Tags in die RAW-Dateien kopiert/gespiegelt. 
+3. **Ablegen [archive]**\: Ereignisse die bis zu dieser Stufe behandelt wurden, können als grundsätzlich fertig abgearbeitet betrachtet werden und deren Ordner werden in den finalen Ablageort verschoben.
+4. **Nachbearbeiten\* [postedit]**\: jedes Foto mit RAW-Dateien kann nun mit dem Programm der Wahl entwickelt werden. Ein dergestalt nachbearbeitetes Foto sollte sowohl im RAW als auch im jpg per XMP-Tag hinterlegt bekommen, dass dies geschehen ist, damit beim Wiederaufnehmen der Tätigkeit klar ist, was noch ansteht.
+5.  **Sichern [backup]**\: kopiere die fertigen Ereignisordner an einen Sicherungsort, der regelmäßig automatisch gesichert wird und der 3-2-1 Regel (3 Kopien an 2 Orten und davon eine offline) eines guten Backups entspricht. 
 
 Die Reihenfolge müsste nicht fest sein, soll sie aber. Das Leitmotiv ist „Konvention vor Konfiguration“ und ich verspreche mir durch das Festlegen der obigen Reihenfolge einen klareren, einfacheren und übersichtlicheren Arbeitsfluss. 
 

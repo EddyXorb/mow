@@ -196,11 +196,22 @@ class MediaGrouper(MediaTransitioner):
 
             isCorrect = self.isCorrectGroupSubfolder(parentDir)
             if isCorrect:
-                out[basename(parentDir)].append(file)
+                groupname = self.getGroupnameFrom(parentDir)
+                out[groupname].append(file)
             else:
                 wrongSubfolders.add(parentDir)
 
         return out
+
+    def getGroupnameFrom(self, parentDir):
+        groupname = str(Path(str(parentDir)).relative_to(self.src))
+        groupname = os.path.normpath(groupname)
+        groupname = groupname.split(os.sep)
+        if len(groupname) > 1:
+            groupname = "/".join(groupname)
+        else:
+            groupname = groupname[0]
+        return groupname
 
     def isCorrectGroupSubfolder(self, folderpath: str) -> bool:
         if folderpath == self.src:
