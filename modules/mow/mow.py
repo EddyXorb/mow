@@ -3,9 +3,9 @@ import yaml
 
 from os import path
 from os.path import join
-import os
 
 
+from ..general.mediatransitioner import TansitionerInput
 from ..general.tkinterhelper import getInputDir
 from ..general.mediarenamer import RenamerInput
 from ..image.imagerenamer import ImageRenamer
@@ -14,8 +14,6 @@ from ..video.videoconverter import VideoConverter
 from ..video.videorenamer import VideoRenamer
 from ..general.mediaconverter import ConverterInput
 from ..general.mediagrouper import GrouperInput, MediaGrouper
-
-from exiftool import ExifToolHelper
 
 
 class Mow:
@@ -41,31 +39,6 @@ class Mow:
         self.stageToFolder = {
             folder.split("_")[1]: folder for folder in self.stageFolders
         }
-
-    def _getStageAfter(self, stage: str) -> str:
-        if stage not in self.stageToFolder:
-            raise Exception(f"Could not find stage {stage}")
-        indexStage = self.stages.index(stage)
-        if indexStage + 1 > len(self.stages) - 1:
-            raise Exception(f"Cannot get stage after {stage}!")
-        return self.stages[indexStage + 1]
-
-    def _readsettings(self) -> str:
-        if not path.exists(self.settingsfile):
-            workingdir = getInputDir("Specify working directory!")
-            with open(self.settingsfile, "w") as f:
-                yaml.safe_dump({"workingdir": workingdir}, f)
-
-        with open(self.settingsfile, "r") as f:
-            return yaml.safe_load(f)
-
-    def _getStageFolder(self, stagename: str) -> str:
-        return join(self.settings["workingdir"], self.stageToFolder[stagename])
-
-    def _getSrcDstForStage(self, stage: str) -> Tuple[str, str]:
-        return self._getStageFolder(stage), self._getStageFolder(
-            self._getStageAfter(stage)
-        )
 
     def copy(self):
         pass
@@ -107,7 +80,14 @@ class Mow:
                 )
             )()
 
-    def group(self, automate, distance, dry):
+    def group(
+        self,
+        automate=False,
+        distance=12,
+        dry=True,
+        undoAutomatedGrouping=False,
+        addMissingTimestampsToSubfolders=False,
+    ):
         src, dst = self._getSrcDstForStage("group")
         print(f"######  Group  files  ######")
         MediaGrouper(
@@ -117,11 +97,13 @@ class Mow:
                 verbose=True,
                 recursive=True,
                 maintainFolderStructure=True,
+                writeXMP=True,
+                removeEmptySubfolders=True,
                 automaticGrouping=automate,
                 separationDistanceInHours=distance,
                 dry=dry,
-                writeXMP=True,
-                removeEmptySubfolders=True,
+                addMissingTimestampsToSubfolders=addMissingTimestampsToSubfolders,
+                undoAutomatedGrouping=undoAutomatedGrouping,
             )
         )()
 
@@ -136,3 +118,28 @@ class Mow:
 
     def aggregate(self):
         pass
+
+    def _getStageAfter(self, stage: str) -> str:
+        if stage not in self.stageToFolder:
+            raise Exception(f"Could not find stage {stage}")
+        indexStage = self.stages.index(stage)
+        if indexStage + 1 > len(self.stages) - 1:
+            raise Exception(f"Cannot get stage after {stage}!")
+        return self.stages[indexStage + 1]
+
+    def _readsettings(self) -> str:
+        if not path.exists(self.settingsfile):
+            workingdir = getInputDir("Specify working directory!")
+            with open(self.settingsfile, "w") as f:
+                yaml.safe_dump({"workingdir": workingdir}, f)
+
+        with open(self.settingsfile, "r") as f:
+            return yaml.safe_load(f)
+
+    def _getStageFolder(self, stagename: str) -> str:
+        return join(self.settings["workingdir"], self.stageToFolder[stagename])
+
+    def _getSrcDstForStage(self, stage: str) -> Tuple[str, str]:
+        return self._getStageFolder(stage), self._getStageFolder(
+            self._getStageAfter(stage)
+        )

@@ -15,7 +15,8 @@ convertparser = subparsers.add_parser(
 )
 
 groupparser = subparsers.add_parser(
-    "group", help="Execute grouping of media files. (Transition 4 -> 5)"
+    "group",
+    help="Execute grouping of media files. (Transition 4 -> 5). Comes with a bunch of helpers. If one of the helpers is called will not perform transition.",
 )
 
 
@@ -27,10 +28,11 @@ renameparser.add_argument(
     dest="rename_usecurrent",
 )
 
+
 groupparser.add_argument(
     "-a",
     "--automate",
-    help="Group ungrouped files, e.g. those that are directly in 'group' folder. Will however add prefix 'TODO_'",
+    help="Group ungrouped files, e.g. those that are directly in 'group' folder. Will however add prefix 'TODO_'. Nothing else is done then.",
     dest="group_automate",
     action="store_true",
 )
@@ -38,17 +40,33 @@ groupparser.add_argument(
 groupparser.add_argument(
     "-s",
     "--separation",
-    help="If grouping ungrouped (-g), will separate files with timediff > this value in hours.",
+    help="If --automate active, will separate files with timediff > this value in hours. Nothing else is done then.",
     dest="group_separate",
     type=int,
     default=8,
 )
 
 groupparser.add_argument(
-    "-d",
-    "--dry",
-    help="Don't actually group anything, but print what would be done.",
-    dest="group_dry",
+    "-u",
+    "--undogrouping",
+    help="Undo grouping which was executed by --automate. Nothing else is done then.",
+    dest="group_undogrouping",
+    action="store_true",
+)
+
+groupparser.add_argument(
+    "-t",
+    "--timestamps",
+    help="Add missing timestamps to folders in group folder. Nothing else is done then.",
+    dest="group_timestamps",
+    action="store_true",
+)
+
+groupparser.add_argument(
+    "-x",
+    "--execute",
+    help="Really execute moving/renaming of files/folders, not only in dry mode. Since the grouping features are powerful we do not want it to be the default behavior that something is really done.",
+    dest="group_execute",
     action="store_true",
 )
 
@@ -66,5 +84,7 @@ if __name__ == "__main__":
         mow.group(
             automate=args.group_automate,
             distance=args.group_separate,
-            dry=args.group_dry,
+            dry=not args.group_execute,
+            undoAutomatedGrouping=args.group_undogrouping,
+            addMissingTimestampsToSubfolders=args.group_timestamps,
         )

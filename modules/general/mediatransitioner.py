@@ -56,6 +56,10 @@ class MediaTransitioner(VerbosePrinterClass):
 
     def __call__(self):
         self.printv(f"Start transition from source {self.src} into {self.dst}")
+        if self.dry:
+            self.printv(
+                "Dry mode active. Will NOT do anything, just print what would be done."
+            )
 
         self.createDestinationDir()
         self.collectMediaFilesToTreat()

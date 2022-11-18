@@ -118,7 +118,9 @@ class MediaGrouper(MediaTransitioner):
 
                 movedFiles += 1
 
-            self.printv(f"Moved {movedFiles} files from {group} back to {self.src}.")
+            self.printv(
+                f"Moved {movedFiles : 4} files from {group} back to {self.src}."
+            )
 
     def getLowestDatetimeOfTimestampsIn(self, folder: str) -> datetime:
         candidates = os.listdir(folder)
