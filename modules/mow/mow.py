@@ -13,6 +13,8 @@ from ..image.imageconverter import ImageConverter
 from ..video.videoconverter import VideoConverter
 from ..video.videorenamer import VideoRenamer
 from ..general.mediaconverter import ConverterInput
+from ..general.mediagrouper import GrouperInput, MediaGrouper
+
 from exiftool import ExifToolHelper
 
 
@@ -116,8 +118,21 @@ class Mow:
 
         removeEmptySubfoldersOf(src)
 
-    def group(self):
-        pass
+    def group(self, automate, distance, dry):
+        src, dst = self._getSrcDstForStage("group")
+        print(f"######  Group  files  ######")
+        MediaGrouper(
+            GrouperInput(
+                src=src,
+                dst=dst,
+                verbose=True,
+                recursive=True,
+                maintainFolderStructure=True,
+                groupUngroupedFiles=automate,
+                separationDistanceInHours=distance,
+                dry=dry,
+            )
+        )()
 
     def rate(self):
         pass
