@@ -31,6 +31,7 @@ class TansitionerInput:
     verbose = False
     dry = False
     maintainFolderStructure = True
+    removeEmptySubfolders = False
 
 
 class MediaTransitioner(VerbosePrinterClass):
@@ -46,6 +47,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.dry = input.dry
         self.mediatype = input.mediaFileFactory
         self.maintainFolderStructure = input.maintainFolderStructure
+        self.removeEmptySubfolders = input.removeEmptySubfolders
 
         self.skippedFiles: Set[str] = set()
         self.toTreat: List[MediaFile] = []
@@ -59,6 +61,9 @@ class MediaTransitioner(VerbosePrinterClass):
         self.collectMediaFilesToTreat()
 
         self.execute()
+
+        if self.removeEmptySubfolders:
+            self.removeEmptySubfoldersOf(self.src)
 
     def createDestinationDir(self):
         if os.path.isdir(self.dst):
@@ -86,6 +91,14 @@ class MediaTransitioner(VerbosePrinterClass):
             return join(self.dst, str(Path(str(file)).relative_to(self.src).parent))
         else:
             return self.dst
+
+    def removeEmptySubfoldersOf(self, pathToRemove):
+        toRemove = os.path.abspath(pathToRemove)
+        for path, _, _ in os.walk(toRemove, topdown=False):
+            if path == toRemove:
+                continue
+            if len(os.listdir(path)) == 0:
+                os.rmdir(path)
 
     def execute(self):
         raise NotImplementedError()

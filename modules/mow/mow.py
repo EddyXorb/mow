@@ -18,15 +18,6 @@ from ..general.mediagrouper import GrouperInput, MediaGrouper
 from exiftool import ExifToolHelper
 
 
-def removeEmptySubfoldersOf(path_to_remove):
-    to_remove = os.path.abspath(path_to_remove)
-    for path, _, _ in os.walk(to_remove, topdown=False):
-        if path == to_remove:
-            continue
-        if len(os.listdir(path)) == 0:
-            os.rmdir(path)
-
-
 class Mow:
     """
     Stands for "M(edia) (fl)OW" - a design to structure your media workflow, be it photos, videos or audio data.
@@ -93,10 +84,9 @@ class Mow:
                     verbose=True,
                     writeXMP=True,
                     useCurrentFilename=useCurrentFilename,
+                    removeEmptySubfolders=True,
                 )
             )()
-
-        removeEmptySubfoldersOf(src)
 
     def convert(self):
         src, dst = self._getSrcDstForStage("convert")
@@ -113,10 +103,9 @@ class Mow:
                     enforcePassthrough=False,
                     recursive=True,
                     maintainFolderStructure=True,
+                    removeEmptySubfolders=True,
                 )
             )()
-
-        removeEmptySubfoldersOf(src)
 
     def group(self, automate, distance, dry):
         src, dst = self._getSrcDstForStage("group")
@@ -132,6 +121,7 @@ class Mow:
                 separationDistanceInHours=distance,
                 dry=dry,
                 writeXMP=True,
+                removeEmptySubfolders=True,
             )
         )()
 
