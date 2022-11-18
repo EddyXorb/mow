@@ -152,10 +152,11 @@ class MediaGrouper(MediaTransitioner):
                 (self._extractDatetimeFrom(str(file)) - lastTime).total_seconds()
                 / 3600.0
             ) >= self.separationDistanceInHours:
-                lastTime = self._extractDatetimeFrom(str(file))
                 currentGroup = self._getGroupBasedOnFirstFile(str(file))
             groupToFiles[currentGroup].append(file)
+            lastTime = self._extractDatetimeFrom(str(file))
 
+        self.printv(f"Created {len(groupToFiles)} new groups.")
         self.printv("Move into newly created group folder..")
         for key, val in groupToFiles.items():
             if not self.dry:

@@ -227,6 +227,39 @@ def test_connectsTwoFileIfNotTooDistant():
     assert exists(join(src, "TODO_2022-12-12@160000", "2022-12-12@160000_test.JPG"))
 
 
+def test_intermediateFileProlongsGroup():
+    fullname = join(src, "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+    shutil.copy(
+        join(testfolder, "test3.JPG"),
+        join(src, "2022-12-12@150000_test.JPG"),
+    )
+    shutil.copy(
+        join(testfolder, "test3.JPG"),
+        join(src, "2022-12-12@180000_test.JPG"),
+    )
+
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            groupUngroupedFiles=True,
+        )
+    )()
+
+    assert not exists(fullname)
+    assert not exists(join(src, "2022-12-12@160000_test.JPG"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.JPG"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@150000_test.JPG"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@180000_test.JPG"))
+
+
 def test_XMPisWritten():
     fullname = join(src, "2022-12-12@120000 TEST", "2022-12-12@120000_test.JPG")
     prepareTest(srcname=fullname)
