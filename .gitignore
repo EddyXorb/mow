@@ -8,3 +8,4 @@ tests/mow_test_workingdir
 filestotreat
 tests/test_converted*
 tests/test_treated*
+mow.log

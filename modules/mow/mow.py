@@ -14,6 +14,9 @@ from ..video.videoconverter import VideoConverter
 from ..video.videorenamer import VideoRenamer
 from ..general.mediaconverter import ConverterInput
 from ..general.mediagrouper import GrouperInput, MediaGrouper
+from ..general.filenamehelper import timestampformat
+
+import logging
 
 
 class Mow:
@@ -22,6 +25,15 @@ class Mow:
     """
 
     def __init__(self, settingsfile: str):
+
+        logging.basicConfig(
+            format="%(asctime)s [%(levelname)s]: %(message)s",
+            level=logging.DEBUG,
+            handlers=[logging.FileHandler("mow.log"), logging.StreamHandler()],
+            datefmt=timestampformat,
+        )
+
+        logging.info(f"{'#'*30} Start new MOW session. {'#'*30}")
         self.settingsfile = settingsfile
         self.settings = self._readsettings()
         self.stageFolders = [
@@ -48,7 +60,7 @@ class Mow:
 
         renamers = [ImageRenamer, VideoRenamer]
         for renamer in renamers:
-            print(f"######  Apply renamer: {renamer.__name__} ######")
+            self._printEmphasized(f"Apply renamer: {renamer.__name__}")
             renamer(
                 RenamerInput(
                     src=src,
@@ -66,7 +78,7 @@ class Mow:
 
         converters = [ImageConverter, VideoConverter]
         for converter in converters:
-            print(f"######  Apply converter: {converter.__name__} ######")
+            self._printEmphasized(f"Apply converter: {converter.__name__}")
             converter(
                 ConverterInput(
                     src=src,
@@ -89,7 +101,7 @@ class Mow:
         addMissingTimestampsToSubfolders=False,
     ):
         src, dst = self._getSrcDstForStage("group")
-        print(f"######  Group  files  ######")
+        self._printEmphasized("Group  files")
         MediaGrouper(
             GrouperInput(
                 src=src,
@@ -143,3 +155,6 @@ class Mow:
         return self._getStageFolder(stage), self._getStageFolder(
             self._getStageAfter(stage)
         )
+
+    def _printEmphasized(self, toprint: str):
+        logging.info(f"{'#'*10} {toprint} {'#'*10}")

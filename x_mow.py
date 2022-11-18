@@ -40,7 +40,7 @@ groupparser.add_argument(
 groupparser.add_argument(
     "-s",
     "--separation",
-    help="If --automate active, will separate files with timediff > this value in hours. Nothing else is done then.",
+    help="If --automate active, will separate files with timediff > this value in hours. Default is 8.",
     dest="group_separate",
     type=int,
     default=8,
@@ -73,8 +73,6 @@ groupparser.add_argument(
 if __name__ == "__main__":
     args = parser.parse_args()
     mow = Mow(".mowsettings.yml")
-
-    print(args)
 
     if args.command == "rename":
         mow.rename(useCurrentFilename=args.rename_usecurrent)

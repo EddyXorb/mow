@@ -75,15 +75,19 @@ class MediaGrouper(MediaTransitioner):
 
     def execute(self):
         if self.undoAutomatedGrouping:
+            self.printv("Start undo grouping..")
             self.undoGrouping()
             return
         if self.groupUngroupedFiles:
+            self.printv("Start automated grouping..")
             self.groupUngrouped()
             return
         if self.addMissingTimestampsToSubfolders:
+            self.printv("Start adding missing timestamps..")
             self.addMissingTimestamps()
             return
 
+        self.printv("Start transitioning from group stage..")
         toTransition = self.getCorrectlyGroupedFiles()
 
         self.printStatisticsOf(toTransition)
