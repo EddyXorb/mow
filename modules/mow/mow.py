@@ -28,7 +28,7 @@ class Mow:
 
         logging.basicConfig(
             format="%(asctime)s [%(levelname)s]: %(message)s",
-            level=logging.DEBUG,
+            level=logging.INFO,
             handlers=[logging.FileHandler("mow.log"), logging.StreamHandler()],
             datefmt=timestampformat,
         )
@@ -55,7 +55,7 @@ class Mow:
     def copy(self):
         pass
 
-    def rename(self, useCurrentFilename=False):
+    def rename(self, useCurrentFilename=False, replace="", dry=False):
         src, dst = self._getSrcDstForStage("rename")
 
         renamers = [ImageRenamer, VideoRenamer]
@@ -70,6 +70,8 @@ class Mow:
                     writeXMP=True,
                     useCurrentFilename=useCurrentFilename,
                     removeEmptySubfolders=True,
+                    replace=replace,
+                    dry=dry,
                 )
             )()
 

@@ -28,6 +28,21 @@ renameparser.add_argument(
     dest="rename_usecurrent",
 )
 
+renameparser.add_argument(
+    "-r",
+    "--replace",
+    help="Expects a comma-separated string such as '^\d*.*,TEST' where the part before the comma is a regex that every file will be searched after and the second part is how matches should be replaced. If given, will just rename mediafiles in place without transitioning them to next stage.",
+    type=str,
+    dest="rename_replace",
+)
+
+renameparser.add_argument(
+    "-x",
+    "--execute",
+    help="Really execute moving/renaming of files/folders, not only in dry mode. Since the renaming features are powerful we do not want it to be the default behavior that something is really done.",
+    dest="rename_execute",
+    action="store_true",
+)
 
 groupparser.add_argument(
     "-a",
@@ -75,7 +90,11 @@ if __name__ == "__main__":
     mow = Mow(".mowsettings.yml")
 
     if args.command == "rename":
-        mow.rename(useCurrentFilename=args.rename_usecurrent)
+        mow.rename(
+            useCurrentFilename=args.rename_usecurrent,
+            replace=args.rename_replace,
+            dry=not args.rename_execute,
+        )
     if args.command == "convert":
         mow.convert()
     if args.command == "group":

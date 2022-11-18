@@ -1,7 +1,7 @@
 from datetime import datetime
 from ..modules.image.imagerenamer import *
 import shutil
-from os.path import join,exists
+from os.path import join, exists
 import os
 
 testfolder = "tests"
@@ -19,6 +19,7 @@ def executeRenamingWith(
     recursive=True,
     maintainFolderStructure=True,
     useCurrentFilename=False,
+    replace="",
 ) -> ImageRenamer:
     renamer = ImageRenamer(
         RenamerInput(
@@ -30,6 +31,7 @@ def executeRenamingWith(
             maintainFolderStructure=maintainFolderStructure,
             recursive=recursive,
             useCurrentFilename=useCurrentFilename,
+            replace=replace,
         )
     )
     renamer()
@@ -165,12 +167,9 @@ def test_useFilenameAsSourceOfTruth():
 
     assert exists(newfile)
 
-    executeRenamingWith(
-        useCurrentFilename=True,
-        writeXMP=True
-    )
- 
-    renamedFile = join(targetDir,"2022-11-11@111111_test3.JPG")
+    executeRenamingWith(useCurrentFilename=True, writeXMP=True)
+
+    renamedFile = join(targetDir, "2022-11-11@111111_test3.JPG")
     assert exists(renamedFile)
 
     from exiftool import ExifToolHelper
@@ -179,3 +178,19 @@ def test_useFilenameAsSourceOfTruth():
         tags = et.get_tags(renamedFile, ["XMP-dc:Source", "XMP-dc:Date"])[0]
         assert tags["XMP:Source"] == "2022-11-11@111111_test3.JPG"
         assert tags["XMP:Date"] == "2022:11:11 11:11:11"
+
+
+def test_replaceWorks():
+    prepareTest()
+
+    executeRenamingWith(move=True, replace="test,qwert")
+
+    assert exists(join(src, "subsubfolder", "qwert3.JPG"))
+
+
+def test_replaceWithRegexWorks():
+    prepareTest()
+
+    executeRenamingWith(move=True, replace=r"\d,99")
+
+    assert exists(join(src, "subsubfolder", "test99.JPG"))

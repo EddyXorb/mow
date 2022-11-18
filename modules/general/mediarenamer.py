@@ -4,6 +4,7 @@ from os.path import join
 from typing import Callable, Dict
 from pathlib import Path
 from datetime import datetime
+import re
 
 from .mediatransitioner import MediaTransitioner, TansitionerInput
 from .filenamehelper import (
@@ -25,6 +26,7 @@ class RenamerInput(TansitionerInput):
     maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
     dry: don't actually rename files
     writeXMP: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
+    replace: a string such as '"^\d*.*",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
     """
 
     move = True
@@ -32,6 +34,7 @@ class RenamerInput(TansitionerInput):
     restoreOldNames = False
     filerenamer: Callable[[str], str] = None
     useCurrentFilename = False
+    replace = ""
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -63,6 +66,13 @@ class MediaRenamer(MediaTransitioner):
         self.writeXMP = input.writeXMP
         self.restoreOldNames = input.restoreOldNames
         self.useCurrentFilename = input.useCurrentFilename
+        self.replace: str = input.replace
+
+        if "," in self.replace and len(self.replace.split(",")) == 2:
+            self.printv(f"Found replace pattern {self.replace}!")
+        elif self.replace != "":
+            self.printv(f"Given replace pattern {self.replace} is invalid.")
+            self.replace = ""
 
         self.oldToNewMapping: Dict[
             str, str
@@ -95,6 +105,8 @@ class MediaRenamer(MediaTransitioner):
                     creationDate = getMediaCreationDateFrom(file).strftime(
                         "%Y:%m:%d %H:%M:%S"
                     )
+                if self.dry:
+                    continue
                 try:
                     et.set_tags(
                         file,
@@ -135,13 +147,12 @@ class MediaRenamer(MediaTransitioner):
                 continue
 
             newName = self.oldToNewMapping[str(file)]
-            if self.dry:
-                continue
 
-            if self.move:
-                file.moveTo(newName)
-            else:
-                file.copyTo(newName)
+            if not self.dry:
+                if self.move:
+                    file.moveTo(newName)
+                else:
+                    file.copyTo(newName)
 
             self.treatedfiles += file.nrFiles
 
@@ -166,6 +177,11 @@ class MediaRenamer(MediaTransitioner):
             newFileName = ""
             if self.useCurrentFilename:
                 newFileName = os.path.basename(file)
+            elif self.replace != "":
+                regex, replacing = self.replace.split(",")
+                newFileName = re.sub(regex, replacing, os.path.basename(file))
+                self.printv(f"Replace {os.path.basename(file)} with {newFileName}.")
+                return join(os.path.dirname(file), newFileName)
             else:
                 renamed = self.renamer(file)
                 newFileName = os.path.basename(renamed)
@@ -180,7 +196,7 @@ class MediaRenamer(MediaTransitioner):
         return False
 
     def printStatistic(self):
-        self.printv("Finished!", "Renamed", self.treatedfiles, "files.")
+        self.printv(f"Finished! Renamed {self.treatedfiles} files.")
 
         if len(self.skippedFiles) > 0:
             self.printv(
