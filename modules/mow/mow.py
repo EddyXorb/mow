@@ -131,6 +131,7 @@ class Mow:
                 groupUngroupedFiles=automate,
                 separationDistanceInHours=distance,
                 dry=dry,
+                writeXMP=True,
             )
         )()
 

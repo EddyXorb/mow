@@ -157,12 +157,12 @@ class MediaGrouper(MediaTransitioner):
             groupToFiles[currentGroup].append(file)
 
         self.printv("Move into newly created group folder..")
-        for key, val in tqdm(groupToFiles.items()):
+        for key, val in groupToFiles.items():
             if not self.dry:
                 for file in val:
                     file.moveTo(join(self.src, key, basename(str(file))))
             self.printv(
-                f"Created new group {key} with {len(val)} files "
+                f"Created new group {key} with {len(val):4} files "
                 + "." * int(sqrt(len(val)))
             )
 
