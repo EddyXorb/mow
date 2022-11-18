@@ -7,4 +7,4 @@ tests/filestorename
 tests/mow_test_workingdir
 filestotreat
 tests/test_converted*
-tests/test_treated/*
+tests/test_treated*
