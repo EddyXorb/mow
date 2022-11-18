@@ -67,7 +67,9 @@ class MediaTransitioner(VerbosePrinterClass):
         self.execute()
 
         if self.removeEmptySubfolders:
-            self.removeEmptySubfoldersOf(self.src)
+            self.printv(f"Remove empty subfolders of {self.src}..")
+            removed = self.removeEmptySubfoldersOf(self.src)
+            self.printv(f"Removed {len(removed)} empty subfolders.")
 
     def createDestinationDir(self):
         if os.path.isdir(self.dst):
@@ -97,12 +99,16 @@ class MediaTransitioner(VerbosePrinterClass):
             return self.dst
 
     def removeEmptySubfoldersOf(self, pathToRemove):
+        removed = []
         toRemove = os.path.abspath(pathToRemove)
         for path, _, _ in os.walk(toRemove, topdown=False):
             if path == toRemove:
                 continue
             if len(os.listdir(path)) == 0:
-                os.rmdir(path)
+                if not self.dry:
+                    os.rmdir(path)
+                removed.append(path)
+        return removed
 
     def execute(self):
         raise NotImplementedError()
