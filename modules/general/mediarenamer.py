@@ -53,7 +53,7 @@ class MediaRenamer(MediaTransitioner):
 
     def __init__(self, input: RenamerInput):
         super().__init__(input)
-        if input.mediatype is None:
+        if input.mediaFileFactory is None:
             raise Exception("Mediatype was not given to MediaRenamer!")
         if input.filerenamer is None:
             raise Exception("Filerenamer was not given to MediaRenamer!")

@@ -2,7 +2,8 @@ from dataclasses import dataclass
 import os
 from os.path import join
 from pathlib import Path
-from typing import List, Set
+from typing import List, Set, Callable
+
 
 from ..general.mediafile import MediaFile
 from ..general.verboseprinterclass import VerbosePrinterClass
@@ -23,7 +24,9 @@ class TansitionerInput:
 
     src: str
     dst: str
-    mediatype: MediaFile = None
+    mediaFileFactory: Callable[
+        [str], MediaFile
+    ] = None  # this can also be a type with its constructor, e.g. ImageFile
     recursive = True
     verbose = False
     dry = False
@@ -41,7 +44,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.dst = os.path.abspath(input.dst)
         self.recursive = input.recursive
         self.dry = input.dry
-        self.mediatype = input.mediatype
+        self.mediatype = input.mediaFileFactory
         self.maintainFolderStructure = input.maintainFolderStructure
 
         self.skippedFiles: Set[str] = set()

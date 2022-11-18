@@ -8,6 +8,6 @@ from .imagefile import ImageFile
 
 class ImageRenamer(MediaRenamer):
     def __init__(self, input: RenamerInput):
-        input.mediatype = ImageFile
+        input.mediaFileFactory = ImageFile
         input.filerenamer = getDateTimeFileNameFor
         super().__init__(input)

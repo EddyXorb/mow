@@ -85,7 +85,7 @@ def test_TimestampStartingTooLateIsRecognized():
     assert not exists(join(dst, groupname, "test.JPG"))
 
 
-def test_AtInGroupnameIsRecognized():
+def test_AtInGroupnameIsRecognizedAndWillBeRefused():
     groupname = "2022-12-12@121212_TEST@TEST"
     fullname = join(src, groupname, "test.JPG")
     prepareTest(srcname=fullname)
@@ -143,7 +143,7 @@ def test_createdGroupOfUnGrouped():
             interactive=False,
             dry=False,
             verbose=True,
-            groupUngroupedFiles=True,
+            automaticGrouping=True,
         )
     )()
 
@@ -163,7 +163,7 @@ def test_shouldNotMoveAutomaticallyGroupedFilesIntoDst():
             interactive=False,
             dry=False,
             verbose=True,
-            groupUngroupedFiles=True,
+            automaticGrouping=True,
         )
     )()
 
@@ -189,7 +189,7 @@ def test_connectsTwoFileIfNotTooDistant():
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
-            groupUngroupedFiles=True,
+            automaticGrouping=True,
         )
     )()
 
@@ -217,7 +217,7 @@ def test_connectsTwoFileIfNotTooDistant():
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
-            groupUngroupedFiles=True,
+            automaticGrouping=True,
         )
     )()
 
@@ -249,7 +249,7 @@ def test_intermediateFileProlongsGroup():
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
-            groupUngroupedFiles=True,
+            automaticGrouping=True,
         )
     )()
 
@@ -283,3 +283,96 @@ def test_XMPisWritten():
         tags = et.get_tags(newname, ["XMP-dc:Description"])[0]
         print(tags)
         assert tags["XMP:Description"] == "2022-12-12@120000 TEST"
+
+
+def test_groupingMovesJpgAndRAWFiles():
+    fullname = join(src, "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+    shutil.copy(
+        join(testfolder, "test3.JPG"),
+        join(src, "2022-12-12@120000_test.ORF"),
+    )
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=True,
+        )
+    )()
+
+    assert not exists(fullname)
+    assert not exists(join(src, "2022-12-12@120000_test.ORF"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.JPG"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.ORF"))
+
+
+def test_undoGroupingWorks():
+    fullname = join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=True,
+            undoAutomatedGrouping=True,
+        )
+    )()
+
+    assert not exists(fullname)
+    assert exists(join(src, "2022-12-12@120000_test.JPG"))
+
+
+def test_undoGroupingDoesNotTouchGroupsWithoutTODOPrefix():
+    fullname = join(src, "2022-12-12@120000", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=True,
+            undoAutomatedGrouping=True,
+        )
+    )()
+
+    assert exists(fullname)
+    assert not exists(join(src, "2022-12-12@120000_test.JPG"))
+
+
+def test_undoGroupingDoesNotTouchTODO_GroupsWithDescription():
+    fullname = join(src, "2022-12-12@120000 TEST", "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+    assert exists(fullname)
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            interactive=False,
+            dry=False,
+            verbose=True,
+            separationDistanceInHours=4,
+            automaticGrouping=True,
+            undoAutomatedGrouping=True,
+        )
+    )()
+
+    assert exists(fullname)
+    assert not exists(join(src, "2022-12-12@120000_test.JPG"))

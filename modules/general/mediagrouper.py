@@ -12,7 +12,8 @@ from collections import defaultdict
 from exiftool import ExifToolHelper
 from math import sqrt
 
-from ..general.genericmediafile import GenericMediaFile
+from ..image.imagefile import ImageFile
+from ..video.videofile import VideoFile
 from ..general.mediafile import MediaFile
 from ..general.filenamehelper import timestampformat
 
@@ -20,13 +21,15 @@ from ..general.filenamehelper import timestampformat
 @dataclass(kw_only=True)
 class GrouperInput(TansitionerInput):
     """
-    groupUngroupedFiles: creates group folders with prefix 'TODO_' for every mediafile that is not in a group
+    automaticGrouping: creates group folders with prefix 'TODO_' for every mediafile that is not in a group
+    undoAutomatedGrouping: copies all mediafiles from folders into src that are in group-like-folders with TODO_YYYY-MM-DD@HHMMSS - format
     separationDistanceInHours: when groupUngroupedFiles is active, will separate two iff their timestamp differs by more than this value in hours
     addMissingTimestampsToSubfolders: if mediafiles in subfolders are found which do not have a timestamp (nowhere), will add timestamp to these folders
     separationDistanceInHours: when groupUngroupedFiles is active, if time between two neighboring mediafiles is greater equal than this time in hours, they will be put into separate groups
     """
 
-    groupUngroupedFiles = False
+    undoAutomatedGrouping = False
+    automaticGrouping = False
     addMissingTimestampsToSubfolders = False
     separationDistanceInHours = 12
     writeXMP = True
@@ -34,6 +37,15 @@ class GrouperInput(TansitionerInput):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+
+def createGroupableMediaFile(path: str) -> MediaFile:
+    for type in [ImageFile, VideoFile]:
+        candidate: MediaFile = type(path)
+        if candidate.isValid():
+            return candidate
+
+    return candidate
 
 
 class MediaGrouper(MediaTransitioner):
@@ -50,37 +62,71 @@ class MediaGrouper(MediaTransitioner):
     """
 
     def __init__(self, input: GrouperInput):
-        input.mediatype = GenericMediaFile
+        input.mediaFileFactory = createGroupableMediaFile
         input.maintainFolderStructure = True
         super().__init__(input)
-        self.groupUngroupedFiles = input.groupUngroupedFiles
+        self.undoAutomatedGrouping = input.undoAutomatedGrouping
+        self.groupUngroupedFiles = input.automaticGrouping
         self.addMissingTimestampsToSubfolders = input.addMissingTimestampsToSubfolders
         self.separationDistanceInHours = input.separationDistanceInHours
         self.writeXMP = input.writeXMP
 
     def execute(self):
+        if self.undoAutomatedGrouping:
+            self.undoGrouping()
+            return
         if self.groupUngroupedFiles:
-            self._groupUngrouped()
+            self.groupUngrouped()
         if self.addMissingTimestampsToSubfolders:
             pass
 
-        toTransition = self._getCorrectlyGroupedFiles()
+        toTransition = self.getCorrectlyGroupedFiles()
 
-        self._printStatisticsOf(toTransition)
-        self._setOptionalXMP(toTransition)
-        self._moveCorrectlyGroupedOf(toTransition)
+        self.printStatisticsOf(toTransition)
+        self.setOptionalXMP(toTransition)
+        self.moveCorrectlyGroupedOf(toTransition)
 
-    def _printStatisticsOf(self, toTransition):
+    def undoGrouping(self):
+        candidatesForUndo = [
+            group
+            for group in os.listdir(self.src)
+            if os.path.isdir(join(self.src, group))
+            and group.startswith("TODO_")
+            and self.isCorrectTimestamp(group[5:])
+        ]
+
+        self.printv(f"Found {len(candidatesForUndo)} groups for undo.")
+
+        for group in candidatesForUndo:
+            movedFiles = 0
+            for f in os.listdir(join(self.src, group)):
+                file = join(self.src, group, f)
+                if not os.path.isfile(file):
+                    continue
+                if not os.path.exists(file):
+                    continue
+
+                toMove = createGroupableMediaFile(file)
+                if not toMove.isValid():
+                    continue
+                if not self.dry:
+                    toMove.moveTo(join(self.src, basename(str(toMove))))
+
+                movedFiles += 1
+
+            self.printv(f"Moved {movedFiles} files from {group} back to {self.src}.")
+
+    def printStatisticsOf(self, toTransition):
         self.printv(
             f"Found {len(toTransition.keys())} groups that were correct (YYYY-MM-DD@HHMMSS#, #=Groupname)."
         )
         for group, files in toTransition.items():
             self.printv(f"Group {group} contains {len(files)} files.")
 
-    def _getUngroupedFiles(self) -> list[MediaFile]:
+    def getUngroupedFiles(self) -> list[MediaFile]:
         return list(x for x in self.toTreat if dirname(str(x)) == self.src)
 
-    def _getCorrectlyGroupedFiles(self) -> DefaultDict[str, List[MediaFile]]:
+    def getCorrectlyGroupedFiles(self) -> DefaultDict[str, List[MediaFile]]:
         out: DefaultDict[str, List[MediaFile]] = defaultdict(lambda: [])
         wrongSubfolders = set()
 
@@ -93,7 +139,7 @@ class MediaGrouper(MediaTransitioner):
             if parentDir in wrongSubfolders:
                 continue
 
-            isCorrect = self._isCorrectGroupSubfolder(parentDir)
+            isCorrect = self.isCorrectGroupSubfolder(parentDir)
             if isCorrect:
                 out[basename(parentDir)].append(file)
             else:
@@ -101,28 +147,20 @@ class MediaGrouper(MediaTransitioner):
 
         return out
 
-    def _isCorrectGroupSubfolder(self, folderpath: str) -> bool:
+    def isCorrectGroupSubfolder(self, folderpath: str) -> bool:
         if folderpath == self.src:
             return True
 
-        if self._isCorrectGroupName(basename(folderpath)):
-            return self._isCorrectGroupSubfolder(dirname(folderpath))
+        if self.isCorrectGroupName(basename(folderpath)):
+            return self.isCorrectGroupSubfolder(dirname(folderpath))
 
         return False
 
-    def _isCorrectGroupName(self, candidate: str) -> bool:
-        if len(candidate) <= 18:
-            self.printv(f"Candidate {candidate} has length <= 18 - dismissed")
-            return False
-
+    def isCorrectTimestamp(self, candidate: str) -> bool:
         if candidate[10] != "@":
             self.printv(
                 f"Candidate {candidate} does not have '@' at index 10, but {candidate[10]} - dismissed"
             )
-            return False
-
-        if "@" in candidate[11:]:
-            self.printv(f"Candidate {candidate} contains '@' at index > 10 - dismissed")
             return False
 
         try:
@@ -132,29 +170,40 @@ class MediaGrouper(MediaTransitioner):
             self.printv(f"Candidate {candidate}'s timestamp is wrong - dismissed")
             return False
 
+    def isCorrectGroupName(self, candidate: str) -> bool:
+        if len(candidate) <= 18:
+            self.printv(f"Candidate {candidate} has length <= 18 - dismissed")
+            return False
+
+        if "@" in candidate[11:]:
+            self.printv(f"Candidate {candidate} contains '@' at index > 10 - dismissed")
+            return False
+
+        return self.isCorrectTimestamp(candidate=candidate[0:17])
+
     def _getGroupBasedOnFirstFile(self, file: str):
         return "TODO_" + datetime.strftime(
-            self._extractDatetimeFrom(file), timestampformat
+            self.extractDatetimeFrom(file), timestampformat
         )
 
-    def _groupUngrouped(self):
-        ungrouped = self._getUngroupedFiles()
+    def groupUngrouped(self):
+        ungrouped = self.getUngroupedFiles()
         if len(ungrouped) == 0:
             return
-        ungrouped.sort(key=lambda file: self._extractDatetimeFrom(str(file)))
+        ungrouped.sort(key=lambda file: self.extractDatetimeFrom(str(file)))
         groupToFiles: DefaultDict[str, List[MediaFile]] = defaultdict(lambda: [])
 
         self.printv("Start creating new group names..")
         currentGroup = self._getGroupBasedOnFirstFile(str(ungrouped[0]))
-        lastTime = self._extractDatetimeFrom(str(ungrouped[0]))
+        lastTime = self.extractDatetimeFrom(str(ungrouped[0]))
         for file in tqdm(ungrouped):
             if (
-                (self._extractDatetimeFrom(str(file)) - lastTime).total_seconds()
+                (self.extractDatetimeFrom(str(file)) - lastTime).total_seconds()
                 / 3600.0
             ) >= self.separationDistanceInHours:
                 currentGroup = self._getGroupBasedOnFirstFile(str(file))
             groupToFiles[currentGroup].append(file)
-            lastTime = self._extractDatetimeFrom(str(file))
+            lastTime = self.extractDatetimeFrom(str(file))
 
         self.printv(f"Created {len(groupToFiles)} new groups.")
         self.printv("Move into newly created group folder..")
@@ -167,7 +216,7 @@ class MediaGrouper(MediaTransitioner):
                 + "." * int(sqrt(len(val)))
             )
 
-    def _moveCorrectlyGroupedOf(self, toTransition: DefaultDict[str, List[MediaFile]]):
+    def moveCorrectlyGroupedOf(self, toTransition: DefaultDict[str, List[MediaFile]]):
         self.printv("Move correctly grouped files..")
         for group, files in tqdm(toTransition.items()):
             self.printv(f"Move group {group}..")
@@ -182,7 +231,7 @@ class MediaGrouper(MediaTransitioner):
                         os.makedirs(targetDir)
                     file.moveTo(join(targetDir, basename(str(file))))
 
-    def _setOptionalXMP(self, toTransition: DefaultDict[str, List[MediaFile]]):
+    def setOptionalXMP(self, toTransition: DefaultDict[str, List[MediaFile]]):
         if not self.writeXMP:
             return
 
@@ -206,7 +255,7 @@ class MediaGrouper(MediaTransitioner):
                         )
                         self.skippedFiles.add(str(file))
 
-    def _extractDatetimeFrom(self, file: str) -> datetime:
+    def extractDatetimeFrom(self, file: str) -> datetime:
         try:
             return datetime.strptime(basename(file)[0:17], timestampformat)
         except Exception as e:

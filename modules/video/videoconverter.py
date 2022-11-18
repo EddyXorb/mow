@@ -43,7 +43,7 @@ def convertVideo(
 
 class VideoConverter(MediaConverter):
     def __init__(self, input: ConverterInput):
-        input.mediatype = VideoFile
+        input.mediaFileFactory = VideoFile
         self.enforcePassthrough = input.enforcePassthrough
         super().__init__(
             input,

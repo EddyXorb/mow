@@ -6,6 +6,6 @@ from ..general.mediarenamer import MediaRenamer, RenamerInput
 
 class VideoRenamer(MediaRenamer):
     def __init__(self, input: RenamerInput):
-        input.mediatype = VideoFile
+        input.mediaFileFactory = VideoFile
         input.filerenamer = getDateTimeFileNameFor
         super().__init__(input)

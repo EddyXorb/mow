@@ -128,7 +128,7 @@ class Mow:
                 verbose=True,
                 recursive=True,
                 maintainFolderStructure=True,
-                groupUngroupedFiles=automate,
+                automaticGrouping=automate,
                 separationDistanceInHours=distance,
                 dry=dry,
                 writeXMP=True,
