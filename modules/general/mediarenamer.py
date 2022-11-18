@@ -29,7 +29,6 @@ class RenamerInput(TansitionerInput):
 
     move = True
     writeXMP = False
-    maintainFolderStrucuture = True
     restoreOldNames = False
     filerenamer: Callable[[str], str] = None
     useCurrentFilename = False
@@ -89,9 +88,9 @@ class MediaRenamer(MediaTransitioner):
             for file in tqdm(oldfiles):
                 filename = os.path.basename(file)
                 if self.useCurrentFilename:
-                    creationDate = datetime.strptime(filename[0:17], timestampformat).strftime(
-                        "%Y:%m:%d %H:%M:%S"
-                    )
+                    creationDate = datetime.strptime(
+                        filename[0:17], timestampformat
+                    ).strftime("%Y:%m:%d %H:%M:%S")
                 else:
                     creationDate = getMediaCreationDateFrom(file).strftime(
                         "%Y:%m:%d %H:%M:%S"
@@ -100,7 +99,7 @@ class MediaRenamer(MediaTransitioner):
                     et.set_tags(
                         file,
                         {"XMP-dc:Date": creationDate, "XMP-dc:Source": filename},
-                        params=["-P", "-overwrite_original"]# , "-v2"],
+                        params=["-P", "-overwrite_original"],  # , "-v2"],
                     )
                 except Exception as e:
                     print(
@@ -171,14 +170,7 @@ class MediaRenamer(MediaTransitioner):
                 renamed = self.renamer(file)
                 newFileName = os.path.basename(renamed)
 
-            if self.maintainFolderStructure:
-                newName = join(
-                    self.dst,
-                    str(Path(file).relative_to(self.src).parent),
-                    newFileName,
-                )
-            else:
-                newName = join(self.dst, newFileName)
+            newName = join(self.getTargetDirectory(str(file)), newFileName)
 
         return newName
 

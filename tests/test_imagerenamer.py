@@ -27,7 +27,7 @@ def executeRenamingWith(
             writeXMP=writeXMP,
             move=move,
             verbose=True,
-            maintainFolderStrucuture=maintainFolderStructure,
+            maintainFolderStructure=maintainFolderStructure,
             recursive=recursive,
             useCurrentFilename=useCurrentFilename,
         )
