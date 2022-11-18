@@ -10,6 +10,7 @@ from datetime import datetime
 from tqdm import tqdm
 from collections import defaultdict
 from exiftool import ExifToolHelper
+from math import sqrt
 
 from ..general.genericmediafile import GenericMediaFile
 from ..general.mediafile import MediaFile
@@ -160,7 +161,10 @@ class MediaGrouper(MediaTransitioner):
             if not self.dry:
                 for file in val:
                     file.moveTo(join(self.src, key, basename(str(file))))
-            self.printv(f"Created new group {key} with {len(val)} files.")
+            self.printv(
+                f"Created new group {key} with {len(val)} files "
+                + "." * int(sqrt(len(val)))
+            )
 
     def _moveCorrectlyGroupedOf(self, toTransition: DefaultDict[str, List[MediaFile]]):
         self.printv("Move correctly grouped files..")
@@ -184,6 +188,11 @@ class MediaGrouper(MediaTransitioner):
         with ExifToolHelper() as et:
             for group, files in tqdm(toTransition.items()):
                 for file in files:
+                    if self.dry:
+                        self.printv(
+                            f"Set XMP tag dc:Description={group} for {str(file)}"
+                        )
+                        continue
                     try:
                         et.set_tags(
                             str(file),
