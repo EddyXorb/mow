@@ -29,7 +29,10 @@ class Mow:
         logging.basicConfig(
             format="%(asctime)s [%(levelname)s]: %(message)s",
             level=logging.INFO,
-            handlers=[logging.FileHandler("mow.log"), logging.StreamHandler()],
+            handlers=[
+                logging.FileHandler("mow.log", "a", "utf-8"),
+                logging.StreamHandler(),
+            ],
             datefmt=timestampformat,
         )
 
