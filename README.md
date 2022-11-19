@@ -1,4 +1,4 @@
-# Photoworkflow
+# Medienworkflow - MOW
 
 ## Überblick
 
