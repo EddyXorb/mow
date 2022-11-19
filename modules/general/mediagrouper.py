@@ -143,7 +143,6 @@ class MediaGrouper(MediaTransitioner):
     def addMissingTimestamps(self):
         renamed: List[Tuple(str, str)] = []
         for root, folders, files in os.walk(self.src, topdown=False):
-            print(f"Looking into {root}..")
             for folder in folders:
                 if "@" in folder or re.search(r"\d(\d+)-\d\d-\d\d", folder):
                     continue
@@ -156,7 +155,9 @@ class MediaGrouper(MediaTransitioner):
                     root, f"{datetime.strftime(timestamp, timestampformat)} {folder}"
                 )
 
-                self.printv(f"Rename {source} to {target}..")
+                self.printv(
+                    f"Rename {Path(source).relative_to(self.src)} to {Path(target).relative_to(self.src)}.."
+                )
                 if os.path.exists(target):
                     self.printv(
                         f"Group with timestamp is already existent. Skip renaming of {source} to {target}."
@@ -307,9 +308,6 @@ class MediaGrouper(MediaTransitioner):
             for group, files in tqdm(toTransition.items()):
                 for file in files:
                     if self.dry:
-                        self.printv(
-                            f"Set XMP tag dc:Description={group} for {str(file)}"
-                        )
                         continue
                     try:
                         et.set_tags(

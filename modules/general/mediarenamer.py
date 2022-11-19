@@ -153,7 +153,9 @@ class MediaRenamer(MediaTransitioner):
                 else:
                     file.copyTo(newName)
 
-            self.printv(f"Renamed {str(file)} to {os.path.basename(newName)}.")
+            self.printv(
+                f"Renamed {Path(str(file)).relative_to(self.src)} to {os.path.basename(newName)}."
+            )
             self.treatedfiles += file.nrFiles
 
         self.printv("Finished renaming files.")
