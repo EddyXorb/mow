@@ -105,7 +105,7 @@ class MediaRenamer(MediaTransitioner):
                     creationDate = getMediaCreationDateFrom(file).strftime(
                         "%Y:%m:%d %H:%M:%S"
                     )
-                if self.dry:
+                if self.dry or self.replace != "":
                     continue
                 try:
                     et.set_tags(
@@ -147,13 +147,13 @@ class MediaRenamer(MediaTransitioner):
                 continue
 
             newName = self.oldToNewMapping[str(file)]
-
             if not self.dry:
                 if self.move:
                     file.moveTo(newName)
                 else:
                     file.copyTo(newName)
 
+            self.printv(f"Renamed {str(file)} to {os.path.basename(newName)}.")
             self.treatedfiles += file.nrFiles
 
         self.printv("Finished renaming files.")
@@ -179,9 +179,9 @@ class MediaRenamer(MediaTransitioner):
                 newFileName = os.path.basename(file)
             elif self.replace != "":
                 regex, replacing = self.replace.split(",")
-                newFileName = re.sub(regex, replacing, os.path.basename(file))
-                self.printv(f"Replace {os.path.basename(file)} with {newFileName}.")
-                return join(os.path.dirname(file), newFileName)
+                name, ext = os.path.splitext(os.path.basename(file))
+                newFileName = re.sub(regex, replacing, name)
+                return join(os.path.dirname(file), newFileName + ext)
             else:
                 renamed = self.renamer(file)
                 newFileName = os.path.basename(renamed)
@@ -191,7 +191,7 @@ class MediaRenamer(MediaTransitioner):
         return newName
 
     def fileWasAlreadyRenamed(self, file: str):
-        if "_" in file and "@" in file:
+        if "_" in os.path.basename(file) and "@" in os.path.basename(file):
             return True
         return False
 

@@ -92,7 +92,7 @@ if __name__ == "__main__":
     if args.command == "rename":
         mow.rename(
             useCurrentFilename=args.rename_usecurrent,
-            replace=args.rename_replace,
+            replace=args.rename_replace if args.rename_replace is not None else "",
             dry=not args.rename_execute,
         )
     if args.command == "convert":
