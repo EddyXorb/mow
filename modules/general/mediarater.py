@@ -17,20 +17,28 @@ class MediaRater(MediaTransitioner):
         input.writeXMPTags = False
         super().__init__(input)
 
-    def getRatedMediaFileIndices(self) -> List[int]:
-        tags = []
-        self.printv("Check every file for rating..")
-        with ExifToolHelper() as et:
-            for file in tqdm(self.toTreat):
-                tags += et.get_tags(str(file), "xmp:rating")
-
-        return [
-            index for index, _ in enumerate(self.toTreat) if "XMP:Rating" in tags[index]
-        ]
-
     def prepareTransition(self):
         pass
 
     def getTasks(self) -> List[TransitionTask]:
-        ratedIndices = self.getRatedMediaFileIndices()
-        return [TransitionTask(index) for index in ratedIndices]
+        self.printv("Check every file for rating..")
+
+        out: List[TransitionTask] = []
+
+        with ExifToolHelper() as et:
+            for index, file in tqdm(enumerate(self.toTreat)):
+                try:
+                    tags = et.get_tags(str(file), "xmp:rating")[0]
+                    if "XMP:Rating" in tags:
+                        out.append(TransitionTask(index))
+                    else:
+                        out.append(
+                            TransitionTask.getFailed(index, "No XMP-rating found.")
+                        )
+                except Exception as e:
+                    out.append(
+                        TransitionTask.getFailed(
+                            index, f"Problem during reading of rating from XMP: {e}"
+                        )
+                    )
+        return out
