@@ -27,3 +27,5 @@ class MediaRater(MediaTransitioner):
                 for index, _ in enumerate(self.toTreat)
                 if "XMP:Rating" in tags[index]
             ]
+        
+    

@@ -17,7 +17,15 @@ class TransitionTask:
     """
 
     index: int
-    newName = None
+    newName: str = None
+    skip: bool = False
+    skipReason: str = None
+
+
+# @dataclass
+# class SkippedTask:
+#     index: int
+#     reason: str
 
 
 @dataclass(kw_only=True)
@@ -61,9 +69,10 @@ class MediaTransitioner(VerbosePrinterClass):
         self.mediaFileFactory = input.mediaFileFactory
         self.maintainFolderStructure = input.maintainFolderStructure
         self.removeEmptySubfolders = input.removeEmptySubfolders
+        self._toTransition: List[TransitionTask] = []
+        self.performedTransition = False
 
         self.toTreat: List[MediaFile] = []
-        self.toSkip: Set[str] = set()
 
         self.treatedfiles = 0
 
@@ -79,8 +88,8 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self.prepareTransition()
 
-        tasks = self.getTransitionTasks()
-        self.performTransitionOf(tasks)
+        self._toTransition = self.getTransitionTasks()
+        self.performTransitionOf(self._toTransition)
 
         self.optionallyRemoveEmptyFolders()
 
@@ -125,9 +134,10 @@ class MediaTransitioner(VerbosePrinterClass):
 
     def performTransitionOf(self, tasks: List[TransitionTask]):
         self.printv(f"Perform transition of {len(tasks)} mediafiles..")
+
         for task in tasks:
             toTransition = self.toTreat[task.index]
-            if str(toTransition) in self.toSkip:
+            if task.skip:
                 continue
             newName = (
                 task.newName
@@ -135,20 +145,56 @@ class MediaTransitioner(VerbosePrinterClass):
                 else os.path.basename(str(toTransition))
             )
             newPath = join(self.getTargetDirectory(toTransition), newName)
+
+            if os.path.exists(newPath):
+                task.skip = True
+                task.skipReason = "File exists already."
+
             self.printv(
-                f"{Path(str(toTransition)).relative_to(self.src)} -> {Path(newPath).relative_to(self.src)}"
+                f"{Path(str(toTransition)).relative_to(self.src)} -> {Path(newPath).relative_to(self.dst)}"
             )
 
             if not self.dry:
+                if not os.path.exists(os.path.dirname(newPath)):
+                    os.makedirs(os.path.dirname(newPath))
                 if self.move:
                     toTransition.moveTo(newPath)
                 else:
                     toTransition.copyTo(newPath)
 
+        skipped = self.printSkipped(tasks)
+        self.printv(f"Finished transition. Skipped files: {skipped}")
+        self.performedTransition = True
+
+    def printSkipped(self, tasks: List[TransitionTask]):
+        skipped = 0
+        for task in tasks:
+            if not task.skip:
+                continue
+            skipped += 1
+            self.printv(f"Skipped {str(self.toTreat[task.index])}: {task.skipReason}")
+        return skipped
+
     def optionallyRemoveEmptyFolders(self):
         if self.removeEmptySubfolders:
             removed = self.removeEmptySubfoldersOf(self.src)
             self.printv(f"Removed {len(removed)} empty subfolders of {self.src}.")
+
+    def getSkippedTasks(self):
+        if self.performedTransition:
+            return [task for task in self._toTransition if task.skip]
+        else:
+            raise Exception(
+                "Cannot call getSkippedTasks before transition was actually performed!"
+            )
+
+    def getTransitionedTasks(self):
+        if self.performedTransition:
+            return [task for task in self._toTransition if not task.skip]
+        else:
+            raise Exception(
+                "Cannot call getTransitionedTasks before transition was actually performed!"
+            )
 
     def getTransitionTasks(self) -> List[TransitionTask]:
         return []

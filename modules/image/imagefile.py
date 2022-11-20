@@ -38,10 +38,6 @@ class ImageFile(MediaFile):
             return self.pathnoext + self.extensions[1]
         return None
 
-    # def copyTo(self, dst: str) -> ImageFile:
-    #     newBaseName = self._relocate(dst, copyfile)
-    #     return ImageFile(newBaseName + self.extensions[0])
-
     def readDateTime(self):
         try:
             date = None

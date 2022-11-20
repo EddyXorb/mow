@@ -1,12 +1,16 @@
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, List
 from tqdm import tqdm
 from os.path import join, basename, exists
 from pathlib import Path
 import os
 
 from ..general.mediafile import MediaFile
-from ..general.mediatransitioner import MediaTransitioner, TansitionerInput
+from ..general.mediatransitioner import (
+    MediaTransitioner,
+    TansitionerInput,
+    TransitionTask,
+)
 
 
 def passthrough(source: MediaFile, targetDir: str):
@@ -41,11 +45,12 @@ class MediaConverter(MediaTransitioner):
     ):
         self.converter = converter
         self.deleteOriginals = input.deleteOriginals
+        self.transitionTasks: List[TransitionTask] = []
         super().__init__(input)
 
     def prepareTransition(self):
         self.printv("Start conversion of files..")
-        for file in tqdm(self.toTreat):
+        for index, file in tqdm(enumerate(self.toTreat)):
             targetDir = self.getTargetDirectory(file)
             if not exists(targetDir):
                 os.makedirs(targetDir)
@@ -53,5 +58,9 @@ class MediaConverter(MediaTransitioner):
             if not self.dry:
                 success = self.converter(file, targetDir)
             if not success:
-                self.printv(f"Skipped {str(file)} because conversion failed.")
-                self.toSkip.add(file)
+                self.transitionTasks.append(
+                    TransitionTask(
+                        index=index, skip=True, skipReason=f"Conversion failed."
+                    )
+                )
+            # at the moment no else with append non-skip task needed as the converter handles everything. This should be refactored.

@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 import os
 from os.path import join
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple
 from pathlib import Path
 from datetime import datetime
 import re
 
 from .mediatransitioner import MediaTransitioner, TansitionerInput, TransitionTask
+
 from .filenamehelper import (
     getDateTimeFileNameFor,
     getMediaCreationDateFrom,
@@ -67,23 +68,38 @@ class MediaRenamer(MediaTransitioner):
         self.replace: str = input.replace
         self.transitionTasks: List[TransitionTask] = []
 
-        if "," in self.replace and len(self.replace.split(",")) == 2:
-            self.printv(f"Found replace pattern {self.replace}!")
-        elif self.replace != "":
-            self.printv(f"Given replace pattern {self.replace} is invalid.")
-            self.replace = ""
+        self.replace = self.initReplace(input.replace)
 
-        self.oldToNewMapping: Dict[
-            str, str
-        ] = {}  # always a string representation of mediafiles
+    def initReplace(self, input: str) -> str:
+        if "," in input and len(input.split(",")) == 2:
+            self.printv(f"Found replace pattern {self.replace}!")
+            return input
+        elif input != "":
+            self.printv(f"Given replace pattern {self.replace} is invalid.")
+        return None
 
     def prepareTransition(self):
+        if self.replace is not None:
+            self.performReplacement()
+            return
+
         self.createNewNames()
         self.addOptionalXMPData()
 
-        self.executeRenaming()
+    def performReplacement(self):
+        regex, replacing = self.replace.split(",")
+        for file in self.toTreat:
+            name, ext = os.path.splitext(os.path.basename(str(file)))
+            newFileName = re.sub(regex, replacing, name)
+            newFullPath = join(os.path.dirname(str(file)), newFileName + ext)
+            if not self.dry:
+                file.moveTo(newFullPath)
+            self.printv(
+                f"Replaced {Path(str(file)).relative_to(self.src)} with {newFileName}"
+            )
 
-        self.printStatistic()
+    def getTransitionTasks(self) -> List[TransitionTask]:
+        return self.transitionTasks
 
     def addOptionalXMPData(self):
         if not self.writeXMP:
@@ -93,32 +109,32 @@ class MediaRenamer(MediaTransitioner):
         from exiftool import ExifToolHelper
 
         with ExifToolHelper() as et:
-            oldfiles = list(self.oldToNewMapping.keys())
-            for file in tqdm(oldfiles):
-                filename = os.path.basename(file)
+            for task in tqdm(self.transitionTasks):
+                if task.skip:
+                    continue
+                mediafile = self.toTreat[task.index]
+                filename = os.path.basename(str(mediafile))
                 if self.useCurrentFilename:
                     creationDate = datetime.strptime(
                         filename[0:17], timestampformat
                     ).strftime("%Y:%m:%d %H:%M:%S")
                 else:
-                    creationDate = getMediaCreationDateFrom(file).strftime(
+                    creationDate = getMediaCreationDateFrom(str(mediafile)).strftime(
                         "%Y:%m:%d %H:%M:%S"
                     )
-                if self.dry or self.replace != "":
+                if self.dry or self.replace is not None:
                     continue
                 try:
                     et.set_tags(
-                        file,
+                        str(mediafile),
                         {"XMP-dc:Date": creationDate, "XMP-dc:Source": filename},
                         params=["-P", "-overwrite_original"],  # , "-v2"],
                     )
                 except Exception as e:
-                    print(
-                        e,
-                        f"Problem setting XMP data to file {file} with exiftool. Skip this one.",
+                    task.skip = True
+                    task.skipReason = (
+                        f"Problem setting XMP data to file {str(mediafile)} with exiftool. Skip this one. Exception:{e}",
                     )
-                    self.toSkip.add(file)
-                    self.oldToNewMapping.pop(file)
 
         self.printv("Added XMP metadata to files to rename.")
 
@@ -126,85 +142,53 @@ class MediaRenamer(MediaTransitioner):
         self.printv("Create new names for files..")
         for index, file in tqdm(enumerate(self.toTreat)):
             oldName = str(file)
-            newName = self.getRenamedFileFrom(oldName)
+            newName, errorreason = self.getRenamedFileFrom(oldName)
+
             if newName is None:
-                self.toSkip.add(oldName)
+                self.transitionTasks.append(
+                    TransitionTask(
+                        index=index,
+                        skip=True,
+                        skipReason=f"Could not create new name: {errorreason}",
+                    )
+                )
                 continue
+
             if os.path.exists(newName):
-                self.printv(f"New filename {newName} exists already. Skip this one.")
-                self.toSkip.add(oldName)
-                continue
-            
-                                        
-            self.transitionTasks.append(TransitionTask(index,os.path.basename(newName)))
-
-            self.oldToNewMapping[oldName] = newName
-
-        self.printv("Created new names for files..")
-
-    def executeRenaming(self):
-        self.printv("Execute renaming..")
-        for file in tqdm(self.toTreat):
-            if str(file) in self.toSkip:
+                self.transitionTasks.append(
+                    TransitionTask(
+                        index=index,
+                        skip=True,
+                        skipReason=f"New filename {newName} exists already.",
+                    )
+                )
                 continue
 
-            newName = self.oldToNewMapping[str(file)]
-            self.printv(
-                f"Renamed {Path(str(file)).relative_to(self.src)} to {os.path.basename(newName)}."
+            self.transitionTasks.append(
+                TransitionTask(index=index, newName=os.path.basename(newName))
             )
-            if not self.dry:
-                if self.move:
-                    file.moveTo(newName)
-                else:
-                    file.copyTo(newName)
 
-            self.treatedfiles += file.nrFiles
+        self.printv("Created new names for files.")
 
-        self.printv("Finished renaming files.")
-
-    def getRenamedFileFrom(self, file: str) -> str:
-        newName = ""
-
+    def getRenamedFileFrom(self, file: str) -> Tuple[str, str]:  # new name, errorreason
         if self.restoreOldNames:
             splitted = os.path.basename(file).split("_")
             if len(splitted) != 2:
-                return None
-            newName = join(self.dst, splitted[1])
-        else:
-            if not self.useCurrentFilename and self.fileWasAlreadyRenamed(file):
-                self.printv(
-                    f"Skip file {file} because it appears to be already renamed."
+                return (
+                    None,
+                    "File contains not exactly one '_', which is needed for restoring old names (could be improved however).",
                 )
-                self.toSkip.add(file)
-                return None
+            return splitted[1], None
 
-            newFileName = ""
-            if self.useCurrentFilename:
-                newFileName = os.path.basename(file)
-            elif self.replace != "":
-                regex, replacing = self.replace.split(",")
-                name, ext = os.path.splitext(os.path.basename(file))
-                newFileName = re.sub(regex, replacing, name)
-                return join(os.path.dirname(file), newFileName + ext)
-            else:
-                renamed = self.renamer(file)
-                newFileName = os.path.basename(renamed)
+        if not self.useCurrentFilename and self.fileWasAlreadyRenamed(file):
+            return None, f"File appears to be already renamed."
 
-            newName = join(self.getTargetDirectory(str(file)), newFileName)
+        if self.useCurrentFilename:
+            return os.path.basename(file), None
 
-        return newName
+        return os.path.basename(self.renamer(file)), None
 
     def fileWasAlreadyRenamed(self, file: str):
         if "_" in os.path.basename(file) and "@" in os.path.basename(file):
             return True
         return False
-
-    def printStatistic(self):
-        self.printv(f"Finished! Renamed {self.treatedfiles} files.")
-
-        if len(self.toSkip) > 0:
-            self.printv(
-                "Skipped the following files (could be due to file being already renamed (containing timestamp and _) in filename or because target existed already): "
-            )
-            for file in self.toSkip:
-                self.printv(file)

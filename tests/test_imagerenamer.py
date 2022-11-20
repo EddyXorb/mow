@@ -10,7 +10,8 @@ src = os.path.abspath(join(testfolder, tempsrcfolder))
 dst = os.path.abspath("./tests/test_renamed")
 targetDir = join(dst, "subsubfolder")
 srcfile = join(src, "subsubfolder", "test3.JPG")
-expectedtargetfile = join(targetDir, "2022-07-27@215555_test3.JPG")
+expectedfilename = "2022-07-27@215555_test3.JPG"
+expectedtargetfile = join(targetDir, expectedfilename)
 
 
 def executeRenamingWith(
@@ -52,11 +53,10 @@ def test_subfolderaremaintained():
     prepareTest()
 
     renamer = executeRenamingWith()
-
     assert len(renamer.toTreat) == 1
-    for old, new in renamer.oldToNewMapping.items():
-        assert os.path.dirname(srcfile) in old
-        assert join(testfolder, "test_renamed", "subsubfolder") in new
+
+    assert not exists(srcfile)
+    assert exists(expectedtargetfile)
 
 
 def test_copyworks():
@@ -103,8 +103,9 @@ def test_timeStampIsCorrect():
 
     renamer = executeRenamingWith()
 
-    for _, new in renamer.oldToNewMapping.items():
-        timestamp = os.path.basename(new).split("_")[
+    tasks = renamer.getTransitionedTasks()
+    for task in tasks:
+        timestamp = task.newName.split("_")[
             0
         ]  # we assume YYYY-MM-DD@HHMMSS_OLDNAME e.g. "2022-07-27@215555_test3"
         assert len(timestamp) == 17
@@ -132,11 +133,11 @@ def test_alreadyexistentfileisnotoverwritten():
 
     renamer = executeRenamingWith(move=False)
 
-    assert len(renamer.toSkip) == 0
+    assert len(renamer.getSkippedTasks()) == 0
 
     renamer = executeRenamingWith(move=False)
 
-    assert len(renamer.toSkip) == 1
+    assert len(renamer.getSkippedTasks()) == 1
 
 
 def test_recursiveDisablingWorks():
@@ -185,12 +186,14 @@ def test_replaceWorks():
 
     executeRenamingWith(move=True, replace="test,qwert")
 
+    assert not exists(srcfile)
     assert exists(join(src, "subsubfolder", "qwert3.JPG"))
 
 
 def test_replaceWithRegexWorks():
     prepareTest()
 
-    executeRenamingWith(move=True, replace=r"\d,99")
+    renamer = executeRenamingWith(move=True, replace=r"\d,99")
+    print(renamer.getTransitionedTasks())
 
     assert exists(join(src, "subsubfolder", "test99.JPG"))

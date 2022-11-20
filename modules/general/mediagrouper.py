@@ -15,7 +15,7 @@ import re
 
 from ..general.mediafile import MediaFile
 from .medafilefactories import createAnyValidMediaFile
-from .mediatransitioner import MediaTransitioner, TansitionerInput
+from .mediatransitioner import MediaTransitioner, TansitionerInput, TransitionTask
 from ..general.filenamehelper import timestampformat
 
 
@@ -78,11 +78,14 @@ class MediaGrouper(MediaTransitioner):
             return
 
         self.printv("Start transitioning from group stage..")
-        toTransition = self.getCorrectlyGroupedFiles()
+        grouped = self.getCorrectlyGroupedFiles()
 
-        self.printStatisticsOf(toTransition)
-        self.setOptionalXMP(toTransition)
-        self.moveCorrectlyGroupedOf(toTransition)
+        self.printStatisticsOf(grouped)
+        self.setOptionalXMP(grouped)
+        # self.moveCorrectlyGroupedOf(toTransition)
+
+    def getTransitionTasks(self) -> List[TransitionTask]:
+        return self._toTransition
 
     def undoGrouping(self):
         candidatesForUndo = [
@@ -132,7 +135,7 @@ class MediaGrouper(MediaTransitioner):
 
     def addMissingTimestamps(self):
         renamed: List[Tuple(str, str)] = []
-        for root, folders, files in os.walk(self.src, topdown=False):
+        for root, folders, _ in os.walk(self.src, topdown=False):
             for folder in folders:
                 if "@" in folder or re.search(r"\d(\d+)-\d\d-\d\d", folder):
                     continue
@@ -162,35 +165,57 @@ class MediaGrouper(MediaTransitioner):
             f"Renamed {len(renamed)} folders without timestamps to folders that have one."
         )
 
-    def printStatisticsOf(self, toTransition):
+    def printStatisticsOf(self, grouped: DefaultDict[str, List[int]]):
         self.printv(
-            f"Found {len(toTransition.keys())} groups that were correct (YYYY-MM-DD@HHMMSS#, #=Groupname)."
+            f"Found {len(grouped.keys())} groups that were correct (YYYY-MM-DD@HHMMSS#, #=Groupname)."
         )
-        for group, files in toTransition.items():
+        for group, files in grouped.items():
             self.printv(f"Group {group} contains {len(files)} files.")
 
     def getUngroupedFiles(self) -> list[MediaFile]:
         return list(x for x in self.toTreat if dirname(str(x)) == self.src)
 
-    def getCorrectlyGroupedFiles(self) -> DefaultDict[str, List[MediaFile]]:
-        out: DefaultDict[str, List[MediaFile]] = defaultdict(lambda: [])
+    def getCorrectlyGroupedFiles(self) -> DefaultDict[str, List[int]]:
+        out: DefaultDict[str, List[int]] = defaultdict(lambda: [])
         wrongSubfolders = set()
 
-        for file in self.toTreat:
+        for index, file in enumerate(self.toTreat):
             filepath = str(file)
             parentDir = dirname(filepath)
 
             if parentDir == self.src:
+                self._toTransition.append(
+                    TransitionTask(
+                        index=index,
+                        skip=True,
+                        skipReason="File is not in a group folder.",
+                    )
+                )
                 continue
             if parentDir in wrongSubfolders:
+                self._toTransition.append(
+                    TransitionTask(
+                        index=index,
+                        skip=True,
+                        skipReason="File is not in a correctly named group folder.",
+                    )
+                )
                 continue
 
             isCorrect = self.isCorrectGroupSubfolder(parentDir)
             if isCorrect:
                 groupname = self.getGroupnameFrom(parentDir)
-                out[groupname].append(file)
+                out[groupname].append(index)
+                self._toTransition.append(TransitionTask(index=index, newName=None))
             else:
                 wrongSubfolders.add(parentDir)
+                self._toTransition.append(
+                    TransitionTask(
+                        index=index,
+                        skip=True,
+                        skipReason="File is not in a correctly named group folder.",
+                    )
+                )
 
         return out
 
@@ -275,30 +300,31 @@ class MediaGrouper(MediaTransitioner):
                 + "." * int(sqrt(len(val)))
             )
 
-    def moveCorrectlyGroupedOf(self, toTransition: DefaultDict[str, List[MediaFile]]):
-        self.printv("Move correctly grouped files..")
-        for group, files in tqdm(toTransition.items()):
-            self.printv(f"Move group {group}..")
-            for file in files:
-                if str(file) in self.toSkip:
-                    continue
+    # def moveCorrectlyGroupedOf(self, toTransition: DefaultDict[str, List[MediaFile]]):
+    #     self.printv("Move correctly grouped files..")
+    #     for group, files in tqdm(toTransition.items()):
+    #         self.printv(f"Move group {group}..")
+    #         for file in files:
+    #             if str(file) in self.toSkip:
+    #                 continue
 
-                targetDir = self.getTargetDirectory(str(file))
+    #             targetDir = self.getTargetDirectory(str(file))
 
-                if not self.dry:
-                    if not exists(targetDir):
-                        os.makedirs(targetDir)
-                    file.moveTo(join(targetDir, basename(str(file))))
+    #             if not self.dry:
+    #                 if not exists(targetDir):
+    #                     os.makedirs(targetDir)
+    #                 file.moveTo(join(targetDir, basename(str(file))))
 
-    def setOptionalXMP(self, toTransition: DefaultDict[str, List[MediaFile]]):
+    def setOptionalXMP(self, grouped: DefaultDict[str, List[int]]):
         if not self.writeXMP:
             return
 
         with ExifToolHelper() as et:
-            for group, files in tqdm(toTransition.items()):
-                for file in files:
+            for group, fileindices in tqdm(grouped.items()):
+                for index in fileindices:
                     if self.dry:
                         continue
+                    file = self.toTreat[index]
                     try:
                         et.set_tags(
                             str(file),
@@ -306,10 +332,14 @@ class MediaGrouper(MediaTransitioner):
                             params=["-P", "-overwrite_original"],  # , "-v2"],
                         )
                     except:
-                        self.printv(
-                            f"Could not set XMP for file {str(file)}. Skip this one."
-                        )
-                        self.toSkip.add(str(file))
+                        for task in self._toTransition:
+                            if task.index != index:
+                                continue
+                            task.skip = True
+                            task.skipReason = (
+                                f"Could not set XMP-dc:Description: {group}."
+                            )
+                            break
 
     def extractDatetimeFrom(self, file: str, verbose=True) -> datetime:
         try:
