@@ -103,7 +103,7 @@ def test_timeStampIsCorrect():
 
     renamer = executeRenamingWith()
 
-    tasks = renamer.getTransitionedTasks()
+    tasks = renamer.getFinishedTasks()
     for task in tasks:
         timestamp = task.newName.split("_")[
             0
@@ -194,6 +194,6 @@ def test_replaceWithRegexWorks():
     prepareTest()
 
     renamer = executeRenamingWith(move=True, replace=r"\d,99")
-    print(renamer.getTransitionedTasks())
+    print(renamer.getFinishedTasks())
 
     assert exists(join(src, "subsubfolder", "test99.JPG"))

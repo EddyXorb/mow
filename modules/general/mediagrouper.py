@@ -84,7 +84,7 @@ class MediaGrouper(MediaTransitioner):
         self.setOptionalXMP(grouped)
         # self.moveCorrectlyGroupedOf(toTransition)
 
-    def getTransitionTasks(self) -> List[TransitionTask]:
+    def getTasks(self) -> List[TransitionTask]:
         return self._toTransition
 
     def undoGrouping(self):

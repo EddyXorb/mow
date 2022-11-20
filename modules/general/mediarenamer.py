@@ -98,7 +98,7 @@ class MediaRenamer(MediaTransitioner):
                 f"Replaced {Path(str(file)).relative_to(self.src)} with {newFileName}"
             )
 
-    def getTransitionTasks(self) -> List[TransitionTask]:
+    def getTasks(self) -> List[TransitionTask]:
         return self.transitionTasks
 
     def addOptionalXMPData(self):

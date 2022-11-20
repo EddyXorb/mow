@@ -69,12 +69,10 @@ class MediaTransitioner(VerbosePrinterClass):
         self.mediaFileFactory = input.mediaFileFactory
         self.maintainFolderStructure = input.maintainFolderStructure
         self.removeEmptySubfolders = input.removeEmptySubfolders
-        self._toTransition: List[TransitionTask] = []
-        self.performedTransition = False
 
         self.toTreat: List[MediaFile] = []
-
-        self.treatedfiles = 0
+        self._performedTransition = False
+        self._toTransition: List[TransitionTask] = []
 
     def __call__(self):
         self.printv(f"Start transition from source {self.src} into {self.dst}")
@@ -88,7 +86,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self.prepareTransition()
 
-        self._toTransition = self.getTransitionTasks()
+        self._toTransition = self.getTasks()
         self.performTransitionOf(self._toTransition)
 
         self.optionallyRemoveEmptyFolders()
@@ -137,13 +135,16 @@ class MediaTransitioner(VerbosePrinterClass):
 
         for task in tasks:
             toTransition = self.toTreat[task.index]
+
             if task.skip:
                 continue
+
             newName = (
                 task.newName
                 if task.newName is not None
                 else os.path.basename(str(toTransition))
             )
+
             newPath = join(self.getTargetDirectory(toTransition), newName)
 
             if os.path.exists(newPath):
@@ -164,7 +165,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
         skipped = self.printSkipped(tasks)
         self.printv(f"Finished transition. Skipped files: {skipped}")
-        self.performedTransition = True
+        self._performedTransition = True
 
     def printSkipped(self, tasks: List[TransitionTask]):
         skipped = 0
@@ -181,23 +182,23 @@ class MediaTransitioner(VerbosePrinterClass):
             self.printv(f"Removed {len(removed)} empty subfolders of {self.src}.")
 
     def getSkippedTasks(self):
-        if self.performedTransition:
+        if self._performedTransition:
             return [task for task in self._toTransition if task.skip]
         else:
             raise Exception(
                 "Cannot call getSkippedTasks before transition was actually performed!"
             )
 
-    def getTransitionedTasks(self):
-        if self.performedTransition:
+    def getFinishedTasks(self):
+        if self._performedTransition:
             return [task for task in self._toTransition if not task.skip]
         else:
             raise Exception(
                 "Cannot call getTransitionedTasks before transition was actually performed!"
             )
 
-    def getTransitionTasks(self) -> List[TransitionTask]:
-        return []
+    def getTasks(self) -> List[TransitionTask]:
+        raise NotImplementedError()
 
     def prepareTransition(self):
         raise NotImplementedError()
