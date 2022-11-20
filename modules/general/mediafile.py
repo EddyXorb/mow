@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, List
 import os
 from shutil import copyfile, move
 from os.path import *
 import datetime as dt
+
 
 class MediaFile:
     """
@@ -59,3 +60,6 @@ class MediaFile:
 
     def readDateTime(self) -> dt.datetime:
         raise NotImplementedError()
+
+    def getAllFileNames(self) -> List[str]:
+        return [self.pathnoext + ext for ext in self.extensions]

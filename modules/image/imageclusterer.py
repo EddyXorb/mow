@@ -2,7 +2,6 @@
 
 import os
 import datetime as dt
-import numpy as np
 from typing import List
 from collections import defaultdict
 

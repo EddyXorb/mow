@@ -7,9 +7,7 @@ from typing import List, Callable
 from ..general.mediafile import MediaFile
 import datetime as dt
 
-from PIL import Image, ExifTags
-from exiftool import ExifToolHelper
-import pathlib
+from PIL import Image
 
 
 class ImageFile(MediaFile):

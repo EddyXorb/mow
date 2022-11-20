@@ -1,9 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from os.path import join
 from pathlib import Path
 from typing import Dict, List, Set, Callable
-
+from exiftool import ExifToolHelper
 
 from ..general.mediafile import MediaFile
 from ..general.verboseprinterclass import VerbosePrinterClass
@@ -14,12 +14,19 @@ class TransitionTask:
     """
     index: index of Mediafile in self.toTreat
     newName: name of mediafile in new location (only basename). If None, take old name
+    skip: don' execute transition if True
+    skipReason: reason for skipping transition
+    XMPTags: dict with xmp-key : value entries to set to file
     """
 
     index: int
     newName: str = None
     skip: bool = False
     skipReason: str = None
+    XMPTags: Dict[str, str] = field(default_factory=dict)
+
+    def getFailed(index, reason) -> "TransitionTask":
+        return TransitionTask(index=index, skip=True, skipReason=reason)
 
 
 # @dataclass
@@ -33,12 +40,14 @@ class TansitionerInput:
     """
     src : directory which will be search for files
     dst : directory where renamed files should be placed
+    move : move files otherwise copy them
     recursive : if true, dives into every subdir to look for files
-    move : if true, moves files, else copies them
-    mediatype: Mediafiletype to be used
+    mediaFileFactory: factory to create Mediafiles
     verbose: additional output
     dry: don't execute actual transition
-    move : move files otherwise copy them
+    maintainFolderStructure: copy nested folders iff true
+    removeEmptySubfolders: clean empty subfolders of source after transition
+    writeXMPTags: writes XMP tags to Files
     """
 
     src: str
@@ -52,6 +61,7 @@ class TansitionerInput:
     dry = False
     maintainFolderStructure = True
     removeEmptySubfolders = False
+    writeXMPTags = True
 
 
 class MediaTransitioner(VerbosePrinterClass):
@@ -69,6 +79,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.mediaFileFactory = input.mediaFileFactory
         self.maintainFolderStructure = input.maintainFolderStructure
         self.removeEmptySubfolders = input.removeEmptySubfolders
+        self.writeXMPTags = input.writeXMPTags
 
         self.toTreat: List[MediaFile] = []
         self._performedTransition = False
@@ -88,6 +99,8 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self._toTransition = self.getTasks()
         self.performTransitionOf(self._toTransition)
+        self.printSkipped(self._toTransition)
+        self._performedTransition = True
 
         self.optionallyRemoveEmptyFolders()
 
@@ -133,23 +146,71 @@ class MediaTransitioner(VerbosePrinterClass):
     def performTransitionOf(self, tasks: List[TransitionTask]):
         self.printv(f"Perform transition of {len(tasks)} mediafiles..")
 
+        tasks = self.getNonSkippedOf(tasks)
+        tasks = self.getNonOverwritingTasksOf(tasks)
+        tasks = self.getSuccesfulChangedXMPTasksOf(tasks)
+
+        self.doRelocationOf(tasks)
+
+    def getNonSkippedOf(self, tasks: List[TransitionTask]):
+        return [task for task in tasks if not task.skip]
+
+    def getNonOverwritingTasksOf(self, tasks: List[TransitionTask]):
+        for task in tasks:
+            newName = self.getNewNameFor(task)
+            if os.path.exists(newName):
+                task.skip = True
+                task.skipReason = f"File exists already in {newName}!"
+
+        return self.getNonSkippedOf(tasks)
+
+    def getNewNameFor(self, task: TransitionTask):
+        mediafile = self.toTreat[task.index]
+        newName = (
+            task.newName
+            if task.newName is not None
+            else os.path.basename(str(mediafile))
+        )
+
+        newPath = join(self.getTargetDirectory(mediafile), newName)
+        return newPath
+
+    def printSkipped(self, tasks: List[TransitionTask]):
+        skipped = 0
+
+        for task in tasks:
+            if not task.skip:
+                continue
+            skipped += 1
+            self.printv(f"Skipped {str(self.toTreat[task.index])}: {task.skipReason}")
+
+        self.printv(f"Finished transition. Skipped files: {skipped}")
+        return skipped
+
+    def getSuccesfulChangedXMPTasksOf(self, tasks: List[TransitionTask]):
+        if not self.writeXMPTags or self.dry:
+            return tasks
+
+        with ExifToolHelper() as et:
+            for task in tasks:
+                try:
+                    files = self.toTreat[task.index].getAllFileNames()
+
+                    et.set_tags(
+                        files,
+                        task.XMPTags,
+                        params=["-P", "-overwrite_original"],  # , "-v2"],
+                    )
+                except Exception as e:
+                    task.skip = True
+                    task.skipReason = f"Problem setting XMP data {task.XMPTags} with exiftool. Exception:{e}"
+
+        return self.getNonSkippedOf(tasks)
+
+    def doRelocationOf(self, tasks: List[TransitionTask]):
         for task in tasks:
             toTransition = self.toTreat[task.index]
-
-            if task.skip:
-                continue
-
-            newName = (
-                task.newName
-                if task.newName is not None
-                else os.path.basename(str(toTransition))
-            )
-
-            newPath = join(self.getTargetDirectory(toTransition), newName)
-
-            if os.path.exists(newPath):
-                task.skip = True
-                task.skipReason = "File exists already."
+            newPath = self.getNewNameFor(task)
 
             self.printv(
                 f"{Path(str(toTransition)).relative_to(self.src)} -> {Path(newPath).relative_to(self.dst)}"
@@ -158,23 +219,11 @@ class MediaTransitioner(VerbosePrinterClass):
             if not self.dry:
                 if not os.path.exists(os.path.dirname(newPath)):
                     os.makedirs(os.path.dirname(newPath))
+
                 if self.move:
                     toTransition.moveTo(newPath)
                 else:
                     toTransition.copyTo(newPath)
-
-        skipped = self.printSkipped(tasks)
-        self.printv(f"Finished transition. Skipped files: {skipped}")
-        self._performedTransition = True
-
-    def printSkipped(self, tasks: List[TransitionTask]):
-        skipped = 0
-        for task in tasks:
-            if not task.skip:
-                continue
-            skipped += 1
-            self.printv(f"Skipped {str(self.toTreat[task.index])}: {task.skipReason}")
-        return skipped
 
     def optionallyRemoveEmptyFolders(self):
         if self.removeEmptySubfolders:
@@ -191,7 +240,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
     def getFinishedTasks(self):
         if self._performedTransition:
-            return [task for task in self._toTransition if not task.skip]
+            return self.getNonSkippedOf(self._toTransition)
         else:
             raise Exception(
                 "Cannot call getTransitionedTasks before transition was actually performed!"

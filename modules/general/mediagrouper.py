@@ -1,17 +1,15 @@
 from dataclasses import dataclass
-from typing import DefaultDict, Dict, List, Tuple
+from typing import DefaultDict, List, Tuple
 
 
 import os
-from os.path import basename, dirname, exists, join
+from os.path import basename, dirname, join
 from pathlib import Path
 from datetime import datetime
 from tqdm import tqdm
 from collections import defaultdict
-from exiftool import ExifToolHelper
 from math import sqrt
 import re
-
 
 from ..general.mediafile import MediaFile
 from .medafilefactories import createAnyValidMediaFile
@@ -33,7 +31,6 @@ class GrouperInput(TansitionerInput):
     automaticGrouping = False
     addMissingTimestampsToSubfolders = False
     separationDistanceInHours = 12
-    writeXMP = True
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -61,7 +58,7 @@ class MediaGrouper(MediaTransitioner):
         self.groupUngroupedFiles = input.automaticGrouping
         self.addMissingTimestampsToSubfolders = input.addMissingTimestampsToSubfolders
         self.separationDistanceInHours = input.separationDistanceInHours
-        self.writeXMP = input.writeXMP
+        self.toTransition: List[TransitionTask] = []
 
     def prepareTransition(self):
         if self.undoAutomatedGrouping:
@@ -82,10 +79,9 @@ class MediaGrouper(MediaTransitioner):
 
         self.printStatisticsOf(grouped)
         self.setOptionalXMP(grouped)
-        # self.moveCorrectlyGroupedOf(toTransition)
 
     def getTasks(self) -> List[TransitionTask]:
-        return self._toTransition
+        return self.toTransition
 
     def undoGrouping(self):
         candidatesForUndo = [
@@ -184,38 +180,24 @@ class MediaGrouper(MediaTransitioner):
             parentDir = dirname(filepath)
 
             if parentDir == self.src:
-                self._toTransition.append(
-                    TransitionTask(
-                        index=index,
-                        skip=True,
-                        skipReason="File is not in a group folder.",
-                    )
-                )
+                reason = "File is not in a group folder."
+                self.toTransition.append(TransitionTask.getFailed(index, reason))
                 continue
+
             if parentDir in wrongSubfolders:
-                self._toTransition.append(
-                    TransitionTask(
-                        index=index,
-                        skip=True,
-                        skipReason="File is not in a correctly named group folder.",
-                    )
-                )
+                reason = "File is not in a correctly named group folder."
+                self.toTransition.append(TransitionTask.getFailed(index, reason))
                 continue
 
             isCorrect = self.isCorrectGroupSubfolder(parentDir)
             if isCorrect:
                 groupname = self.getGroupnameFrom(parentDir)
                 out[groupname].append(index)
-                self._toTransition.append(TransitionTask(index=index, newName=None))
+                self.toTransition.append(TransitionTask(index=index, newName=None))
             else:
                 wrongSubfolders.add(parentDir)
-                self._toTransition.append(
-                    TransitionTask(
-                        index=index,
-                        skip=True,
-                        skipReason="File is not in a correctly named group folder.",
-                    )
-                )
+                reason = "File is not in a correctly named group folder."
+                self.toTransition.append(TransitionTask.getFailed(index, reason))
 
         return out
 
@@ -265,7 +247,7 @@ class MediaGrouper(MediaTransitioner):
 
         return self.isCorrectTimestamp(candidate=candidate[0:17])
 
-    def _getGroupBasedOnFirstFile(self, file: str):
+    def getGroupBasedOnFirstFile(self, file: str):
         return "TODO_" + datetime.strftime(
             self.extractDatetimeFrom(file), timestampformat
         )
@@ -278,14 +260,14 @@ class MediaGrouper(MediaTransitioner):
         groupToFiles: DefaultDict[str, List[MediaFile]] = defaultdict(lambda: [])
 
         self.printv("Start creating new group names..")
-        currentGroup = self._getGroupBasedOnFirstFile(str(ungrouped[0]))
+        currentGroup = self.getGroupBasedOnFirstFile(str(ungrouped[0]))
         lastTime = self.extractDatetimeFrom(str(ungrouped[0]))
         for file in tqdm(ungrouped):
             if (
                 (self.extractDatetimeFrom(str(file)) - lastTime).total_seconds()
                 / 3600.0
             ) >= self.separationDistanceInHours:
-                currentGroup = self._getGroupBasedOnFirstFile(str(file))
+                currentGroup = self.getGroupBasedOnFirstFile(str(file))
             groupToFiles[currentGroup].append(file)
             lastTime = self.extractDatetimeFrom(str(file))
 
@@ -316,30 +298,16 @@ class MediaGrouper(MediaTransitioner):
     #                 file.moveTo(join(targetDir, basename(str(file))))
 
     def setOptionalXMP(self, grouped: DefaultDict[str, List[int]]):
-        if not self.writeXMP:
+        if not self.writeXMPTags:
             return
 
-        with ExifToolHelper() as et:
-            for group, fileindices in tqdm(grouped.items()):
-                for index in fileindices:
-                    if self.dry:
-                        continue
-                    file = self.toTreat[index]
-                    try:
-                        et.set_tags(
-                            str(file),
-                            {"XMP-dc:Description": group},
-                            params=["-P", "-overwrite_original"],  # , "-v2"],
-                        )
-                    except:
-                        for task in self._toTransition:
-                            if task.index != index:
-                                continue
-                            task.skip = True
-                            task.skipReason = (
-                                f"Could not set XMP-dc:Description: {group}."
-                            )
-                            break
+        inverted = {}
+        for group, indices in grouped.items():
+            inverted.update({index: group for index in indices})
+
+        for task in [task for task in self.toTransition if not task.skip]:
+            groupname = inverted[task.index]
+            task.XMPTags = {"XMP-dc:Description": groupname}
 
     def extractDatetimeFrom(self, file: str, verbose=True) -> datetime:
         try:

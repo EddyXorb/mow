@@ -47,7 +47,7 @@ def prepareVideoConversionTest():
 
 def prepareGroupingTest():
     prepareTest(
-        targetdir=join(workingdir, "5_rate", "2022-12-12@121212 TEST"),
+        targetdir=join(workingdir, "5.1_rate", "2022-12-12@121212 TEST"),
         untouchedfile=join(testfolder, "test3.JPG"),
         starttransitionfile=join(
             workingdir,

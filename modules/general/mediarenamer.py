@@ -8,11 +8,7 @@ import re
 
 from .mediatransitioner import MediaTransitioner, TansitionerInput, TransitionTask
 
-from .filenamehelper import (
-    getDateTimeFileNameFor,
-    getMediaCreationDateFrom,
-    timestampformat,
-)
+from .filenamehelper import getMediaCreationDateFrom, timestampformat
 from tqdm import tqdm
 
 
@@ -26,11 +22,10 @@ class RenamerInput(TansitionerInput):
     restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
     maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
     dry: don't actually rename files
-    writeXMP: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
+    writeXMPTags: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
     replace: a string such as '"^[0-9].*$",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
     """
 
-    writeXMP = False
     restoreOldNames = False
     filerenamer: Callable[[str], str] = None
     useCurrentFilename = False
@@ -50,7 +45,7 @@ class MediaRenamer(MediaTransitioner):
     restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
     maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
     dry: don't actually rename files
-    writeXMP: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
+    writeXMPTags: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
     useCurrentFilename: file will only be moved/copied, not renamed again, and use filename as source of truth for XMP
     """
 
@@ -62,7 +57,6 @@ class MediaRenamer(MediaTransitioner):
             raise Exception("Filerenamer was not given to MediaRenamer!")
 
         self.renamer = input.filerenamer
-        self.writeXMP = input.writeXMP
         self.restoreOldNames = input.restoreOldNames
         self.useCurrentFilename = input.useCurrentFilename
         self.replace: str = input.replace
@@ -84,7 +78,7 @@ class MediaRenamer(MediaTransitioner):
             return
 
         self.createNewNames()
-        self.addOptionalXMPData()
+        self.setXMPTags()
 
     def performReplacement(self):
         regex, replacing = self.replace.split(",")
@@ -101,45 +95,31 @@ class MediaRenamer(MediaTransitioner):
     def getTasks(self) -> List[TransitionTask]:
         return self.transitionTasks
 
-    def addOptionalXMPData(self):
-        if not self.writeXMP:
+    def setXMPTags(self):
+        if not self.writeXMPTags:
             return
 
-        self.printv("Add XMP-metadata to files..")
-        from exiftool import ExifToolHelper
+        for task in tqdm(self.transitionTasks):
+            if task.skip:
+                continue
 
-        with ExifToolHelper() as et:
-            for task in tqdm(self.transitionTasks):
-                if task.skip:
-                    continue
-                mediafile = self.toTreat[task.index]
-                filename = os.path.basename(str(mediafile))
-                if self.useCurrentFilename:
-                    creationDate = datetime.strptime(
-                        filename[0:17], timestampformat
-                    ).strftime("%Y:%m:%d %H:%M:%S")
-                else:
-                    creationDate = getMediaCreationDateFrom(str(mediafile)).strftime(
-                        "%Y:%m:%d %H:%M:%S"
-                    )
-                if self.dry or self.replace is not None:
-                    continue
-                try:
-                    et.set_tags(
-                        str(mediafile),
-                        {"XMP-dc:Date": creationDate, "XMP-dc:Source": filename},
-                        params=["-P", "-overwrite_original"],  # , "-v2"],
-                    )
-                except Exception as e:
-                    task.skip = True
-                    task.skipReason = (
-                        f"Problem setting XMP data to file {str(mediafile)} with exiftool. Skip this one. Exception:{e}",
-                    )
+            mediafile = self.toTreat[task.index]
+            filename = os.path.basename(str(mediafile))
 
-        self.printv("Added XMP metadata to files to rename.")
+            if self.useCurrentFilename:
+                creationDate = datetime.strptime(
+                    filename[0:17], timestampformat
+                ).strftime("%Y:%m:%d %H:%M:%S")
+            else:
+                creationDate = getMediaCreationDateFrom(str(mediafile)).strftime(
+                    "%Y:%m:%d %H:%M:%S"
+                )
+
+            task.XMPTags = {"XMP-dc:Date": creationDate, "XMP-dc:Source": filename}
 
     def createNewNames(self):
         self.printv("Create new names for files..")
+
         for index, file in tqdm(enumerate(self.toTreat)):
             oldName = str(file)
             newName, errorreason = self.getRenamedFileFrom(oldName)
@@ -147,19 +127,9 @@ class MediaRenamer(MediaTransitioner):
             if newName is None:
                 self.transitionTasks.append(
                     TransitionTask(
-                        index=index,
+                        index,
                         skip=True,
                         skipReason=f"Could not create new name: {errorreason}",
-                    )
-                )
-                continue
-
-            if os.path.exists(newName):
-                self.transitionTasks.append(
-                    TransitionTask(
-                        index=index,
-                        skip=True,
-                        skipReason=f"New filename {newName} exists already.",
                     )
                 )
                 continue
