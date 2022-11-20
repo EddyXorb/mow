@@ -132,11 +132,11 @@ def test_alreadyexistentfileisnotoverwritten():
 
     renamer = executeRenamingWith(move=False)
 
-    assert len(renamer.skippedFiles) == 0
+    assert len(renamer.toSkip) == 0
 
     renamer = executeRenamingWith(move=False)
 
-    assert len(renamer.skippedFiles) == 1
+    assert len(renamer.toSkip) == 1
 
 
 def test_recursiveDisablingWorks():

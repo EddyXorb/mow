@@ -280,7 +280,7 @@ class MediaGrouper(MediaTransitioner):
         for group, files in tqdm(toTransition.items()):
             self.printv(f"Move group {group}..")
             for file in files:
-                if str(file) in self.skippedFiles:
+                if str(file) in self.toSkip:
                     continue
 
                 targetDir = self.getTargetDirectory(str(file))
@@ -309,7 +309,7 @@ class MediaGrouper(MediaTransitioner):
                         self.printv(
                             f"Could not set XMP for file {str(file)}. Skip this one."
                         )
-                        self.skippedFiles.add(str(file))
+                        self.toSkip.add(str(file))
 
     def extractDatetimeFrom(self, file: str, verbose=True) -> datetime:
         try:

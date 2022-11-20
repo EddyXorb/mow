@@ -62,8 +62,8 @@ class MediaTransitioner(VerbosePrinterClass):
         self.maintainFolderStructure = input.maintainFolderStructure
         self.removeEmptySubfolders = input.removeEmptySubfolders
 
-        self.skippedFiles: Set[str] = set()
         self.toTreat: List[MediaFile] = []
+        self.toSkip: Set[str] = set()
 
         self.treatedfiles = 0
 
@@ -127,6 +127,8 @@ class MediaTransitioner(VerbosePrinterClass):
         self.printv(f"Perform transition of {len(tasks)} mediafiles..")
         for task in tasks:
             toTransition = self.toTreat[task.index]
+            if str(toTransition) in self.toSkip:
+                continue
             newName = (
                 task.newName
                 if task.newName is not None

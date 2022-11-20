@@ -54,4 +54,4 @@ class MediaConverter(MediaTransitioner):
                 success = self.converter(file, targetDir)
             if not success:
                 self.printv(f"Skipped {str(file)} because conversion failed.")
-                self.skippedFiles.add(file)
+                self.toSkip.add(file)

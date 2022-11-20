@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 import os
 from os.path import join
-from typing import Callable, Dict
+from typing import Callable, Dict, List
 from pathlib import Path
 from datetime import datetime
 import re
 
-from .mediatransitioner import MediaTransitioner, TansitionerInput
+from .mediatransitioner import MediaTransitioner, TansitionerInput, TransitionTask
 from .filenamehelper import (
     getDateTimeFileNameFor,
     getMediaCreationDateFrom,
@@ -65,6 +65,7 @@ class MediaRenamer(MediaTransitioner):
         self.restoreOldNames = input.restoreOldNames
         self.useCurrentFilename = input.useCurrentFilename
         self.replace: str = input.replace
+        self.transitionTasks: List[TransitionTask] = []
 
         if "," in self.replace and len(self.replace.split(",")) == 2:
             self.printv(f"Found replace pattern {self.replace}!")
@@ -116,23 +117,26 @@ class MediaRenamer(MediaTransitioner):
                         e,
                         f"Problem setting XMP data to file {file} with exiftool. Skip this one.",
                     )
-                    self.skippedFiles.add(file)
+                    self.toSkip.add(file)
                     self.oldToNewMapping.pop(file)
 
         self.printv("Added XMP metadata to files to rename.")
 
     def createNewNames(self):
         self.printv("Create new names for files..")
-        for file in tqdm(self.toTreat):
+        for index, file in tqdm(enumerate(self.toTreat)):
             oldName = str(file)
             newName = self.getRenamedFileFrom(oldName)
             if newName is None:
-                self.skippedFiles.add(oldName)
+                self.toSkip.add(oldName)
                 continue
             if os.path.exists(newName):
                 self.printv(f"New filename {newName} exists already. Skip this one.")
-                self.skippedFiles.add(oldName)
+                self.toSkip.add(oldName)
                 continue
+            
+                                        
+            self.transitionTasks.append(TransitionTask(index,os.path.basename(newName)))
 
             self.oldToNewMapping[oldName] = newName
 
@@ -141,7 +145,7 @@ class MediaRenamer(MediaTransitioner):
     def executeRenaming(self):
         self.printv("Execute renaming..")
         for file in tqdm(self.toTreat):
-            if str(file) in self.skippedFiles:
+            if str(file) in self.toSkip:
                 continue
 
             newName = self.oldToNewMapping[str(file)]
@@ -171,7 +175,7 @@ class MediaRenamer(MediaTransitioner):
                 self.printv(
                     f"Skip file {file} because it appears to be already renamed."
                 )
-                self.skippedFiles.add(file)
+                self.toSkip.add(file)
                 return None
 
             newFileName = ""
@@ -198,9 +202,9 @@ class MediaRenamer(MediaTransitioner):
     def printStatistic(self):
         self.printv(f"Finished! Renamed {self.treatedfiles} files.")
 
-        if len(self.skippedFiles) > 0:
+        if len(self.toSkip) > 0:
             self.printv(
                 "Skipped the following files (could be due to file being already renamed (containing timestamp and _) in filename or because target existed already): "
             )
-            for file in self.skippedFiles:
+            for file in self.toSkip:
                 self.printv(file)
