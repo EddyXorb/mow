@@ -1,31 +1,36 @@
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import List
+from typing import DefaultDict, List
+from os.path import basename, dirname
+from pathlib import Path
+from tqdm import tqdm
 
-from ..general.mediafile import MediaFile
-from .mediatransitioner import MediaTransitioner, TansitionerInput
+from .mediatransitioner import MediaTransitioner, TransitionerInput, TransitionTask
 from ..general.medafilefactories import createAnyValidMediaFile
 
 from exiftool import ExifToolHelper
 
 
-@dataclass(kw_only=True)
-class RaterInput(TansitionerInput):
-    transitionPartiallyRatedGroups = False
-
-
 class MediaRater(MediaTransitioner):
-    def __init__(self, input: RaterInput):
+    def __init__(self, input: TransitionerInput):
         input.mediaFileFactory = createAnyValidMediaFile
+        input.writeXMPTags = False
         super().__init__(input)
-        self.transitionPartiallyRatedGroups = input.transitionPartiallyRatedGroups
 
     def getRatedMediaFileIndices(self) -> List[int]:
+        tags = []
+        self.printv("Check every file for rating..")
         with ExifToolHelper() as et:
-            tags = et.get_tags([str(file) for file in self.toTreat], "xmp:rating")
-            return [
-                index
-                for index, _ in enumerate(self.toTreat)
-                if "XMP:Rating" in tags[index]
-            ]
-        
-    
+            for file in tqdm(self.toTreat):
+                tags += et.get_tags(str(file), "xmp:rating")
+
+        return [
+            index for index, _ in enumerate(self.toTreat) if "XMP:Rating" in tags[index]
+        ]
+
+    def prepareTransition(self):
+        pass
+
+    def getTasks(self) -> List[TransitionTask]:
+        ratedIndices = self.getRatedMediaFileIndices()
+        return [TransitionTask(index) for index in ratedIndices]

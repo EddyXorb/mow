@@ -6,14 +6,14 @@ from pathlib import Path
 from datetime import datetime
 import re
 
-from .mediatransitioner import MediaTransitioner, TansitionerInput, TransitionTask
+from .mediatransitioner import MediaTransitioner, TransitionerInput, TransitionTask
 
 from .filenamehelper import getMediaCreationDateFrom, timestampformat
 from tqdm import tqdm
 
 
 @dataclass(kw_only=True)
-class RenamerInput(TansitionerInput):
+class RenamerInput(TransitionerInput):
     """
     src : directory which will be search for files
     dst : directory where renamed files should be placed

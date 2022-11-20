@@ -17,7 +17,6 @@ from exiftool import ExifToolHelper
 def prepareTest(srcname="test.JPG"):
     shutil.rmtree(src, ignore_errors=True)
     shutil.rmtree(dst, ignore_errors=True)
-    print(f"Create dirs {os.path.dirname(srcname)}")
     os.makedirs(os.path.dirname(srcname))
     shutil.copy(
         join(testfolder, "test3.JPG"),
@@ -32,9 +31,7 @@ def test_correctlyNamedGroupIsRecognized():
 
     assert exists(fullname)
 
-    MediaGrouper(
-        input=GrouperInput(src=src, dst=dst, interactive=False, dry=False, verbose=True)
-    )()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert exists(join(dst, groupname, "test.JPG"))
@@ -47,9 +44,7 @@ def test_GroupWithoutDescriptionIsRejected():
 
     assert exists(fullname)
 
-    MediaGrouper(
-        input=GrouperInput(src=src, dst=dst, interactive=False, dry=False, verbose=True)
-    )()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -62,9 +57,7 @@ def test_GroupWithVeryShortDescriptionIsAccepted():
 
     assert exists(fullname)
 
-    MediaGrouper(
-        input=GrouperInput(src=src, dst=dst, interactive=False, dry=False, verbose=True)
-    )()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert exists(join(dst, groupname, "test.JPG"))
@@ -77,9 +70,7 @@ def test_correctlyNamedGroupIsRecognizedButDryDoesNotMove():
 
     assert exists(fullname)
 
-    MediaGrouper(
-        input=GrouperInput(src=src, dst=dst, interactive=False, dry=True, verbose=True)
-    )()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=True, verbose=True))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -92,9 +83,7 @@ def test_WrongTimestampHoursAreRecognized():
 
     assert exists(fullname)
 
-    MediaGrouper(
-        input=GrouperInput(src=src, dst=dst, interactive=False, dry=False, verbose=True)
-    )()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -107,9 +96,7 @@ def test_TimestampStartingTooLateIsRecognized():
 
     assert exists(fullname)
 
-    MediaGrouper(
-        input=GrouperInput(src=src, dst=dst, interactive=False, dry=False, verbose=True)
-    )()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -122,9 +109,7 @@ def test_AtInGroupnameIsRecognizedAndWillBeRefused():
 
     assert exists(fullname)
 
-    MediaGrouper(
-        input=GrouperInput(src=src, dst=dst, interactive=False, dry=False, verbose=True)
-    )()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -137,9 +122,7 @@ def test_CorrectSubsubfolderIsRecognized():
 
     assert exists(fullname)
 
-    MediaGrouper(
-        input=GrouperInput(src=src, dst=dst, interactive=False, dry=False, verbose=True)
-    )()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert exists(join(dst, groupname, "test.JPG"))
@@ -152,9 +135,7 @@ def test_WrongSupergroupIsRecognized():
 
     assert exists(fullname)
 
-    MediaGrouper(
-        input=GrouperInput(src=src, dst=dst, interactive=False, dry=False, verbose=True)
-    )()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -170,7 +151,6 @@ def test_createdGroupOfUnGrouped():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             automaticGrouping=True,
@@ -190,7 +170,6 @@ def test_shouldNotMoveAutomaticallyGroupedFilesIntoDst():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             automaticGrouping=True,
@@ -215,7 +194,6 @@ def test_connectsTwoFileIfNotTooDistant():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -243,7 +221,6 @@ def test_connectsTwoFileIfNotTooDistant():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -275,7 +252,6 @@ def test_intermediateFileProlongsGroup():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -302,7 +278,7 @@ def test_XMPisWritten():
             dst=dst,
             dry=False,
             verbose=True,
-            writeXMP=True,
+            writeXMPTags=True,
         )
     )()
 
@@ -332,7 +308,7 @@ def test_XMPDescriptionContainsAllSuperfolders():
             dst=dst,
             dry=False,
             verbose=True,
-            writeXMP=True,
+            writeXMPTags=True,
         )
     )()
 
@@ -365,7 +341,6 @@ def test_groupingMovesJpgAndRAWFiles():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -388,7 +363,6 @@ def test_undoGroupingWorks():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -410,7 +384,6 @@ def test_undoGroupingDoesNotTouchGroupsWithoutTODOPrefix():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -432,7 +405,6 @@ def test_undoGroupingDoesNotTouchTODO_GroupsWithDescription():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -455,7 +427,6 @@ def test_addMissingTimestampWorks():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -479,7 +450,6 @@ def test_addMissingTimestampWorksRecursively():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -518,7 +488,6 @@ def test_addMissingTimestampTakesLowestDatetime():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -544,7 +513,6 @@ def test_addMissingTimestampWillNotRenameIfDateIsPresent():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -570,7 +538,6 @@ def test_addMissingTimestampWillNotRenameIfDateIsSomewhereInTheMiddle():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -596,7 +563,6 @@ def test_addMissingTimestampWillNotRenameIfShortDateIsPresent():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -622,7 +588,6 @@ def test_addMissingTimestampWillNotRenameIfAtIsPresent():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -648,7 +613,6 @@ def test_addMissingTimestampWillWillWorkIfSomeNumberIsPresent():
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,
@@ -672,7 +636,6 @@ def test_addMissingTimestampWillWillWorkIfSomeNumberAndNotDateDashesArePresent()
         input=GrouperInput(
             src=src,
             dst=dst,
-            interactive=False,
             dry=False,
             verbose=True,
             separationDistanceInHours=4,

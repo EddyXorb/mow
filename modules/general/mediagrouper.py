@@ -13,12 +13,12 @@ import re
 
 from ..general.mediafile import MediaFile
 from .medafilefactories import createAnyValidMediaFile
-from .mediatransitioner import MediaTransitioner, TansitionerInput, TransitionTask
+from .mediatransitioner import MediaTransitioner, TransitionerInput, TransitionTask
 from ..general.filenamehelper import timestampformat
 
 
 @dataclass(kw_only=True)
-class GrouperInput(TansitionerInput):
+class GrouperInput(TransitionerInput):
     """
     automaticGrouping: creates group folders with prefix 'TODO_' for every mediafile that is not in a group
     undoAutomatedGrouping: copies all mediafiles from folders into src that are in group-like-folders with TODO_YYYY-MM-DD@HHMMSS - format

@@ -7,6 +7,7 @@ import os
 
 testfolder = "tests"
 workingdir = abspath(join(testfolder, "mow_test_workingdir"))
+tagdir = join(workingdir, "5.2_tag")
 ratedir = join(workingdir, "5.1_rate")
 groupdir = join(workingdir, "4_group")
 convertdir = join(workingdir, "3_convert")
@@ -55,6 +56,14 @@ def prepareGroupingTest():
             "2022-12-12@121212 TEST",
             "2022-12-12@121212_test3.JPG",
         ),
+    )
+
+
+def prepareRateTransitionTest():
+    prepareTest(
+        targetdir=join(tagdir, "subfolder"),
+        untouchedfile=join(testfolder, "rated.jpg"),
+        starttransitionfile=join(ratedir, "subfolder", "rated.jpg"),
     )
 
 
@@ -117,3 +126,15 @@ def test_conversionOfVideoWorks():
     assert not exists(srcfile)
     assert exists(join(workingdir, "4_group", "subfolder", "test_original.MOV"))
     assert exists(join(workingdir, "4_group", "subfolder", "test.mp4"))
+
+
+def test_ratedImageIsTransitioned():
+    prepareRateTransitionTest()
+    srcfile = join(ratedir, "subfolder", "rated.jpg")
+
+    assert exists(srcfile)
+
+    Mow(settingsfile=settingsfile).rate(dry=False)
+
+    assert not exists(srcfile)
+    assert exists(join(tagdir, "subfolder", "rated.jpg"))

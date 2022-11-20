@@ -36,7 +36,7 @@ class TransitionTask:
 
 
 @dataclass(kw_only=True)
-class TansitionerInput:
+class TransitionerInput:
     """
     src : directory which will be search for files
     dst : directory where renamed files should be placed
@@ -52,16 +52,16 @@ class TansitionerInput:
 
     src: str
     dst: str
-    move = True
-    mediaFileFactory: Callable[
-        [str], MediaFile
-    ] = None  # this can also be a type with its constructor, e.g. ImageFile
-    recursive = True
-    verbose = False
-    dry = False
-    maintainFolderStructure = True
-    removeEmptySubfolders = False
-    writeXMPTags = True
+    move: bool = True
+    recursive: bool = True
+    verbose: bool = False
+    dry: bool = False
+    maintainFolderStructure: bool = True
+    removeEmptySubfolders: bool = False
+    writeXMPTags: bool = True
+    mediaFileFactory: Callable[[str], MediaFile] = field(
+        default_factory=lambda: None
+    )  # this can also be a type with its constructor, e.g. ImageFile
 
 
 class MediaTransitioner(VerbosePrinterClass):
@@ -69,7 +69,7 @@ class MediaTransitioner(VerbosePrinterClass):
     Abstract class for transitioning a certain mediafiletype into the next stage.
     """
 
-    def __init__(self, input: TansitionerInput):
+    def __init__(self, input: TransitionerInput):
         super().__init__(input.verbose)
         self.src = os.path.abspath(input.src)
         self.dst = os.path.abspath(input.dst)

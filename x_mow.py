@@ -19,6 +19,10 @@ groupparser = subparsers.add_parser(
     help="Execute grouping of media files. (Transition 4 -> 5). Comes with a bunch of helpers. If one of the helpers is called will not perform transition.",
 )
 
+rateparser = subparsers.add_parser(
+    "rate", help="Execute transition of rated media files (Transition 5.1 -> 5.2))"
+)
+
 
 renameparser.add_argument(
     "-c",
@@ -85,6 +89,15 @@ groupparser.add_argument(
     action="store_true",
 )
 
+rateparser.add_argument(
+    "-x",
+    "--execute",
+    help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
+    action="store_true",
+    dest="rate_execute"
+)
+
+
 if __name__ == "__main__":
     args = parser.parse_args()
     mow = Mow(".mowsettings.yml")
@@ -105,3 +118,5 @@ if __name__ == "__main__":
             undoAutomatedGrouping=args.group_undogrouping,
             addMissingTimestampsToSubfolders=args.group_timestamps,
         )
+    if args.command == "rate":
+        mow.rate(dry = not args.rate_execute)

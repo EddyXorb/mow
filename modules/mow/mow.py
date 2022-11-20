@@ -5,7 +5,7 @@ from os import path
 from os.path import join
 
 
-from ..general.mediatransitioner import TansitionerInput
+from ..general.mediatransitioner import TransitionerInput
 from ..general.tkinterhelper import getInputDir
 from ..general.mediarenamer import RenamerInput
 from ..image.imagerenamer import ImageRenamer
@@ -15,6 +15,7 @@ from ..video.videorenamer import VideoRenamer
 from ..general.mediaconverter import ConverterInput
 from ..general.mediagrouper import GrouperInput, MediaGrouper
 from ..general.filenamehelper import timestampformat
+from ..general.mediarater import MediaRater
 
 import logging
 
@@ -70,7 +71,7 @@ class Mow:
                     dst=dst,
                     move=True,
                     verbose=True,
-                    writeXMP=True,
+                    writeXMPTags=True,
                     useCurrentFilename=useCurrentFilename,
                     removeEmptySubfolders=True,
                     replace=replace,
@@ -114,7 +115,7 @@ class Mow:
                 verbose=True,
                 recursive=True,
                 maintainFolderStructure=True,
-                writeXMP=True,
+                writeXMPTags=True,
                 removeEmptySubfolders=True,
                 automaticGrouping=automate,
                 separationDistanceInHours=distance,
@@ -124,8 +125,20 @@ class Mow:
             )
         )()
 
-    def rate(self):
-        pass
+    def rate(self, dry: bool = True):
+        src, dst = self._getSrcDstForStage("rate")
+        self._printEmphasized("Rate files")
+        MediaRater(
+            input=TransitionerInput(
+                src=src,
+                dst=dst,
+                verbose=True,
+                dry=dry,
+                recursive=True,
+                maintainFolderStructure=True,
+                removeEmptySubfolders=True,
+            )
+        )()
 
     def tag(self):
         pass

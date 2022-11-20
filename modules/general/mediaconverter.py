@@ -8,7 +8,7 @@ import os
 from ..general.mediafile import MediaFile
 from ..general.mediatransitioner import (
     MediaTransitioner,
-    TansitionerInput,
+    TransitionerInput,
     TransitionTask,
 )
 
@@ -19,7 +19,7 @@ def passthrough(source: MediaFile, targetDir: str):
 
 
 @dataclass(kw_only=True)
-class ConverterInput(TansitionerInput):
+class ConverterInput(TransitionerInput):
     """
     converter: takes filename to convert and destination of result file name
     maintainfolderstructure: output converted media files in the same subfolder they were in before conversion
