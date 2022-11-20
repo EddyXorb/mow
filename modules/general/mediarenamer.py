@@ -26,10 +26,9 @@ class RenamerInput(TansitionerInput):
     maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
     dry: don't actually rename files
     writeXMP: sets XMP-dc:Source to original filename and XMP-dc:date to creationDate
-    replace: a string such as '"^\d*.*",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
+    replace: a string such as '"^[0-9].*$",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
     """
 
-    move = True
     writeXMP = False
     restoreOldNames = False
     filerenamer: Callable[[str], str] = None
@@ -61,7 +60,6 @@ class MediaRenamer(MediaTransitioner):
         if input.filerenamer is None:
             raise Exception("Filerenamer was not given to MediaRenamer!")
 
-        self.move = input.move
         self.renamer = input.filerenamer
         self.writeXMP = input.writeXMP
         self.restoreOldNames = input.restoreOldNames
@@ -78,7 +76,7 @@ class MediaRenamer(MediaTransitioner):
             str, str
         ] = {}  # always a string representation of mediafiles
 
-    def execute(self):
+    def prepareTransition(self):
         self.createNewNames()
         self.addOptionalXMPData()
 
@@ -147,15 +145,15 @@ class MediaRenamer(MediaTransitioner):
                 continue
 
             newName = self.oldToNewMapping[str(file)]
+            self.printv(
+                f"Renamed {Path(str(file)).relative_to(self.src)} to {os.path.basename(newName)}."
+            )
             if not self.dry:
                 if self.move:
                     file.moveTo(newName)
                 else:
                     file.copyTo(newName)
 
-            self.printv(
-                f"Renamed {Path(str(file)).relative_to(self.src)} to {os.path.basename(newName)}."
-            )
             self.treatedfiles += file.nrFiles
 
         self.printv("Finished renaming files.")

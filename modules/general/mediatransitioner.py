@@ -2,11 +2,22 @@ from dataclasses import dataclass
 import os
 from os.path import join
 from pathlib import Path
-from typing import List, Set, Callable
+from typing import Dict, List, Set, Callable
 
 
 from ..general.mediafile import MediaFile
 from ..general.verboseprinterclass import VerbosePrinterClass
+
+
+@dataclass
+class TransitionTask:
+    """
+    index: index of Mediafile in self.toTreat
+    newName: name of mediafile in new location (only basename). If None, take old name
+    """
+
+    index: int
+    newName = None
 
 
 @dataclass(kw_only=True)
@@ -24,6 +35,7 @@ class TansitionerInput:
 
     src: str
     dst: str
+    move = True
     mediaFileFactory: Callable[
         [str], MediaFile
     ] = None  # this can also be a type with its constructor, e.g. ImageFile
@@ -43,9 +55,10 @@ class MediaTransitioner(VerbosePrinterClass):
         super().__init__(input.verbose)
         self.src = os.path.abspath(input.src)
         self.dst = os.path.abspath(input.dst)
+        self.move = input.move
         self.recursive = input.recursive
         self.dry = input.dry
-        self.mediatype = input.mediaFileFactory
+        self.mediaFileFactory = input.mediaFileFactory
         self.maintainFolderStructure = input.maintainFolderStructure
         self.removeEmptySubfolders = input.removeEmptySubfolders
 
@@ -64,12 +77,12 @@ class MediaTransitioner(VerbosePrinterClass):
         self.createDestinationDir()
         self.collectMediaFilesToTreat()
 
-        self.execute()
+        self.prepareTransition()
 
-        if self.removeEmptySubfolders:
-            self.printv(f"Remove empty subfolders of {self.src}..")
-            removed = self.removeEmptySubfoldersOf(self.src)
-            self.printv(f"Removed {len(removed)} empty subfolders.")
+        tasks = self.getTransitionTasks()
+        self.performTransitionOf(tasks)
+
+        self.optionallyRemoveEmptyFolders()
 
     def createDestinationDir(self):
         if os.path.isdir(self.dst):
@@ -85,7 +98,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
             for file in files:
                 path = Path(join(root, file))
-                mfile = self.mediatype(str(path))
+                mfile = self.mediaFileFactory(str(path))
                 if not mfile.isValid():
                     continue
                 self.toTreat.append(mfile)
@@ -110,5 +123,33 @@ class MediaTransitioner(VerbosePrinterClass):
                 removed.append(path)
         return removed
 
-    def execute(self):
+    def performTransitionOf(self, tasks: List[TransitionTask]):
+        self.printv(f"Perform transition of {len(tasks)} mediafiles..")
+        for task in tasks:
+            toTransition = self.toTreat[task.index]
+            newName = (
+                task.newName
+                if task.newName is not None
+                else os.path.basename(str(toTransition))
+            )
+            newPath = join(self.getTargetDirectory(toTransition), newName)
+            self.printv(
+                f"{Path(str(toTransition)).relative_to(self.src)} -> {Path(newPath).relative_to(self.src)}"
+            )
+
+            if not self.dry:
+                if self.move:
+                    toTransition.moveTo(newPath)
+                else:
+                    toTransition.copyTo(newPath)
+
+    def optionallyRemoveEmptyFolders(self):
+        if self.removeEmptySubfolders:
+            removed = self.removeEmptySubfoldersOf(self.src)
+            self.printv(f"Removed {len(removed)} empty subfolders of {self.src}.")
+
+    def getTransitionTasks(self) -> List[TransitionTask]:
+        return []
+
+    def prepareTransition(self):
         raise NotImplementedError()

@@ -43,7 +43,7 @@ class MediaConverter(MediaTransitioner):
         self.deleteOriginals = input.deleteOriginals
         super().__init__(input)
 
-    def execute(self):
+    def prepareTransition(self):
         self.printv("Start conversion of files..")
         for file in tqdm(self.toTreat):
             targetDir = self.getTargetDirectory(file)

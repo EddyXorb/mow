@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import DefaultDict, Dict, List, Tuple
 
 
-from .mediatransitioner import MediaTransitioner, TansitionerInput
 import os
 from os.path import basename, dirname, exists, join
 from pathlib import Path
@@ -14,9 +13,9 @@ from math import sqrt
 import re
 
 
-from ..image.imagefile import ImageFile
-from ..video.videofile import VideoFile
 from ..general.mediafile import MediaFile
+from .medafilefactories import createAnyValidMediaFile
+from .mediatransitioner import MediaTransitioner, TansitionerInput
 from ..general.filenamehelper import timestampformat
 
 
@@ -41,15 +40,6 @@ class GrouperInput(TansitionerInput):
             setattr(self, key, value)
 
 
-def createGroupableMediaFile(path: str) -> MediaFile:
-    for type in [ImageFile, VideoFile]:
-        candidate: MediaFile = type(path)
-        if candidate.isValid():
-            return candidate
-
-    return candidate
-
-
 class MediaGrouper(MediaTransitioner):
     """
     The idea behind this transition is the following:
@@ -64,7 +54,7 @@ class MediaGrouper(MediaTransitioner):
     """
 
     def __init__(self, input: GrouperInput):
-        input.mediaFileFactory = createGroupableMediaFile
+        input.mediaFileFactory = createAnyValidMediaFile
         input.maintainFolderStructure = True
         super().__init__(input)
         self.undoAutomatedGrouping = input.undoAutomatedGrouping
@@ -73,7 +63,7 @@ class MediaGrouper(MediaTransitioner):
         self.separationDistanceInHours = input.separationDistanceInHours
         self.writeXMP = input.writeXMP
 
-    def execute(self):
+    def prepareTransition(self):
         if self.undoAutomatedGrouping:
             self.printv("Start undo grouping..")
             self.undoGrouping()
@@ -114,7 +104,7 @@ class MediaGrouper(MediaTransitioner):
                 if not os.path.exists(file):
                     continue
 
-                toMove = createGroupableMediaFile(file)
+                toMove = self.mediaFileFactory(file)
                 if not toMove.isValid():
                     continue
                 if not self.dry:
