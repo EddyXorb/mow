@@ -26,7 +26,7 @@ class MediaRater(MediaTransitioner):
         out: List[TransitionTask] = []
 
         with ExifToolHelper() as et:
-            for index, file in tqdm(enumerate(self.toTreat)):
+            for index, file in tqdm(enumerate(self.toTreat), total=len(self.toTreat)):
                 try:
                     tags = et.get_tags(str(file), "xmp:rating")[0]
                     if "XMP:Rating" in tags:

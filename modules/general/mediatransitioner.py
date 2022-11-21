@@ -1,9 +1,11 @@
+from collections import defaultdict
 from dataclasses import dataclass, field
 import os
 from os.path import join
 from pathlib import Path
-from typing import Dict, List, Set, Callable
+from typing import Dict, List, Set, Callable, Tuple
 from exiftool import ExifToolHelper
+from math import sqrt
 
 from ..general.mediafile import MediaFile
 from ..general.verboseprinterclass import VerbosePrinterClass
@@ -178,11 +180,25 @@ class MediaTransitioner(VerbosePrinterClass):
     def printSkipped(self, tasks: List[TransitionTask]):
         skipped = 0
 
+        messageToTask = defaultdict(list)
         for task in tasks:
             if not task.skip:
                 continue
             skipped += 1
-            self.printv(f"Skipped {str(self.toTreat[task.index])}: {task.skipReason}")
+            messageToTask[task.skipReason].append(task)
+
+        for tasks in messageToTask.values():
+            cnt = 0
+            for task in tasks:
+                self.printv(
+                    f"Skipped {str(self.toTreat[task.index])}: {task.skipReason}"
+                )
+                cnt += 1
+                if cnt >= 5 and len(tasks) - 5 >= 5:
+                    self.printv(
+                        f'\n{"."*int(sqrt(len(tasks) - 5))}\nSkipped message "{task.skipReason}" for other {len(tasks) - 5} files.'
+                    )
+                    break
 
         self.printv(f"Finished transition. Skipped files: {skipped}")
         return skipped
@@ -213,7 +229,7 @@ class MediaTransitioner(VerbosePrinterClass):
             newPath = self.getNewNameFor(task)
 
             self.printv(
-                f"{Path(str(toTransition)).relative_to(self.src)} -> {Path(newPath).relative_to(self.dst)}"
+                f"{Path(str(toTransition)).relative_to(Path(self.src).parent)}    --->    {os.path.basename(self.dst)}\\...\\{os.path.basename(newPath)}"
             )
 
             if not self.dry:
@@ -224,6 +240,8 @@ class MediaTransitioner(VerbosePrinterClass):
                     toTransition.moveTo(newPath)
                 else:
                     toTransition.copyTo(newPath)
+
+        self.printv(f"Finished relocating {len(tasks)} files.")
 
     def optionallyRemoveEmptyFolders(self):
         if self.removeEmptySubfolders:
