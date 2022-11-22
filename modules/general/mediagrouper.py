@@ -12,9 +12,15 @@ from math import sqrt
 import re
 
 from ..general.mediafile import MediaFile
+from ..general.checkresult import CheckResult
 from .medafilefactories import createAnyValidMediaFile
 from .mediatransitioner import MediaTransitioner, TransitionerInput, TransitionTask
-from ..general.filenamehelper import timestampformat
+from ..general.filenamehelper import (
+    extractDatetimeFrom,
+    isCorrectTimestamp,
+    timestampformat,
+)
+from ..general.checkresult import CheckResult
 
 
 @dataclass(kw_only=True)
@@ -49,6 +55,50 @@ class MediaGrouper(MediaTransitioner):
     src/2022-12-12@121212_Supergroup/Subgroup/image.jpg nor
     src/Supergroup/1999-12-12@222222_Subgroup/image.jpg is, so it won't be transitioned.
     """
+
+    @staticmethod
+    def isCorrectGroupName(candidate: str) -> CheckResult:
+        if len(candidate) <= 18:
+            return CheckResult(
+                ok=False,
+                error=f"Candidate {candidate} has no or too short description, should at least have length 2",
+            )
+
+        if "@" in candidate[11:]:
+            return CheckResult(
+                ok=False,
+                error=f"Candidate {candidate} contains '@' at index > 10",
+            )
+
+        return isCorrectTimestamp(candidate=candidate[0:17])
+
+    @staticmethod
+    def isCorrectGroupSubfolder(folderPath: str, rootFolder: str) -> CheckResult:
+        if folderPath == rootFolder:
+            return CheckResult(True)
+
+        result = MediaGrouper.isCorrectGroupName(basename(folderPath))
+        if result.ok:
+            return MediaGrouper.isCorrectGroupSubfolder(
+                dirname(folderPath), rootFolder=rootFolder
+            )
+
+        return result
+
+    @staticmethod
+    def getGroupBasedOnFirstFile(file: str):
+        return "TODO_" + datetime.strftime(extractDatetimeFrom(file), timestampformat)
+
+    @staticmethod
+    def getGroupnameFrom(parentDir, rootFolder):
+        groupname = str(Path(str(parentDir)).relative_to(rootFolder))
+        groupname = os.path.normpath(groupname)
+        groupname = groupname.split(os.sep)
+        if len(groupname) > 1:
+            groupname = "/".join(groupname)
+        else:
+            groupname = groupname[0]
+        return groupname
 
     def __init__(self, input: GrouperInput):
         input.mediaFileFactory = createAnyValidMediaFile
@@ -90,7 +140,7 @@ class MediaGrouper(MediaTransitioner):
             for group in os.listdir(self.src)
             if os.path.isdir(join(self.src, group))
             and group.startswith("TODO_")
-            and self.isCorrectTimestamp(group[5:])
+            and isCorrectTimestamp(group[5:])
         ]
 
         self.printv(f"Found {len(candidatesForUndo)} groups for undo.")
@@ -120,7 +170,7 @@ class MediaGrouper(MediaTransitioner):
         candidates = os.listdir(folder)
         timestamps = []
         for cand in candidates:
-            timestamp = self.extractDatetimeFrom(cand, verbose=False)
+            timestamp = extractDatetimeFrom(cand, verbose=False)
             if timestamp is not None:
                 timestamps.append(timestamp)
 
@@ -190,87 +240,38 @@ class MediaGrouper(MediaTransitioner):
                 self.toTransition.append(TransitionTask.getFailed(index, reason))
                 continue
 
-            isCorrect = self.isCorrectGroupSubfolder(parentDir)
-            if isCorrect:
-                groupname = self.getGroupnameFrom(parentDir)
+            result = self.isCorrectGroupSubfolder(parentDir, self.src)
+
+            if result.ok:
+                groupname = self.getGroupnameFrom(parentDir, rootFolder=self.src)
                 out[groupname].append(index)
                 self.toTransition.append(TransitionTask(index=index, newName=None))
             else:
                 wrongSubfolders.add(parentDir)
-                reason = "File is not in a correctly named group folder."
+                reason = (
+                    f"File is not in a correctly named group folder: {result.error}"
+                )
                 self.toTransition.append(TransitionTask.getFailed(index, reason))
 
         return out
-
-    def getGroupnameFrom(self, parentDir):
-        groupname = str(Path(str(parentDir)).relative_to(self.src))
-        groupname = os.path.normpath(groupname)
-        groupname = groupname.split(os.sep)
-        if len(groupname) > 1:
-            groupname = "/".join(groupname)
-        else:
-            groupname = groupname[0]
-        return groupname
-
-    def isCorrectGroupSubfolder(self, folderpath: str) -> bool:
-        if folderpath == self.src:
-            return True
-
-        if self.isCorrectGroupName(basename(folderpath)):
-            return self.isCorrectGroupSubfolder(dirname(folderpath))
-
-        return False
-
-    def isCorrectTimestamp(self, candidate: str) -> bool:
-        if candidate[10] != "@":
-            self.printv(
-                f"Candidate {candidate} does not have '@' at index 10, but {candidate[10]} - dismissed"
-            )
-            return False
-
-        try:
-            dummy = datetime.strptime(candidate[0:17], timestampformat)
-            return dummy is not None
-        except:
-            self.printv(f"Candidate {candidate}'s timestamp is wrong - dismissed")
-            return False
-
-    def isCorrectGroupName(self, candidate: str) -> bool:
-        if len(candidate) <= 18:
-            self.printv(
-                f"Candidate {candidate} has no or too short description (should at least have length 2) - dismissed"
-            )
-            return False
-
-        if "@" in candidate[11:]:
-            self.printv(f"Candidate {candidate} contains '@' at index > 10 - dismissed")
-            return False
-
-        return self.isCorrectTimestamp(candidate=candidate[0:17])
-
-    def getGroupBasedOnFirstFile(self, file: str):
-        return "TODO_" + datetime.strftime(
-            self.extractDatetimeFrom(file), timestampformat
-        )
 
     def groupUngrouped(self):
         ungrouped = self.getUngroupedFiles()
         if len(ungrouped) == 0:
             return
-        ungrouped.sort(key=lambda file: self.extractDatetimeFrom(str(file)))
+        ungrouped.sort(key=lambda file: extractDatetimeFrom(str(file)))
         groupToFiles: DefaultDict[str, List[MediaFile]] = defaultdict(lambda: [])
 
         self.printv("Start creating new group names..")
         currentGroup = self.getGroupBasedOnFirstFile(str(ungrouped[0]))
-        lastTime = self.extractDatetimeFrom(str(ungrouped[0]))
+        lastTime = extractDatetimeFrom(str(ungrouped[0]))
         for file in tqdm(ungrouped):
             if (
-                (self.extractDatetimeFrom(str(file)) - lastTime).total_seconds()
-                / 3600.0
+                (extractDatetimeFrom(str(file)) - lastTime).total_seconds() / 3600.0
             ) >= self.separationDistanceInHours:
                 currentGroup = self.getGroupBasedOnFirstFile(str(file))
             groupToFiles[currentGroup].append(file)
-            lastTime = self.extractDatetimeFrom(str(file))
+            lastTime = extractDatetimeFrom(str(file))
 
         self.printv(f"Created {len(groupToFiles)} new groups.")
         self.printv("Move into newly created group folder..")
@@ -294,13 +295,3 @@ class MediaGrouper(MediaTransitioner):
         for task in [task for task in self.toTransition if not task.skip]:
             groupname = inverted[task.index]
             task.XMPTags = {"XMP-dc:Description": groupname}
-
-    def extractDatetimeFrom(self, file: str, verbose=True) -> datetime:
-        try:
-            return datetime.strptime(basename(file)[0:17], timestampformat)
-        except Exception as e:
-            if verbose:
-                self.printv(
-                    f"Could not get time from timestamp of file {file} because of {e}"
-                )
-            return None
