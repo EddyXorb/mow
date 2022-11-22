@@ -51,7 +51,7 @@ class MediaConverter(MediaTransitioner):
     def convert(self):
         self.printv("Start conversion of files..")
         for index, file in tqdm(enumerate(self.toTreat)):
-            targetDir = self.getTargetDirectory(file)
+            targetDir = self.getTargetDirectory(file, self.dst)
             if not exists(targetDir):
                 os.makedirs(targetDir)
             success = True

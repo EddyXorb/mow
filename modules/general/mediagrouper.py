@@ -283,21 +283,6 @@ class MediaGrouper(MediaTransitioner):
                 + "." * int(sqrt(len(val)))
             )
 
-    # def moveCorrectlyGroupedOf(self, toTransition: DefaultDict[str, List[MediaFile]]):
-    #     self.printv("Move correctly grouped files..")
-    #     for group, files in tqdm(toTransition.items()):
-    #         self.printv(f"Move group {group}..")
-    #         for file in files:
-    #             if str(file) in self.toSkip:
-    #                 continue
-
-    #             targetDir = self.getTargetDirectory(str(file))
-
-    #             if not self.dry:
-    #                 if not exists(targetDir):
-    #                     os.makedirs(targetDir)
-    #                 file.moveTo(join(targetDir, basename(str(file))))
-
     def setOptionalXMP(self, grouped: DefaultDict[str, List[int]]):
         if not self.writeXMPTags:
             return

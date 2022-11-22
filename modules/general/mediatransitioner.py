@@ -16,7 +16,7 @@ class TransitionTask:
     """
     index: index of Mediafile in self.toTreat
     newName: name of mediafile in new location (only basename). If None, take old name
-    delete: instead of renaming/transitioning move this file into trash can folder 'trash' in source folder
+    delete: instead of renaming/transitioning move this file into folder 'deleted' in source folder
     skip: don' execute transition if True
     skipReason: reason for skipping transition
     XMPTags: dict with xmp-key : value entries to set to file
@@ -121,11 +121,13 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self.printv(f"Collected {len(self.toTreat)} files.")
 
-    def getTargetDirectory(self, file: str) -> str:
+    def getTargetDirectory(self, file: str, destinationFolder: str) -> str:
         if self.maintainFolderStructure:
-            return join(self.dst, str(Path(str(file)).relative_to(self.src).parent))
+            return join(
+                destinationFolder, str(Path(str(file)).relative_to(self.src).parent)
+            )
         else:
-            return self.dst
+            return destinationFolder
 
     def removeEmptySubfoldersOf(self, pathToRemove):
         removed = []
@@ -168,7 +170,8 @@ class MediaTransitioner(VerbosePrinterClass):
             else os.path.basename(str(mediafile))
         )
 
-        newPath = join(self.getTargetDirectory(mediafile), newName)
+        destinationFolder = self.dst if not task.delete else join(self.src, "deleted")
+        newPath = join(self.getTargetDirectory(mediafile, destinationFolder), newName)
         return newPath
 
     def printSkipped(self, tasks: List[TransitionTask]):
