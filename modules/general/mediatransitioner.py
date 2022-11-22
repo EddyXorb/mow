@@ -16,6 +16,7 @@ class TransitionTask:
     """
     index: index of Mediafile in self.toTreat
     newName: name of mediafile in new location (only basename). If None, take old name
+    delete: instead of renaming/transitioning move this file into trash can folder 'trash' in source folder
     skip: don' execute transition if True
     skipReason: reason for skipping transition
     XMPTags: dict with xmp-key : value entries to set to file
@@ -26,15 +27,10 @@ class TransitionTask:
     skip: bool = False
     skipReason: str = None
     XMPTags: Dict[str, str] = field(default_factory=dict)
+    delete: bool = False
 
     def getFailed(index, reason) -> "TransitionTask":
         return TransitionTask(index=index, skip=True, skipReason=reason)
-
-
-# @dataclass
-# class SkippedTask:
-#     index: int
-#     reason: str
 
 
 @dataclass(kw_only=True)
