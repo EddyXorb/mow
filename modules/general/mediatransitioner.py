@@ -93,8 +93,6 @@ class MediaTransitioner(VerbosePrinterClass):
         self.createDestinationDir()
         self.collectMediaFilesToTreat()
 
-        self.prepareTransition()
-
         self._toTransition = self.getTasks()
         self.performTransitionOf(self._toTransition)
         self.printSkipped(self._toTransition)
@@ -261,7 +259,4 @@ class MediaTransitioner(VerbosePrinterClass):
             )
 
     def getTasks(self) -> List[TransitionTask]:
-        raise NotImplementedError()
-
-    def prepareTransition(self):
         raise NotImplementedError()

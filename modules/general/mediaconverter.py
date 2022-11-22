@@ -48,7 +48,7 @@ class MediaConverter(MediaTransitioner):
         self.transitionTasks: List[TransitionTask] = []
         super().__init__(input)
 
-    def prepareTransition(self):
+    def convert(self):
         self.printv("Start conversion of files..")
         for index, file in tqdm(enumerate(self.toTreat)):
             targetDir = self.getTargetDirectory(file)
@@ -66,4 +66,5 @@ class MediaConverter(MediaTransitioner):
             # at the moment no else with append non-skip task needed as the converter handles everything. This should be refactored.
 
     def getTasks(self) -> List[TransitionTask]:
+        self.convert()
         return []

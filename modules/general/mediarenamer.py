@@ -93,6 +93,7 @@ class MediaRenamer(MediaTransitioner):
             )
 
     def getTasks(self) -> List[TransitionTask]:
+        self.prepareTransition()
         return self.transitionTasks
 
     def setXMPTags(self):
