@@ -10,3 +10,4 @@ tests/test_converted*
 tests/test_treated*
 mow.log
 .pytest_cache
+tests/test_aggregate*
