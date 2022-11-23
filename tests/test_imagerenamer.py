@@ -119,7 +119,7 @@ def test_writeXMPDateAndCreationWorks():
     from exiftool import ExifToolHelper
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(expectedtargetfile, ["XMP-dc:Source", "XMP-dc:Date"])[0]
+        tags = et.get_tags(expectedtargetfile, ["XMP:Source", "XMP:Date"])[0]
         assert tags["XMP:Source"] == "test3.JPG"
         assert tags["XMP:Date"] == "2022:07:27 21:55:55"
 
@@ -176,7 +176,7 @@ def test_useFilenameAsSourceOfTruth():
     from exiftool import ExifToolHelper
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(renamedFile, ["XMP-dc:Source", "XMP-dc:Date"])[0]
+        tags = et.get_tags(renamedFile, ["XMP:Source", "XMP:Date"])[0]
         assert tags["XMP:Source"] == "2022-11-11@111111_test3.JPG"
         assert tags["XMP:Date"] == "2022:11:11 11:11:11"
 

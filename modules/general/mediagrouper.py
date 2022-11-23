@@ -294,4 +294,4 @@ class MediaGrouper(MediaTransitioner):
 
         for task in [task for task in self.toTransition if not task.skip]:
             groupname = inverted[task.index]
-            task.XMPTags = {"XMP-dc:Description": groupname}
+            task.XMPTags = {"XMP:Description": groupname}

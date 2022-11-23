@@ -16,9 +16,9 @@ class MediaAggregator(MediaTransitioner):
 
         self.toTransition: List[TransitionTask] = []
         self.expectedTags = [
-            "XMP-dc:Date",
-            "XMP-dc:Source",
-            "XMP-dc:Description",
+            "XMP:Date",
+            "XMP:Source",
+            "XMP:Description",
             "XMP:Rating",
         ]
 
@@ -74,9 +74,8 @@ class MediaAggregator(MediaTransitioner):
         for task in self.toTransition:
             if task.skip:
                 continue
-            result = MediaGrouper.isCorrectGroupName(
-                basename(str(Path(str(self.toTreat[task.index])).parent))
-            )
+            groupnameToTest = basename(str(Path(str(self.toTreat[task.index])).parent))
+            result = MediaGrouper.isCorrectGroupName(groupnameToTest)
             if not result.ok:
                 task.skip = True
                 task.skipReason = result.error

@@ -286,7 +286,7 @@ def test_XMPisWritten():
     newname = join(dst, "2022-12-12@120000 TEST", "2022-12-12@120000_test.JPG")
     assert exists(newname)
     with ExifToolHelper() as et:
-        tags = et.get_tags(newname, ["XMP-dc:Description"])[0]
+        tags = et.get_tags(newname, ["XMP:Description"])[0]
         print(tags)
         assert tags["XMP:Description"] == "2022-12-12@120000 TEST"
 
@@ -321,7 +321,7 @@ def test_XMPDescriptionContainsAllSuperfolders():
     )
     assert exists(newname)
     with ExifToolHelper() as et:
-        tags = et.get_tags(newname, ["XMP-dc:Description"])[0]
+        tags = et.get_tags(newname, ["XMP:Description"])[0]
         print(tags)
         assert (
             tags["XMP:Description"] == "2022-12-12@120000 TEST/2022-12-12@120000 TEST2"
