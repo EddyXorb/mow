@@ -34,7 +34,7 @@ class MediaAggregator(MediaTransitioner):
                 files = self.toTreat[task.index].getAllFileNames()
 
                 try:
-                    tags = et.get_tags(str(files), tags=self.expectedTags)
+                    tags = et.get_tags(files, tags=self.expectedTags)
                     out[task.index] = tags
                 except:
                     out[task.index] = []
@@ -56,8 +56,16 @@ class MediaAggregator(MediaTransitioner):
         return self.toTransition
 
     def checkFileNamesHaveCorrectTimestamp(self):
-        for index, file in self.toTreat:
-            result = isCorrectTimestamp(str(file)[0:17])
+        for index, file in enumerate(self.toTreat):
+
+            filename = basename(str(file))
+            if len(filename) < 17:
+                result = CheckResult(
+                    False, "filename is too short to contain at least the timestamp"
+                )
+            else:
+                result = isCorrectTimestamp(basename(str(file))[0:17])
+
             if not result.ok:
                 self.toTransition.append(TransitionTask.getFailed(index, result.error))
             else:
@@ -100,7 +108,7 @@ class MediaAggregator(MediaTransitioner):
             if task.skip:
                 continue
 
-            rating = int(indexToTags[task.index][0]["XMP-Rating"])
+            rating = int(indexToTags[task.index][0]["XMP:Rating"])
             if rating not in range(1, 6):
                 task.skip = True
                 task.skipReason = f"rating is {rating}, which is not within 1-5 range"

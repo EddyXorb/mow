@@ -104,7 +104,7 @@ class MediaTransitioner(VerbosePrinterClass):
         if os.path.isdir(self.dst):
             return
         os.makedirs(self.dst, exist_ok=True)
-        self.printv("Created dir", self.dst)
+        self.printv(f"Created dir {self.dst}")
 
     def collectMediaFilesToTreat(self):
         self.printv("Collect files..")
@@ -207,6 +207,8 @@ class MediaTransitioner(VerbosePrinterClass):
 
         with ExifToolHelper() as et:
             for task in tasks:
+                if len(task.XMPTags) == 0:
+                    continue
                 try:
                     files = self.toTreat[task.index].getAllFileNames()
 
