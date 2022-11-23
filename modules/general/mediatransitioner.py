@@ -231,9 +231,6 @@ class MediaTransitioner(VerbosePrinterClass):
             )
 
             if not self.dry:
-                if not os.path.exists(os.path.dirname(newPath)):
-                    os.makedirs(os.path.dirname(newPath))
-
                 if self.move:
                     toTransition.moveTo(newPath)
                 else:
