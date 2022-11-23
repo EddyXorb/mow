@@ -15,7 +15,7 @@ expectedtargetfile = join(targetDir, expectedfilename)
 
 
 def executeRenamingWith(
-    writeXMP=False,
+    writeXMPTags=False,
     move=True,
     recursive=True,
     maintainFolderStructure=True,
@@ -26,7 +26,7 @@ def executeRenamingWith(
         RenamerInput(
             src=src,
             dst=dst,
-            writeXMP=writeXMP,
+            writeXMPTags=writeXMPTags,
             move=move,
             verbose=True,
             maintainFolderStructure=maintainFolderStructure,
@@ -115,7 +115,7 @@ def test_timeStampIsCorrect():
 def test_writeXMPDateAndCreationWorks():
     prepareTest()
 
-    executeRenamingWith(writeXMP=True)
+    executeRenamingWith(writeXMPTags=True)
     from exiftool import ExifToolHelper
 
     with ExifToolHelper() as et:
@@ -168,7 +168,7 @@ def test_useFilenameAsSourceOfTruth():
 
     assert exists(newfile)
 
-    executeRenamingWith(useCurrentFilename=True, writeXMP=True)
+    executeRenamingWith(useCurrentFilename=True, writeXMPTags=True)
 
     renamedFile = join(targetDir, "2022-11-11@111111_test3.JPG")
     assert exists(renamedFile)
