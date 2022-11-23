@@ -32,14 +32,13 @@ class MediaAggregator(MediaTransitioner):
             for task in self.toTransition:
 
                 files = self.toTreat[task.index].getAllFileNames()
-
                 try:
                     tags = et.get_tags(files, tags=self.expectedTags)
                     out[task.index] = tags
-                except:
+                except Exception as e:
                     out[task.index] = []
                     task.skip = True
-                    task.skipReason = "Could not parse XMP-tags"
+                    task.skipReason = f"Could not parse XMP-tags: {e}"
 
         return out
 

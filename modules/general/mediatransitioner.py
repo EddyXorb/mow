@@ -219,7 +219,9 @@ class MediaTransitioner(VerbosePrinterClass):
                     )
                 except Exception as e:
                     task.skip = True
-                    task.skipReason = f"Problem setting XMP data {task.XMPTags} with exiftool. Exception:{e}"
+                    task.skipReason = (
+                        f"Problem setting XMP data {task.XMPTags} with exiftool: {e}"
+                    )
 
         return self.getNonSkippedOf(tasks)
 
@@ -238,7 +240,7 @@ class MediaTransitioner(VerbosePrinterClass):
                 else:
                     toTransition.copyTo(newPath)
 
-        self.printv(f"Finished relocating {len(tasks)} files.")
+        self.printv(f"Finished transition {len(tasks)} files.")
 
     def optionallyRemoveEmptyFolders(self):
         if self.removeEmptySubfolders:
