@@ -1,9 +1,9 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 import os
-from os.path import join
+from os.path import join, basename
 from pathlib import Path
-from typing import Dict, List, Set, Callable, Tuple
+from typing import Dict, List, Callable
 from exiftool import ExifToolHelper
 from math import sqrt
 
