@@ -78,6 +78,8 @@ class MediaTransitioner(VerbosePrinterClass):
         self.writeXMPTags = input.writeXMPTags
 
         self.toTreat: List[MediaFile] = []
+        self.deleteFolder = join(self.src, "deleted")
+
         self._performedTransition = False
         self._toTransition: List[TransitionTask] = []
 
@@ -106,9 +108,11 @@ class MediaTransitioner(VerbosePrinterClass):
 
     def collectMediaFilesToTreat(self):
         self.printv("Collect files..")
-        for root, _, files in os.walk(self.src):
+        for root, dirs, files in os.walk(self.src, topdown=True):
             if not self.recursive and root != self.src:
                 return
+            # ignore all files in deleteFolder
+            dirs[:] = [d for d in dirs if d != basename(self.deleteFolder)]
 
             for file in files:
                 path = Path(join(root, file))
@@ -168,8 +172,7 @@ class MediaTransitioner(VerbosePrinterClass):
             else os.path.basename(str(mediafile))
         )
 
-        destinationFolder = self.dst if not task.delete else join(self.src, "deleted")
-        newPath = join(self.getTargetDirectory(mediafile, destinationFolder), newName)
+        newPath = join(self.getTargetDirectory(mediafile, self.dst), newName)
         return newPath
 
     def printSkipped(self, tasks: List[TransitionTask]):
