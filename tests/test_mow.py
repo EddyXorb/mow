@@ -7,6 +7,9 @@ import os
 
 testfolder = "tests"
 workingdir = abspath(join(testfolder, "mow_test_workingdir"))
+archivedir = join(workingdir, "7_archive")
+aggregatedir = join(workingdir, "6_aggregate")
+localizedir = join(workingdir, "5.3_localize")
 tagdir = join(workingdir, "5.2_tag")
 ratedir = join(workingdir, "5.1_rate")
 groupdir = join(workingdir, "4_group")
@@ -67,6 +70,30 @@ def prepareRateTransitionTest():
     )
 
 
+def prepareTagTransitionTest():
+    prepareTest(
+        targetdir=join(localizedir, "subfolder"),
+        untouchedfile=join(testfolder, "test3.jpg"),
+        starttransitionfile=join(tagdir, "subfolder", "tagged.jpg"),
+    )
+
+
+def prepareLocalizeTransitionTest():
+    prepareTest(
+        targetdir=join(aggregatedir, "subfolder"),
+        untouchedfile=join(testfolder, "test3.jpg"),
+        starttransitionfile=join(localizedir, "subfolder", "localized.jpg"),
+    )
+
+
+def prepareAggregateTransitionTest(filename: str, groupname: str):
+    prepareTest(
+        targetdir=join(archivedir, groupname),
+        untouchedfile=join(testfolder, "2022-12-12@121212_FINISHED.JPG"),
+        starttransitionfile=join(aggregatedir, groupname, filename),
+    )
+
+
 def test_filewasmoved():
     prepareRenameTest()
 
@@ -74,7 +101,7 @@ def test_filewasmoved():
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).rename()
+    Mow(settingsfile=settingsfile).rename(dry=False)
     assert not exists(srcfile)
     assert exists(join(convertdir, "subfolder", "2022-07-27@215555_test3.JPG"))
 
@@ -100,7 +127,7 @@ def test_emptyDirsAreremovedInRenameFolder():
     prepareRenameTest()
 
     assert exists(join(renamedir, "subfolder"))
-    Mow(settingsfile=settingsfile).rename()
+    Mow(settingsfile=settingsfile).rename(dry=False)
     assert not exists(join(renamedir, "subfolder"))
 
 
@@ -109,7 +136,7 @@ def test_conversionOfImageWorks():
     srcfile = join(workingdir, "3_convert", "subfolder", "test3.JPG")
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).convert()
+    Mow(settingsfile=settingsfile).convert(dry=False)
 
     assert not exists(srcfile)
     assert exists(join(workingdir, "4_group", "subfolder", "test3.JPG"))
@@ -121,7 +148,7 @@ def test_conversionOfVideoWorks():
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).convert()
+    Mow(settingsfile=settingsfile).convert(dry=False)
 
     assert not exists(srcfile)
     assert exists(join(workingdir, "4_group", "subfolder", "test_original.MOV"))
@@ -138,3 +165,41 @@ def test_ratedImageIsTransitioned():
 
     assert not exists(srcfile)
     assert exists(join(tagdir, "subfolder", "rated.jpg"))
+
+
+def test_taggedImageIsTransitioned():
+    prepareTagTransitionTest()
+    srcfile = join(tagdir, "subfolder", "tagged.jpg")
+
+    assert exists(srcfile)
+
+    Mow(settingsfile=settingsfile).tag(dry=False)
+
+    assert not exists(srcfile)
+    assert exists(join(localizedir, "subfolder", "tagged.jpg"))
+
+
+def test_localizedImageIsTransitioned():
+    prepareLocalizeTransitionTest()
+    srcfile = join(localizedir, "subfolder", "localized.jpg")
+
+    assert exists(srcfile)
+
+    Mow(settingsfile=settingsfile).localize(dry=False)
+
+    assert not exists(srcfile)
+    assert exists(join(aggregatedir, "subfolder", "localized.jpg"))
+
+
+def test_aggregatableImageIsTransitioned():
+    group = "2022-12-12@121212_TEST"
+    file = "2022-12-12@121212_aggregated.jpg"
+    prepareAggregateTransitionTest(groupname=group, filename=file)
+    srcfile = join(aggregatedir, group, file)
+
+    assert exists(srcfile)
+
+    Mow(settingsfile=settingsfile).aggregate(dry=False)
+
+    assert not exists(srcfile)
+    assert exists(join(archivedir, group, file))
