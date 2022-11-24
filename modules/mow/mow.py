@@ -3,6 +3,7 @@ import yaml
 
 from os import path
 from os.path import join
+import logging
 
 
 from ..general.mediatransitioner import TransitionerInput
@@ -16,8 +17,10 @@ from ..general.mediaconverter import ConverterInput
 from ..general.mediagrouper import GrouperInput, MediaGrouper
 from ..general.filenamehelper import timestampformat
 from ..general.mediarater import MediaRater
-
-import logging
+from ..image.imageaggregator import ImageAggregator
+from ..video.videoaggregator import VideoAggregator
+from ..general.medialocalizer import MediaLocalizer
+from ..general.mediatagger import MediaTagger
 
 
 class Mow:
@@ -26,7 +29,6 @@ class Mow:
     """
 
     def __init__(self, settingsfile: str):
-
         logging.basicConfig(
             format="%(asctime)s [%(levelname)s]: %(message)s",
             level=logging.INFO,
@@ -55,46 +57,47 @@ class Mow:
         self.stageToFolder = {
             folder.split("_")[1]: folder for folder in self.stageFolders
         }
+        self.basicInputParameter = {
+            "verbose": True,
+            "recursive": True,
+            "maintainFolderStructure": True,
+            "removeEmptySubfolders": True,
+            "writeXMPTags": True,
+            "move": True,
+        }
 
     def copy(self):
         pass
 
-    def rename(self, useCurrentFilename=False, replace="", dry=False):
+    def rename(self, useCurrentFilename=False, replace="", dry: bool = True):
         src, dst = self._getSrcDstForStage("rename")
-
         renamers = [ImageRenamer, VideoRenamer]
         for renamer in renamers:
-            self._printEmphasized(f"Apply renamer: {renamer.__name__}")
+            self._printEmphasized(f"Stage rename: {renamer.__name__}")
             renamer(
                 RenamerInput(
                     src=src,
                     dst=dst,
-                    move=True,
-                    verbose=True,
-                    writeXMPTags=True,
-                    useCurrentFilename=useCurrentFilename,
-                    removeEmptySubfolders=True,
-                    replace=replace,
                     dry=dry,
+                    useCurrentFilename=useCurrentFilename,
+                    replace=replace,
+                    **self.basicInputParameter,
                 )
             )()
 
-    def convert(self):
+    def convert(self, dry: bool):
         src, dst = self._getSrcDstForStage("convert")
-
         converters = [ImageConverter, VideoConverter]
         for converter in converters:
-            self._printEmphasized(f"Apply converter: {converter.__name__}")
+            self._printEmphasized(f"Stage Convert: {converter.__name__}")
             converter(
                 ConverterInput(
                     src=src,
                     dst=dst,
-                    verbose=True,
+                    dry=dry,
                     deleteOriginals=False,
                     enforcePassthrough=False,
-                    recursive=True,
-                    maintainFolderStructure=True,
-                    removeEmptySubfolders=True,
+                    **self.basicInputParameter,
                 )
             )()
 
@@ -102,52 +105,73 @@ class Mow:
         self,
         automate=False,
         distance=12,
-        dry=True,
+        dry: bool = True,
         undoAutomatedGrouping=False,
         addMissingTimestampsToSubfolders=False,
     ):
         src, dst = self._getSrcDstForStage("group")
-        self._printEmphasized("Group  files")
+        self._printEmphasized("Stage Group")
         MediaGrouper(
             GrouperInput(
                 src=src,
                 dst=dst,
-                verbose=True,
-                recursive=True,
-                maintainFolderStructure=True,
-                writeXMPTags=True,
-                removeEmptySubfolders=True,
                 automaticGrouping=automate,
                 separationDistanceInHours=distance,
                 dry=dry,
                 addMissingTimestampsToSubfolders=addMissingTimestampsToSubfolders,
                 undoAutomatedGrouping=undoAutomatedGrouping,
+                **self.basicInputParameter,
             )
         )()
 
     def rate(self, dry: bool = True):
         src, dst = self._getSrcDstForStage("rate")
-        self._printEmphasized("Rate files")
+        self._printEmphasized("Stage Rate")
         MediaRater(
             input=TransitionerInput(
                 src=src,
                 dst=dst,
-                verbose=True,
                 dry=dry,
-                recursive=True,
-                maintainFolderStructure=True,
-                removeEmptySubfolders=True,
+                **self.basicInputParameter,
             )
         )()
 
-    def tag(self):
-        pass
+    def tag(self, dry: bool = True):
+        src, dst = self._getSrcDstForStage("tag")
+        self._printEmphasized("Stage Tag")
+        MediaTagger(
+            TransitionerInput(
+                src=src,
+                dst=dst,
+                dry=dry,
+                **self.basicInputParameter,
+            )
+        )()
 
-    def localize(self):
-        pass
+    def localize(self, dry: bool = True):
+        src, dst = self._getSrcDstForStage("localize")
+        self._printEmphasized("Stage Localize")
+        MediaTagger(
+            TransitionerInput(
+                src=src,
+                dst=dst,
+                dry=dry,
+                **self.basicInputParameter,
+            )
+        )()
 
-    def aggregate(self):
-        pass
+    def aggregate(self, dry: bool = True):
+        src, dst = self._getSrcDstForStage("aggregate")
+        self._printEmphasized("Stage Aggregate")
+        for aggregator in [ImageAggregator, VideoAggregator]:
+            aggregator(
+                TransitionerInput(
+                    src=src,
+                    dst=dst,
+                    dry=dry,
+                    **self.basicInputParameter,
+                )
+            )()
 
     def _getStageAfter(self, stage: str) -> str:
         if stage not in self.stageToFolder:
