@@ -3,6 +3,7 @@ from typing import Dict, List
 from pathlib import Path
 from os.path import basename, splitext
 from exiftool import ExifToolHelper
+from tqdm import tqdm
 
 from .mediatransitioner import MediaTransitioner, TransitionTask, TransitionerInput
 from .mediagrouper import MediaGrouper
@@ -26,10 +27,11 @@ class MediaAggregator(MediaTransitioner):
         """
         Returns index to tags of all files of mediafile
         """
+        self.printv("Collect xmp-tags..")
         out: Dict[int, List[Dict[str, str]]] = {}
 
         with ExifToolHelper() as et:
-            for task in self.toTransition:
+            for task in tqdm(self.toTransition):
 
                 files = self.toTreat[task.index].getAllFileNames()
                 try:
@@ -94,7 +96,7 @@ class MediaAggregator(MediaTransitioner):
     def checkAllTagsAreEqualFor(self, tags: List[Dict[str, str]]) -> CheckResult:
         if len(tags) <= 1:
             return CheckResult(True)
-        
+
         for exp in self.expectedTags:
             for singleFileTags in tags:
                 if singleFileTags[exp] != tags[0][exp]:
@@ -102,7 +104,7 @@ class MediaAggregator(MediaTransitioner):
                         False,
                         f"XMP-tag {exp} differs between two files that belong to the same medium",
                     )
-                    
+
         return CheckResult(True)
 
     def checkExpectedXMPTags(self, indexToTags: Dict[int, List[Dict[str, str]]]):
