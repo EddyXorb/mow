@@ -17,9 +17,6 @@ class MediaRater(MediaTransitioner):
         input.writeXMPTags = False
         super().__init__(input)
 
-    def prepareTransition(self):
-        pass
-
     def getTasks(self) -> List[TransitionTask]:
         self.printv("Check every file for rating..")
 

@@ -36,6 +36,10 @@ class ImageFile(MediaFile):
             return self.pathnoext + self.extensions[1]
         return None
 
+    def markRawAsRemoved(self):
+        if len(self.extensions) > 1:
+            self.extensions.pop()
+
     def readDateTime(self):
         try:
             date = None

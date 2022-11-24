@@ -240,7 +240,7 @@ class MediaTransitioner(VerbosePrinterClass):
                 else:
                     toTransition.copyTo(newPath)
 
-        self.printv(f"Finished transition {len(tasks)} files.")
+        self.printv(f"Finished transition of {len(tasks)} files.")
 
     def optionallyRemoveEmptyFolders(self):
         if self.removeEmptySubfolders:

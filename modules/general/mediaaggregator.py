@@ -48,6 +48,7 @@ class MediaAggregator(MediaTransitioner):
 
         indexToTags = self.getTagsFromTasks()
         self.checkExpectedXMPTags(indexToTags)
+        self.checkXMPTagsAreEqual(indexToTags)
         self.deleteBasedOnRating(indexToTags)
 
     def getTasks(self) -> List[TransitionTask]:
@@ -79,6 +80,30 @@ class MediaAggregator(MediaTransitioner):
             if not result.ok:
                 task.skip = True
                 task.skipReason = result.error
+
+    def checkXMPTagsAreEqual(self, indexToTags: Dict[int, List[Dict[str, str]]]):
+        for task in self.toTransition:
+            if task.skip:
+                continue
+
+            result = self.checkAllTagsAreEqualFor(indexToTags[task.index])
+
+            task.skip = not result.ok
+            task.skipReason = result.error
+
+    def checkAllTagsAreEqualFor(self, tags: List[Dict[str, str]]) -> CheckResult:
+        if len(tags) <= 1:
+            return CheckResult(True)
+        
+        for exp in self.expectedTags:
+            for singleFileTags in tags:
+                if singleFileTags[exp] != tags[0][exp]:
+                    return CheckResult(
+                        False,
+                        f"XMP-tag {exp} differs between two files that belong to the same medium",
+                    )
+                    
+        return CheckResult(True)
 
     def checkExpectedXMPTags(self, indexToTags: Dict[int, List[Dict[str, str]]]):
         for task in self.toTransition:
