@@ -8,19 +8,32 @@ parser = ArgumentParser(
 subparsers = parser.add_subparsers(dest="command")
 
 renameparser = subparsers.add_parser(
-    "rename", help="Execute renaming of media files (Transition 2 -> 3)."
+    "rename", help=f"transition of renamed media files (2 -> 3)."
 )
 convertparser = subparsers.add_parser(
-    "convert", help="Execute conversion of media files. (Transition 3 -> 4)"
+    "convert", help="transition of converted media files (3 -> 4)."
 )
 
 groupparser = subparsers.add_parser(
     "group",
-    help="Execute grouping of media files. (Transition 4 -> 5). Comes with a bunch of helpers. If one of the helpers is called will not perform transition.",
+    help="transition of grouped media files. (4 -> 5). Comes with a bunch of helpers. If one of the helpers is called will not perform transition.",
 )
 
 rateparser = subparsers.add_parser(
-    "rate", help="Execute transition of rated media files (Transition 5.1 -> 5.2))"
+    "rate", help="transition of rated media files (5.1 -> 5.2)."
+)
+
+tagparser = subparsers.add_parser(
+    "tag", help="transition of tagged media files (5.2 -> 5.3)."
+)
+
+localizeparser = subparsers.add_parser(
+    "localize",
+    help="transition of localized media files (5.3 -> 6).",
+)
+
+aggregateparser = subparsers.add_parser(
+    "aggregate", help="transition of aggregated media files (6 -> 7)."
 )
 
 
@@ -94,9 +107,32 @@ rateparser.add_argument(
     "--execute",
     help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
     action="store_true",
-    dest="rate_execute"
+    dest="rate_execute",
 )
 
+tagparser.add_argument(
+    "-x",
+    "--execute",
+    help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
+    action="store_true",
+    dest="tag_execute",
+)
+
+localizeparser.add_argument(
+    "-x",
+    "--execute",
+    help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
+    action="store_true",
+    dest="localize_execute",
+)
+
+aggregateparser.add_argument(
+    "-x",
+    "--execute",
+    help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
+    action="store_true",
+    dest="aggregate_execute",
+)
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -119,4 +155,10 @@ if __name__ == "__main__":
             addMissingTimestampsToSubfolders=args.group_timestamps,
         )
     if args.command == "rate":
-        mow.rate(dry = not args.rate_execute)
+        mow.rate(dry=not args.rate_execute)
+    if args.command == "tag":
+        mow.tag(dry=not args.tag_execute)
+    if args.command == "localize":
+        mow.localize(dry=not args.localize_execute)
+    if args.command == "aggregate":
+        mow.aggregate(dry=not args.aggregate_execute)
