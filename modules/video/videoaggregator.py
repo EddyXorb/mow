@@ -4,6 +4,7 @@ from ..general.mediatransitioner import TransitionTask
 from ..video.videofile import VideoFile
 from ..general.mediaaggregator import MediaAggregator, TransitionerInput
 
+
 class VideoAggregator(MediaAggregator):
     def __init__(self, input: TransitionerInput):
         input.mediaFileFactory = VideoFile
@@ -13,6 +14,7 @@ class VideoAggregator(MediaAggregator):
         mfile: VideoFile = self.toTreat[task.index]
         match rating:
             case 1:
-                mfile.moveTo(self.deleteFolder)
+                if not self.dry:
+                    mfile.moveTo(self.deleteFolder)
                 task.skip = True
                 task.skipReason = "deleted file based on rating."

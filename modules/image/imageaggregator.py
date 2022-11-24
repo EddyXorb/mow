@@ -23,7 +23,8 @@ class ImageAggregator(MediaAggregator):
                     basename(str(mfile)),
                 )
                 self.printv(f"Delete file {str(mfile)} ( ---> {self.deleteFolder})")
-                mfile.moveTo(target)
+                if not self.dry:
+                    mfile.moveTo(target)
 
                 task.skip = True
                 task.skipReason = "deleted file based on rating."
@@ -36,8 +37,7 @@ class ImageAggregator(MediaAggregator):
                     self.getTargetDirectory(rawfile, self.deleteFolder),
                     basename(rawfile),
                 )
-
-                os.makedirs(dirname(target), exist_ok=True)
-                move(rawfile, target)
-
-                mfile.markRawAsRemoved()
+                if not self.dry:
+                    os.makedirs(dirname(target), exist_ok=True)
+                    move(rawfile, target)
+                    mfile.markRawAsRemoved()
