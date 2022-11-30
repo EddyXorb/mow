@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Callable
 from exiftool import ExifToolHelper
 from math import sqrt
+from tqdm import tqdm
 
 from ..general.mediafile import MediaFile
 from ..general.verboseprinterclass import VerbosePrinterClass
@@ -202,12 +203,13 @@ class MediaTransitioner(VerbosePrinterClass):
         return skipped
 
     def getSuccesfulChangedXMPTasksOf(self, tasks: List[TransitionTask]):
-        if not self.writeXMPTags or self.dry:
+        if not self.writeXMPTags:
             return tasks
 
+        self.printv("Set XMP tags..")
         with ExifToolHelper() as et:
-            for task in tasks:
-                if len(task.XMPTags) == 0:
+            for task in tqdm(tasks):
+                if len(task.XMPTags) == 0 or self.dry:
                     continue
                 try:
                     files = self.toTreat[task.index].getAllFileNames()
