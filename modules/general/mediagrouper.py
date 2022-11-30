@@ -61,13 +61,13 @@ class MediaGrouper(MediaTransitioner):
         if len(candidate) <= 18:
             return CheckResult(
                 ok=False,
-                error=f"Candidate {candidate} has no or too short description, should at least have length 2",
+                error=f"has no or too short description, should at least have length 2",
             )
 
         if "@" in candidate[11:]:
             return CheckResult(
                 ok=False,
-                error=f"Candidate {candidate} contains '@' at index > 10",
+                error=f"contains '@' at index > 10",
             )
 
         return isCorrectTimestamp(candidate=candidate[0:17])
