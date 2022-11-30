@@ -166,7 +166,7 @@ def test_differentXMPTagsBetweenJPGandRawAreRecognized():
     )
 
 
-def test_missingXMPTagSourceInRawIsRecognized():
+def test_missingXMPTagSourceInRawIsCopiedFromJpg():
     groupname = "2022-12-12@121212_TEST"
     fullname = join(src, groupname, "2022-12-12@121212_test.ORF")
     prepareTest(srcname=fullname)
@@ -178,19 +178,26 @@ def test_missingXMPTagSourceInRawIsRecognized():
     assert exists(fullname.replace(".jpg", ".ORF"))
 
     ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, verbose=True, writeXMPTags=True
+        )
     )()
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert not exists(fullname)
+    assert not exists(fullname.replace(".jpg", ".ORF"))
 
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
+    expectedTarget = join(
+        dst, str(Path(fullname.replace(".ORF", ".jpg")).relative_to(src))
     )
+    assert exists(expectedTarget)
+    assert exists(expectedTarget.replace(".jpg", ".ORF"))
+
+    with ExifToolHelper() as et:
+        tag = et.get_tags(expectedTarget.replace(".jpg", ".ORF"), "XMP:Source")[0]
+        assert tag["XMP:Source"] == "test_aggregate.jpg"
 
 
-def test_missingXMPTagSourceInJpgIsRecognized():
+def test_missingXMPTagSourceInJpgIsCopiedFromRaw():
     groupname = "2022-12-12@121212_TEST"
     fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
     prepareTest(srcname=fullname)
@@ -205,16 +212,48 @@ def test_missingXMPTagSourceInJpgIsRecognized():
         input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
     )()
 
+    assert not exists(fullname)
+    assert not exists(fullname.replace(".jpg", ".ORF"))
+
+    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
+    assert exists(expectedTargetJpg)
+    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
+
+    with ExifToolHelper() as et:
+        tag = et.get_tags(expectedTargetJpg, "XMP:Source")[0]
+        assert tag["XMP:Source"] == "test_aggregate.jpg"
+
+
+def test_missingXMPTagDescriptionIsCopiedFromRaw():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+    prepareTest(srcname=fullname)
+    ifile = ImageFile(fullname)
+
+    # delete tag
+    with ExifTool() as et:
+        et.execute("-xmp:Description=", "-P", "-overwrite_original", str(ifile))
+
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
+    ImageAggregator(
+        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
+    )()
+
+    assert not exists(fullname)
+    assert not exists(fullname.replace(".jpg", ".ORF"))
+
+    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
+    assert exists(expectedTargetJpg)
+    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
+
+    with ExifToolHelper() as et:
+        tag = et.get_tags(expectedTargetJpg, "XMP:Description")[0]
+        assert tag["XMP:Description"] == "2022-12-12@121212_TEST"
 
 
-def test_missingXMPTagDescriptionIsRecognized():
+def test_completelyMissingXMPTagDescriptionIsRecognized():
     groupname = "2022-12-12@121212_TEST"
     fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
     prepareTest(srcname=fullname)
@@ -236,13 +275,12 @@ def test_missingXMPTagDescriptionIsRecognized():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
+    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
+    assert not exists(expectedTargetJpg)
+    assert not exists(expectedTargetJpg.replace(".jpg", ".ORF"))
 
 
-def test_missingXMPTagDateIsRecognized():
+def test_completelyMissingXMPTagDateIsRecognized():
     groupname = "2022-12-12@121212_TEST"
     fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
     prepareTest(srcname=fullname)
@@ -261,13 +299,40 @@ def test_missingXMPTagDateIsRecognized():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
+    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
+    assert not exists(expectedTargetJpg)
+    assert not exists(expectedTargetJpg.replace(".jpg", ".ORF"))
 
 
-def test_missingXMPTagRatingIsRecognized():
+def test_missingXMPTagDateIsCopiedFromRaw():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+    prepareTest(srcname=fullname)
+    ifile = ImageFile(fullname)
+
+    with ExifTool() as et:
+        et.execute("-xmp:Date=", "-P", "-overwrite_original", str(ifile))
+
+    assert exists(fullname)
+    assert exists(fullname.replace(".jpg", ".ORF"))
+
+    ImageAggregator(
+        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
+    )()
+
+    assert not exists(fullname)
+    assert not exists(fullname.replace(".jpg", ".ORF"))
+
+    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
+    assert exists(expectedTargetJpg)
+    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
+
+    with ExifToolHelper() as et:
+        tag = et.get_tags(expectedTargetJpg, "XMP:Date")[0]
+        assert tag["XMP:Date"] == "2022:07:27 21:55:55"
+
+
+def test_completelyMissingXMPTagRatingIsRecognized():
     groupname = "2022-12-12@121212_TEST"
     fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
     prepareTest(srcname=fullname)
@@ -292,6 +357,94 @@ def test_missingXMPTagRatingIsRecognized():
     assert not exists(
         join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
     )
+
+
+def test_missingXMPTagRatingIsCopiedFromRaw():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+    prepareTest(srcname=fullname)
+    ifile = ImageFile(fullname)
+
+    with ExifTool() as et:
+        et.execute("-xmp:Rating=", "-P", "-overwrite_original", str(ifile))
+
+    assert exists(fullname)
+    assert exists(fullname.replace(".jpg", ".ORF"))
+
+    ImageAggregator(
+        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
+    )()
+
+    assert not exists(fullname)
+    assert not exists(fullname.replace(".jpg", ".ORF"))
+
+    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
+    assert exists(expectedTargetJpg)
+    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
+
+    with ExifToolHelper() as et:
+        tag = et.get_tags(expectedTargetJpg, "XMP:Rating")[0]
+        assert tag["XMP:Rating"] == 4
+
+
+def test_optionalXMPTagLabelIsCopiedFromJpg():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+    prepareTest(srcname=fullname)
+    ifile = ImageFile(fullname)
+
+    with ExifToolHelper() as et:
+        et.set_tags(
+            tags={"XMP:Label": "Green"},
+            params=["-P", "-overwrite_original"],
+            files=str(ifile),
+        )
+
+    assert exists(fullname)
+    assert exists(fullname.replace(".jpg", ".ORF"))
+
+    ImageAggregator(
+        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
+    )()
+
+    assert not exists(fullname)
+    assert not exists(fullname.replace(".jpg", ".ORF"))
+
+    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
+    assert exists(expectedTargetJpg)
+    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
+
+    with ExifToolHelper() as et:
+        tag = et.get_tags(expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:Label")[0]
+        assert tag["XMP:Label"] == "Green"
+
+
+def test_optionalXMPTagSubjectIsCopiedFromJpg():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+    prepareTest(srcname=fullname)
+    ifile = ImageFile(fullname)
+
+    with ExifTool() as et:
+        et.execute("-xmp:Subject=Haus", "-P", "-overwrite_original", str(ifile))
+
+    assert exists(fullname)
+    assert exists(fullname.replace(".jpg", ".ORF"))
+
+    ImageAggregator(
+        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
+    )()
+
+    assert not exists(fullname)
+    assert not exists(fullname.replace(".jpg", ".ORF"))
+
+    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
+    assert exists(expectedTargetJpg)
+    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
+
+    with ExifToolHelper() as et:
+        tag = et.get_tags(expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:Subject")[0]
+        assert tag["XMP:Subject"] == "Haus"
 
 
 def test_rating1ImageIsMovedIntoDeleteFolder():

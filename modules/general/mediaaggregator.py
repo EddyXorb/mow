@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from pathlib import Path
 from os.path import basename, splitext
@@ -22,8 +22,9 @@ class MediaAggregator(MediaTransitioner):
             "XMP:Description",
             "XMP:Rating",
         ]
+        self.optionalTags = ["XMP:Subject", "XMP:Label"]
 
-    def getTagsFromTasks(self):
+    def getTagsFromTasks(self) -> Dict[int, List[Dict[str, str]]]:
         """
         Returns index to tags of all files of mediafile
         """
@@ -35,7 +36,9 @@ class MediaAggregator(MediaTransitioner):
 
                 files = self.toTreat[task.index].getAllFileNames()
                 try:
-                    tags = et.get_tags(files, tags=self.expectedTags)
+                    tags = et.get_tags(
+                        files, tags=self.expectedTags + self.optionalTags
+                    )
                     out[task.index] = tags
                 except Exception as e:
                     out[task.index] = []
@@ -49,8 +52,7 @@ class MediaAggregator(MediaTransitioner):
         self.checkGrouping()
 
         indexToTags = self.getTagsFromTasks()
-        self.checkExpectedXMPTags(indexToTags)
-        self.checkXMPTagsAreEqual(indexToTags)
+        self.setXMPTagsToWrite(indexToTags)
         self.deleteBasedOnRating(indexToTags)
 
     def getTasks(self) -> List[TransitionTask]:
@@ -83,48 +85,53 @@ class MediaAggregator(MediaTransitioner):
                 task.skip = True
                 task.skipReason = result.error
 
-    def checkXMPTagsAreEqual(self, indexToTags: Dict[int, List[Dict[str, str]]]):
+    def setXMPTagsToWrite(self, indexToTags: Dict[int, List[Dict[str, str]]]):
         for task in self.toTransition:
             if task.skip:
                 continue
 
-            result = self.checkAllTagsAreEqualFor(indexToTags[task.index])
+            tagsDictList = indexToTags[task.index]
+            result = self.setXMPTagsToWriteFor(task, tagsDictList)
 
-            task.skip = not result.ok
-            task.skipReason = result.error
+            if not result.ok:
+                task.skip = True
+                task.skipReason = result.error
 
-    def checkAllTagsAreEqualFor(self, tags: List[Dict[str, str]]) -> CheckResult:
-        if len(tags) <= 1:
-            return CheckResult(True)
+    def setXMPTagsToWriteFor(
+        self, task: TransitionTask, tagsDictList: List[Dict[str, str]]
+    ) -> CheckResult:
+        for tag in self.expectedTags + self.optionalTags:
+            allValuesThisTag: Set[str] = set()
+            atLeastOneMissing = False
+            tagMissingForExtension = []
+            subjectTagList = None
 
-        for exp in self.expectedTags:
-            for singleFileTags in tags:
-                if singleFileTags[exp] != tags[0][exp]:
-                    return CheckResult(
-                        False,
-                        f"XMP-tag {exp} differs between two files that belong to the same medium",
-                    )
+            for tagsDict in tagsDictList:
+                if tag in tagsDict:
+                    if tag == "XMP:Subject":
+                        subjectTagList = tagsDict[
+                            tag
+                        ]  # we need to treat this as special case as this is a list, not string
+                    allValuesThisTag.add(str(tagsDict[tag]))
+                else:
+                    atLeastOneMissing = True
+                    tagMissingForExtension.append(splitext(tagsDict["SourceFile"])[1])
 
-        return CheckResult(True)
-
-    def checkExpectedXMPTags(self, indexToTags: Dict[int, List[Dict[str, str]]]):
-        for task in self.toTransition:
-            if task.skip:
-                continue
-
-            result = self.checkExpectedXMPTagsIn(indexToTags[task.index])
-            task.skip = not result.ok
-            task.skipReason = result.error
-
-    def checkExpectedXMPTagsIn(self, tagslist: List[Dict[str, str]]) -> CheckResult:
-        for singleFileTags in tagslist:
-            for exp in self.expectedTags:
-                if exp not in singleFileTags:
-                    extension = splitext(singleFileTags["SourceFile"])[1]
-                    return CheckResult(
-                        ok=False,
-                        error=f"XMP tag {exp} is missing for extension {extension}",
-                    )
+            if len(allValuesThisTag) == 1 and atLeastOneMissing:
+                if tag != "XMP:Subject":
+                    task.XMPTags[tag] = allValuesThisTag.pop()
+                else:
+                    task.XMPTags[tag] = subjectTagList
+            elif len(allValuesThisTag) == 0 and tag in self.expectedTags:
+                return CheckResult(
+                    False,
+                    f"XMP tag {tag} is missing for extension(s): {','.join(tagMissingForExtension)}",
+                )
+            elif len(allValuesThisTag) > 1:
+                return CheckResult(
+                    False,
+                    f"XMP-tag {tag} differs between two files that belong to the same medium",
+                )
 
         return CheckResult(ok=True)
 
@@ -133,8 +140,11 @@ class MediaAggregator(MediaTransitioner):
             if task.skip:
                 continue
 
-            rating = int(indexToTags[task.index][0]["XMP:Rating"])
-            if rating not in range(1, 6):
+            if "XMP:Rating" in task.XMPTags:
+                rating = task.XMPTags["XMP:Rating"]
+            else:
+                rating = int(indexToTags[task.index][0]["XMP:Rating"])
+            if not (1 <= int(rating) <= 5):
                 task.skip = True
                 task.skipReason = f"rating is {rating}, which is not within 1-5 range"
                 continue
