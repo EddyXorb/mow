@@ -149,7 +149,7 @@ class MediaAggregator(MediaTransitioner):
                 task.skipReason = f"rating is {rating}, which is not within 1-5 range"
                 continue
 
-            self.treatTaskBasedOnRating(task, rating)
+            self.treatTaskBasedOnRating(task, int(rating))
 
     def treatTaskBasedOnRating(self, task: TransitionTask, rating: int):
         """
