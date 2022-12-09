@@ -224,6 +224,8 @@ class MediaTransitioner(VerbosePrinterClass):
                     task.skipReason = (
                         f"Problem setting XMP data {task.XMPTags} with exiftool: {e}"
                     )
+                    if len(str(self.toTreat[task.index])) > 260:
+                        task.skipReason += f"Filename is too long. Exiftool supports only 260 characters."
 
         return self.getNonSkippedOf(tasks)
 
