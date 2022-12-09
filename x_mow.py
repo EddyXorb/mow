@@ -36,6 +36,9 @@ aggregateparser = subparsers.add_parser(
     "aggregate", help="transition of aggregated media files (6 -> 7)."
 )
 
+statusparser = subparsers.add_parser(
+    "status", help="get some status information about the workingdirectory"
+)
 
 renameparser.add_argument(
     "-c",
@@ -134,6 +137,7 @@ aggregateparser.add_argument(
     dest="aggregate_execute",
 )
 
+
 if __name__ == "__main__":
     args = parser.parse_args()
     mow = Mow(".mowsettings.yml")
@@ -162,3 +166,5 @@ if __name__ == "__main__":
         mow.localize(dry=not args.localize_execute)
     if args.command == "aggregate":
         mow.aggregate(dry=not args.aggregate_execute)
+    if args.command == "status":
+        mow.status()

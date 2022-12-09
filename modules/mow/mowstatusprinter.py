@@ -1,0 +1,51 @@
+from collections import defaultdict
+import os
+from os.path import join
+from typing import Dict, List, DefaultDict
+from math import sqrt
+from ..general.medafilefactories import createAnyValidMediaFile
+
+
+class MowStatusPrinter:
+    def __init__(
+        self, stages: List[str], stageToFolder: Dict[str, str], workingdir: str
+    ):
+        """
+        stages: stagename, stagefolder-path
+        """
+        self.stages = stages
+        self.stageToFolder = stageToFolder
+        self.workingdir = workingdir
+
+    def printStatus(self):
+        allfiles = self.collectAllMediafiles()
+
+        nrallfiles = sum([len(files) for files in allfiles.values()])
+        weightedSum = 0
+
+        for cnt, item in enumerate(allfiles.items()):
+            stage, files = item
+            print(
+                f"{stage}: {len(files)} mediafiles ({(100.0 * len(files))/nrallfiles:.0f}%) {'.'*int(sqrt(len(files)))}"
+            )
+            weightedSum += cnt * len(files)
+        print(
+            f"\nOverall progress: {float(100*weightedSum)/(len(self.stages)*nrallfiles):.0f} %"
+        )
+
+    def collectAllMediafiles(self) -> Dict[str, List[str]]:
+        """
+        Return: stage to list of all mediafiles found in this stage
+        """
+        out: DefaultDict[str, List[str]] = defaultdict(lambda: [])
+
+        for stage in self.stages:
+            for root, _, files in os.walk(
+                join(self.workingdir, self.stageToFolder[stage])
+            ):
+                for file in files:
+                    mediafile = createAnyValidMediaFile(join(root, file))
+                    if mediafile.isValid():
+                        out[stage].append(mediafile)
+
+        return out

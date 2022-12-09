@@ -22,6 +22,8 @@ from ..video.videoaggregator import VideoAggregator
 from ..general.medialocalizer import MediaLocalizer
 from ..general.mediatagger import MediaTagger
 
+from .mowstatusprinter import MowStatusPrinter
+
 
 class Mow:
     """
@@ -39,7 +41,8 @@ class Mow:
             datefmt=timestampformat,
         )
 
-        logging.info(f"{'#'*30} Start new MOW session. {'#'*30}")
+        #logging.info(f"{'#'*30} Start new MOW session. {'#'*30}")
+
         self.settingsfile = settingsfile
         self.settings = self._readsettings()
         self.stageFolders = [
@@ -172,6 +175,11 @@ class Mow:
                     **self.basicInputParameter,
                 )
             )()
+
+    def status(self):
+        MowStatusPrinter(
+            self.stages, self.stageToFolder, self.settings["workingdir"]
+        ).printStatus()
 
     def _getStageAfter(self, stage: str) -> str:
         if stage not in self.stageToFolder:
