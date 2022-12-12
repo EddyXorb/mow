@@ -29,8 +29,9 @@ class MowStatusPrinter:
                 f"{stage}: {len(files)} mediafiles ({(100.0 * len(files))/nrallfiles:.0f}%) {'.'*int(sqrt(len(files)))}"
             )
             weightedSum += cnt * len(files)
+        print(f"\nNumber of all files: {nrallfiles}")
         print(
-            f"\nOverall progress: {float(100*weightedSum)/(len(self.stages)*nrallfiles):.0f} %"
+            f"Overall progress: {float(100*weightedSum)/(len(self.stages)*nrallfiles):.0f} %"
         )
 
     def collectAllMediafiles(self) -> Dict[str, List[str]]:
@@ -40,9 +41,11 @@ class MowStatusPrinter:
         out: DefaultDict[str, List[str]] = defaultdict(lambda: [])
 
         for stage in self.stages:
-            for root, _, files in os.walk(
+            for root, dirs, files in os.walk(
                 join(self.workingdir, self.stageToFolder[stage])
             ):
+                # ignore all files in deleteFolder
+                dirs[:] = [d for d in dirs if d != "deleted"]
                 for file in files:
                     mediafile = createAnyValidMediaFile(join(root, file))
                     if mediafile.isValid():
