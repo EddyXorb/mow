@@ -64,6 +64,14 @@ renameparser.add_argument(
     action="store_true",
 )
 
+convertparser.add_argument(
+    "-x",
+    "--execute",
+    help="Really execute conversion/deletion/moving of files/folders, not only in dry mode.",
+    dest="convert_execute",
+    action="store_true",
+)
+
 groupparser.add_argument(
     "-a",
     "--automate",
@@ -149,7 +157,7 @@ if __name__ == "__main__":
             dry=not args.rename_execute,
         )
     if args.command == "convert":
-        mow.convert()
+        mow.convert(dry=not args.convert_execute)
     if args.command == "group":
         mow.group(
             automate=args.group_automate,
