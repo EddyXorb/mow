@@ -44,17 +44,21 @@ class ImageFile(MediaFile):
         try:
             date = None
             img = Image.open(self.getJpg())
-            img_exif = img.getexif()
+            img_exif = img._getexif()
             exifvalueOriginalCreation = 36867
+            exifValueDigitized = 36868
             exifvalueChangedDate = 306
             if img_exif is None or (
                 exifvalueOriginalCreation not in img_exif
+                and exifValueDigitized not in img_exif
                 and exifvalueChangedDate not in img_exif
             ):
                 return None
             else:
                 if exifvalueOriginalCreation in img_exif:
                     date = img_exif[exifvalueOriginalCreation]
+                elif exifValueDigitized in img_exif:
+                    date = img_exif[exifValueDigitized]
                 else:
                     date = img_exif[exifvalueChangedDate]
 
