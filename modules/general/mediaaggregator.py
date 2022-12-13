@@ -22,7 +22,7 @@ class MediaAggregator(MediaTransitioner):
             "XMP:Description",
             "XMP:Rating",
         ]
-        self.optionalTags = ["XMP:Subject", "XMP:Label"]
+        self.optionalTags = ["XMP:Subject", "XMP:HierarchicalSubject", "XMP:Label"]
 
     def getTagsFromTasks(self) -> Dict[int, List[Dict[str, str]]]:
         """
