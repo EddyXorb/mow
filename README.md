@@ -101,7 +101,11 @@ Per Definition darf der Name des Ereignisses **KEIN** *@* enthalten. Solange die
 
       Sollte man den Prozess mittendrin unterbrechen müssen, ist dies dadurch klar, dass nicht alle Medien ein Rating haben.
 
-   2. **Kategorisieren\* [tag]**\: den Medien können beliebige Kategorien wie „greifen“, „drucken“, „Kirchen“ etc. zugeordnet werden entsprechend meiner fotografischen Projekte. Diese Kategorien werden in einen noch zu definierenden geeigneten XMP-Tag untergebracht. Weiters können hier die mit dem Ereignis verbundenen Personennamen hier aufgenommen werden. Es können in diesem Schritt auch Tools wie [Excire](https://excire.com) Schlagworte erstellen, die in XMP eingebettet werden.
+   2. **Kategorisieren\* [tag]**\: den Medien können beliebige Kategorien wie "greifen", "drucken", "Kirchen" etc. zugeordnet werden oder auch Hierarchien wie "Sammlungen|Fotobuch|Oma" entsprechend meiner fotografischen Projekte. Diese Kategorien werden im XMP-tag
+   
+      * *HierarchicalSubject*
+
+      hinterlegt. Weiters können hier die mit dem Ereignis verbundenen Personennamen hier aufgenommen werden. Es können in diesem Schritt auch Tools wie [Excire](https://excire.com) Schlagworte erstellen, die in XMP eingebettet werden.
    3. **Lokalisieren\* [localize]**\: Medien bekommen einen Ort in die Metadaten geschrieben. Hier wird zwischen einem Ort für alle Medien desselben Ereignisses unterschieden und je einem genauen Ort für jedes Foto. Dies hängt davon ab, ob es einen GPS-Track gibt, der auf die Medien angewendet werden kann und wenn nein, ob es eine einfache Möglichkeit gibt auf einer Karte für ein Ereignis einen ungefähren Ort zu markieren.
 2. **Aggregieren [aggregate]**\: die RAWs werden entsprechend dem obigen Ratingschema in den Ereignisordner kopiert bzw.  in eine Art Papierkorb an noch zu definierender Stelle verschoben. Zugleich werden die in den beiden vorhergehenden Schritten erzeugten XMP-Tags in die RAW-Dateien kopiert/gespiegelt. Weiterhin wird geprüft, dass alle Mediendateien alle wesentlichen Kriterien erfüllen, um als fertig gelten zu können.
 Dazu gehören
