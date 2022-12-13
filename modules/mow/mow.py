@@ -88,7 +88,7 @@ class Mow:
                 )
             )()
 
-    def convert(self, dry: bool):
+    def convert(self, dry: bool, enforcePassthrough: bool):
         src, dst = self._getSrcDstForStage("convert")
         converters = [ImageConverter, VideoConverter]
         for converter in converters:
@@ -99,7 +99,7 @@ class Mow:
                     dst=dst,
                     dry=dry,
                     deleteOriginals=False,
-                    enforcePassthrough=False,
+                    enforcePassthrough=enforcePassthrough,
                     **self.basicInputParameter,
                 )
             )()

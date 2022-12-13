@@ -72,6 +72,14 @@ convertparser.add_argument(
     action="store_true",
 )
 
+convertparser.add_argument(
+    "-p",
+    "--passthrough",
+    help="Enforces pasthrough for all files.",
+    dest="convert_passthrough",
+    action="store_true",
+)
+
 groupparser.add_argument(
     "-a",
     "--automate",
@@ -157,7 +165,9 @@ if __name__ == "__main__":
             dry=not args.rename_execute,
         )
     if args.command == "convert":
-        mow.convert(dry=not args.convert_execute)
+        mow.convert(
+            dry=not args.convert_execute, enforcePassthrough=args.convert_passthrough
+        )
     if args.command == "group":
         mow.group(
             automate=args.group_automate,
