@@ -85,11 +85,13 @@ class MediaRenamer(MediaTransitioner):
         for file in self.toTreat:
             name, ext = os.path.splitext(os.path.basename(str(file)))
             newFileName = re.sub(regex, replacing, name)
+            if newFileName == name:
+                continue
             newFullPath = join(os.path.dirname(str(file)), newFileName + ext)
             if not self.dry:
                 file.moveTo(newFullPath)
             self.printv(
-                f"Replaced {Path(str(file)).relative_to(self.src)} with {newFileName}"
+                f"Replaced {Path(str(file)).relative_to(self.src)}    --->    {newFileName}{ext}"
             )
 
     def getTasks(self) -> List[TransitionTask]:
