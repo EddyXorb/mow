@@ -23,7 +23,6 @@ class MediaAggregator(MediaTransitioner):
             "XMP:Rating",
         ]
         self.optionalTags = ["XMP:Subject", "XMP:HierarchicalSubject", "XMP:Label"]
-        self.listLikeTags = ["XMP:Subject", "XMP:HierarchicalSubject"]
 
     def getTagsFromTasks(self) -> Dict[int, List[Dict[str, str]]]:
         """
@@ -105,24 +104,18 @@ class MediaAggregator(MediaTransitioner):
             allValuesThisTag: Set[str] = set()
             atLeastOneMissing = False
             tagMissingForExtension = []
-            listLikeTagList = None
+            actualTagValue = None
 
             for tagsDict in tagsDictList:
                 if tag in tagsDict:
-                    if tag in self.listLikeTags:
-                        listLikeTagList = tagsDict[
-                            tag
-                        ]  # we need to treat this as special case as this is a list, not string
+                    actualTagValue = tagsDict[tag]
                     allValuesThisTag.add(str(tagsDict[tag]))
                 else:
                     atLeastOneMissing = True
                     tagMissingForExtension.append(splitext(tagsDict["SourceFile"])[1])
 
             if len(allValuesThisTag) == 1 and atLeastOneMissing:
-                if tag not in self.listLikeTags:
-                    task.XMPTags[tag] = allValuesThisTag.pop()
-                else:
-                    task.XMPTags[tag] = listLikeTagList
+                task.XMPTags[tag] = actualTagValue
             elif len(allValuesThisTag) == 0 and tag in self.expectedTags:
                 return CheckResult(
                     False,
