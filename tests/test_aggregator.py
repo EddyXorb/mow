@@ -446,6 +446,7 @@ def test_optionalXMPTagSubjectIsCopiedFromJpg():
         tag = et.get_tags(expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:Subject")[0]
         assert tag["XMP:Subject"] == "Haus"
 
+
 def test_optionalXMPTagHierarchicalSubjectIsCopiedFromJpg():
     groupname = "2022-12-12@121212_TEST"
     fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
@@ -453,7 +454,12 @@ def test_optionalXMPTagHierarchicalSubjectIsCopiedFromJpg():
     ifile = ImageFile(fullname)
 
     with ExifTool() as et:
-        et.execute("-xmp:HierarchicalSubject=Project|Haus", "-P", "-overwrite_original", str(ifile))
+        et.execute(
+            "-xmp:HierarchicalSubject=Project|Haus",
+            "-P",
+            "-overwrite_original",
+            str(ifile),
+        )
 
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
@@ -470,8 +476,56 @@ def test_optionalXMPTagHierarchicalSubjectIsCopiedFromJpg():
     assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
 
     with ExifToolHelper() as et:
-        tag = et.get_tags(expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:HierarchicalSubject")[0]
+        tag = et.get_tags(
+            expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:HierarchicalSubject"
+        )[0]
         assert tag["XMP:HierarchicalSubject"] == "Project|Haus"
+
+
+def test_multipleHierarchicalSubjectsAreNoProblem():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+    prepareTest(srcname=fullname)
+    ifile = ImageFile(fullname)
+
+    with ExifToolHelper() as et:
+        et.set_tags(
+            str(ifile),
+            tags={
+                "XMP:HierarchicalSubject": [
+                    "Project|Haus",
+                    "Project|Buch",
+                    "Person|Hubert",
+                ]
+            },
+            params=["-P", "-overwrite_original"],
+        )
+
+    assert exists(fullname)
+    assert exists(fullname.replace(".jpg", ".ORF"))
+
+    ImageAggregator(
+        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
+    )()
+
+    assert not exists(fullname)
+    assert not exists(fullname.replace(".jpg", ".ORF"))
+
+    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
+    assert exists(expectedTargetJpg)
+    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
+
+    with ExifToolHelper() as et:
+        tag = et.get_tags(
+            expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:HierarchicalSubject"
+        )[0]
+        print(tag["XMP:HierarchicalSubject"])
+        assert len(tag["XMP:HierarchicalSubject"]) == 3
+        assert "Project|Haus" in tag["XMP:HierarchicalSubject"]
+        assert "Project|Buch" in tag["XMP:HierarchicalSubject"]
+        assert "Person|Hubert" in tag["XMP:HierarchicalSubject"]
+       
+        
 
 
 def test_rating1ImageIsMovedIntoDeleteFolder():
