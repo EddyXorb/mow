@@ -34,7 +34,7 @@ class Transcoder:
         self.sharpoption = " --lapsharp=medium "
         self.presets = {
             "sd": '"H.265 MKV 720p30"',
-            "hd": '"H.265 MKV 2160p60"',
+            "hd": '"H.265 MKV 2160p60 4K"',
             "android": '"Android 720p30"',
         }
         self.qualityValue = f" -q {qualityvalue} "
