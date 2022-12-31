@@ -76,7 +76,7 @@ Die mit einem **\*** gekennzeichnet Schritte sind optional. In eckigen Klammern 
    In XMP zu hinterlegen (siehe [Dublin-Core (dc) XMP Namespace](https://de.wikipedia.org/wiki/Dublin_Core)):
    * die Ursprüngliche Aufnahmezeit soll in *dc:date* abgelegt werden
    * der ursprüngliche Dateiname soll unter *dc:source* abelegt werden
-3. **Konvertieren\* [convert]**\: Ausgewählte Medien (insbesondere Videos) werden in diesem Schritt kleinergerechnet. Die originalen Medien (nur IV) können sofort gelöscht werden um Speicherplatz zu sparen. Originale Dateien bekommen das Suffix „\_original im Dateinamen, falls die Originale behalten werden sollen.
+3. **Konvertieren\* [convert]**\: Ausgewählte Medien (insbesondere Videos) werden in diesem Schritt kleinergerechnet. Originale Dateien bekommen das Suffix „\_original im Dateinamen, falls die Originale behalten werden sollen. Die originalen Medien werden in einen Unterordner *deleted* verschoben. Sobald klar ist, dass die Konversion funktioniert hat, können sie auch richtig gelöscht werden.
 4. **Gruppieren [group]**\: Medien desselben Ereignisses werden zusammengefasst, indem für jedes Ereignis ein Unterordner angelegt wird, der YYYY-MM-DD@HHMMSS #“ heißt, mit der Zeit entsprechend dem Aufnahmezeitpunkt des ersten Mediums des Ereignisses und #=Name des Ereignisses. 
 Per Definition darf der Name des Ereignisses **KEIN** *@* enthalten. Solange die Ordner, in die man die Fotos gruppiert nicht dem Namensschema folgen gilt die Gruppierung als noch nicht abgeschlossen für den jeweiligen Ordner, andernfalls schon. Als Konvention wird ein Präfix **TODO_** festgelegt, um dies anzuzeigen.
 
@@ -87,8 +87,7 @@ Per Definition darf der Name des Ereignisses **KEIN** *@* enthalten. Solange die
 1. **XMP-Metadaten befüllen:**
 
    *Begründung:* Exif als Metadatenspeicher kommt nicht in Frage, weil damit nicht alle Formate abgehandelt werden können wie z.B. `.ORF` und `.mp4`.
-   1. **Bewerten/Löschen [rate]**\: der XMP-Eintrag „Rating“ jedes Mediums wird angelegt und mit Werten von 0 bis 5 versehen. Dabei heißt
-      * 0 = unklar, aber behalte raw und jpg
+   1. **Bewerten/Löschen [rate]**\: der XMP-Eintrag „Rating“ jedes Mediums wird angelegt und mit Werten von 1 bis 5 versehen. Dabei heißt
       * 1 = schlecht, lösche jpg und raw
       * 2 = ok, behalte nur jpg
       * 3 = gut, behalte nur jpg
