@@ -184,7 +184,7 @@ class MediaGrouper(MediaTransitioner):
         renamed: List[Tuple(str, str)] = []
         for root, folders, _ in os.walk(self.src, topdown=False):
             for folder in folders:
-                if "@" in folder or re.search(r"\d\d-\d\d", folder):
+                if "@" in folder or re.search(r"\d\d\d\d-\d\d-\d\d", folder):
                     continue
                 timestamp = self.getLowestDatetimeOfTimestampsIn(join(root, folder))
                 if timestamp is None:
