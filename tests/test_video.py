@@ -96,6 +96,7 @@ def test_conversionDeletesOriginalsIfWanted():
     assert not exists(srcfile)
     assert exists(join(targetDir, "test.mp4"))
     assert not exists(join(targetDir, "test_original.MOV"))
+    assert exists(join(src,"deleted","test_original.MOV"))
 
 
 def test_simpleConversionWorks():

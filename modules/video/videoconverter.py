@@ -11,6 +11,7 @@ def convertVideo(
     target: str,
     deleteOriginals: bool = False,
     enforcePassthrough=False,
+    deletionFolder=""
 ) -> bool:
     noExt, oldExt = splitext(basename(str(source)))
     newExt = ".mp4"
@@ -34,7 +35,7 @@ def convertVideo(
         source.moveTo(newOriginalFile)
 
         if deleteOriginals:
-            os.remove(newOriginalFile)
+            source.moveTo(os.path.join(deletionFolder,os.path.basename(newOriginalFile)))
     else:
         source.moveTo(join(target, noExt + oldExt))
 
@@ -52,5 +53,6 @@ class VideoConverter(MediaConverter):
                 target,
                 deleteOriginals=input.deleteOriginals,
                 enforcePassthrough=self.enforcePassthrough,
+                deletionFolder=self.deleteFolder
             ),
         )
