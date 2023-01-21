@@ -5,6 +5,8 @@ from os.path import basename, splitext
 from exiftool import ExifToolHelper
 from tqdm import tqdm
 
+from ..mow.mowtags import MowTags
+
 from .mediatransitioner import MediaTransitioner, TransitionTask, TransitionerInput
 from .mediagrouper import MediaGrouper
 from .filenamehelper import isCorrectTimestamp
@@ -16,13 +18,6 @@ class MediaAggregator(MediaTransitioner):
         super().__init__(input)
 
         self.toTransition: List[TransitionTask] = []
-        self.expectedTags = [
-            "XMP:Date",
-            "XMP:Source",
-            "XMP:Description",
-            "XMP:Rating",
-        ]
-        self.optionalTags = ["XMP:Subject", "XMP:HierarchicalSubject", "XMP:Label"]
 
     def getTagsFromTasks(self) -> Dict[int, List[Dict[str, str]]]:
         """
@@ -36,9 +31,7 @@ class MediaAggregator(MediaTransitioner):
 
                 files = self.toTreat[task.index].getAllFileNames()
                 try:
-                    tags = et.get_tags(
-                        files, tags=self.expectedTags + self.optionalTags
-                    )
+                    tags = et.get_tags(files, tags=MowTags.all)
                     out[task.index] = tags
                 except Exception as e:
                     out[task.index] = []
@@ -100,7 +93,7 @@ class MediaAggregator(MediaTransitioner):
     def setXMPTagsToWriteFor(
         self, task: TransitionTask, tagsDictList: List[Dict[str, str]]
     ) -> CheckResult:
-        for tag in self.expectedTags + self.optionalTags:
+        for tag in MowTags.all:
             allValuesThisTag: Set[str] = set()
             atLeastOneMissing = False
             tagMissingForExtension = []
@@ -116,7 +109,7 @@ class MediaAggregator(MediaTransitioner):
 
             if len(allValuesThisTag) == 1 and atLeastOneMissing:
                 task.XMPTags[tag] = actualTagValue
-            elif len(allValuesThisTag) == 0 and tag in self.expectedTags:
+            elif len(allValuesThisTag) == 0 and tag in MowTags.expected:
                 return CheckResult(
                     False,
                     f"XMP tag {tag} is missing for extension(s): {','.join(tagMissingForExtension)}",
