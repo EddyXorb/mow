@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from typing import Callable, List
+from typing import Callable, List, Tuple
 from tqdm import tqdm
 from os.path import join, basename, exists
 from pathlib import Path
 import os
+
+from ..mow.mowtags import MowTags
 
 from ..general.mediafile import MediaFile
 from ..general.mediatransitioner import (
@@ -12,10 +14,13 @@ from ..general.mediatransitioner import (
     TransitionTask,
 )
 
+from exiftool import ExifToolHelper
+
 
 def passthrough(source: MediaFile, targetDir: str):
-    source.moveTo(join(targetDir, basename(str(source))))
-    return True
+    targetfile = join(targetDir, basename(str(source)))
+    source.moveTo(targetfile)
+    return True, targetfile
 
 
 @dataclass(kw_only=True)
@@ -41,7 +46,7 @@ class MediaConverter(MediaTransitioner):
     def __init__(
         self,
         input: ConverterInput,
-        converter: Callable[[MediaFile, str], bool] = passthrough,
+        converter: Callable[[MediaFile, str], Tuple[bool, str]] = passthrough,
     ):
         self.converter = converter
         self.deleteOriginals = input.deleteOriginals
@@ -50,20 +55,30 @@ class MediaConverter(MediaTransitioner):
 
     def convert(self):
         self.printv("Start conversion of files..")
-        for index, file in tqdm(enumerate(self.toTreat)):
-            targetDir = self.getTargetDirectory(file, self.dst)
-            if not exists(targetDir):
-                os.makedirs(targetDir)
-            success = True
-            if not self.dry:
-                success = self.converter(file, targetDir)
-            if not success:
-                self.transitionTasks.append(
-                    TransitionTask(
-                        index=index, skip=True, skipReason=f"Conversion failed."
+
+        with ExifToolHelper() as et:
+            for index, file in tqdm(enumerate(self.toTreat)):
+                targetDir = self.getTargetDirectory(file, self.dst)
+                if not exists(targetDir):
+                    os.makedirs(targetDir)
+                success = True
+
+                if not self.dry:
+                    success, convertedFile = self.converter(file, targetDir)
+                    if self.converter != passthrough:
+                        try:
+                            xmptagstowrite = et.get_tags(str(file), MowTags.all)[0]
+                            xmptagstowrite.pop("SourceFile")
+                            et.set_tags(convertedFile, xmptagstowrite)
+                        except:
+                            success = False
+                if not success:
+                    self.transitionTasks.append(
+                        TransitionTask(
+                            index=index, skip=True, skipReason=f"Conversion failed."
+                        )
                     )
-                )
-            # at the moment no else with append non-skip task needed as the converter handles everything. This should be refactored.
+                # at the moment no else with append non-skip task needed as the converter handles everything. This should be refactored.
 
     def getTasks(self) -> List[TransitionTask]:
         self.convert()

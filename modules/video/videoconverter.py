@@ -1,4 +1,5 @@
 from time import sleep
+from typing import Tuple
 from ..general.mediaconverter import ConverterInput, MediaConverter
 from .videofile import VideoFile
 from .transcodevideo import Transcoder
@@ -11,8 +12,8 @@ def convertVideo(
     target: str,
     deleteOriginals: bool = False,
     enforcePassthrough=False,
-    deletionFolder=""
-) -> bool:
+    deletionFolder="",
+) -> Tuple[bool, str]:
     noExt, oldExt = splitext(basename(str(source)))
     newExt = ".mp4"
 
@@ -24,22 +25,26 @@ def convertVideo(
             print(
                 f"Abort conversion of {str(source)} as target file {newOriginalFile} is already existent!"
             )
-            return False
+            return False, ""
 
         Transcoder(str(source), convertedFilename, quality="hd", qualityvalue=22.0)()
 
         sleep(1)  # otherwise the following check fails
         if not os.path.exists(convertedFilename):
-            return False
+            return False, ""
 
         source.moveTo(newOriginalFile)
 
         if deleteOriginals:
-            source.moveTo(os.path.join(deletionFolder,os.path.basename(newOriginalFile)))
-    else:
-        source.moveTo(join(target, noExt + oldExt))
+            source.moveTo(
+                os.path.join(deletionFolder, os.path.basename(newOriginalFile))
+            )
 
-    return True
+        return True, convertedFilename
+    else:
+        targetfile = join(target, noExt + oldExt)
+        source.moveTo(targetfile)
+        return True, targetfile
 
 
 class VideoConverter(MediaConverter):
@@ -53,6 +58,6 @@ class VideoConverter(MediaConverter):
                 target,
                 deleteOriginals=input.deleteOriginals,
                 enforcePassthrough=self.enforcePassthrough,
-                deletionFolder=self.deleteFolder
+                deletionFolder=self.deleteFolder,
             ),
         )
