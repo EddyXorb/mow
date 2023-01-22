@@ -23,11 +23,11 @@ class MowStatusPrinter:
         nrallfiles = sum([len(files) for files in allfiles.values()])
         weightedSum = 0
 
-        for cnt, item in enumerate(allfiles.items()):
-            stage, files = item
-            print(
-                f"{stage}: {len(files)} mediafiles ({(100.0 * len(files))/nrallfiles:.0f}%) {'.'*int(sqrt(len(files)))}"
-            )
+        for cnt, stage in enumerate(self.stages):
+            files = allfiles[stage]
+            if len(files) > 0:
+                print(f"{stage}: {len(files)} mediafiles ({(100.0 * len(files))/nrallfiles:.0f}%) {'.'*int(sqrt(len(files)))}")
+                
             weightedSum += cnt * len(files)
         print(f"\nNumber of all files: {nrallfiles}")
         print(
@@ -38,9 +38,10 @@ class MowStatusPrinter:
         """
         Return: stage to list of all mediafiles found in this stage
         """
-        out: DefaultDict[str, List[str]] = defaultdict(lambda: [])
+        out: Dict[str, List[str]] = {}
 
         for stage in self.stages:
+            out[stage] = []
             for root, dirs, files in os.walk(
                 join(self.workingdir, self.stageToFolder[stage])
             ):
