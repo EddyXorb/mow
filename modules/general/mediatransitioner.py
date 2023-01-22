@@ -28,7 +28,7 @@ class TransitionTask:
     skipReason: str = None
     XMPTags: Dict[str, str] = field(default_factory=dict)
 
-    def getFailed(index, reason) -> "TransitionTask":
+    def getFailed(index:int, reason:str) -> "TransitionTask":
         return TransitionTask(index=index, skip=True, skipReason=reason)
 
 
@@ -219,6 +219,7 @@ class MediaTransitioner(VerbosePrinterClass):
                         task.XMPTags,
                         params=["-P", "-overwrite_original"],  # , "-v2"],
                     )
+                    
                 except Exception as e:
                     task.skip = True
                     task.skipReason = (

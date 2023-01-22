@@ -1,9 +1,12 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import DefaultDict, List
+from typing import DefaultDict, List, Tuple
 from os.path import basename, dirname
 from pathlib import Path
 from tqdm import tqdm
+
+from ..general.checkresult import CheckResult
+from ..general.mediafile import MediaFile
 
 from .mediatransitioner import MediaTransitioner, TransitionerInput, TransitionTask
 from ..general.medafilefactories import createAnyValidMediaFile
@@ -14,7 +17,7 @@ from exiftool import ExifToolHelper
 class MediaRater(MediaTransitioner):
     def __init__(self, input: TransitionerInput):
         input.mediaFileFactory = createAnyValidMediaFile
-        input.writeXMPTags = False
+        input.writeXMPTags = True
         super().__init__(input)
 
     def getTasks(self) -> List[TransitionTask]:
@@ -24,18 +27,27 @@ class MediaRater(MediaTransitioner):
 
         with ExifToolHelper() as et:
             for index, file in tqdm(enumerate(self.toTreat), total=len(self.toTreat)):
-                try:
-                    tags = et.get_tags(str(file), "xmp:rating")[0]
-                    if "XMP:Rating" in tags:
-                        out.append(TransitionTask(index))
-                    else:
-                        out.append(
-                            TransitionTask.getFailed(index, "No XMP-rating found.")
-                        )
-                except Exception as e:
-                    out.append(
-                        TransitionTask.getFailed(
-                            index, f"Problem during reading of rating from XMP: {e}"
-                        )
-                    )
+                out.append(self.getTransitionTask(et, index, file))
         return out
+
+    def getTransitionTask(
+        self, et: ExifToolHelper, index: int, file: MediaFile
+    ) -> Tuple[CheckResult, int]:
+        try:
+            tags = et.get_tags(file.getAllFileNames(), "XMP:Rating")
+            ratings = [
+                filetags["XMP:Rating"] for filetags in tags if "XMP:Rating" in filetags
+            ]
+            match len(set(ratings)):
+                case 0:
+                    return TransitionTask.getFailed(index, "No rating found!")
+                case 1:
+                    if len(tags) > 1:
+                        return TransitionTask(index, XMPTags={"XMP:Rating": ratings[0]})
+                    return TransitionTask(index)
+                case _:
+                    return TransitionTask.getFailed(index, f"Different ratings found:{ratings}")
+        except Exception as e:
+            return TransitionTask.getFailed(
+                index, f"Problem during reading rating from XMP: {e}"
+            )
