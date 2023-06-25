@@ -60,7 +60,7 @@ renameparser.add_argument(
     "-x",
     "--execute",
     help="Really execute moving/renaming of files/folders, not only in dry mode. Since the renaming features are powerful we do not want it to be the default behavior that something is really done.",
-    dest="rename_execute",
+    dest="execute",
     action="store_true",
 )
 
@@ -68,7 +68,7 @@ convertparser.add_argument(
     "-x",
     "--execute",
     help="Really execute conversion/deletion/moving of files/folders, not only in dry mode.",
-    dest="convert_execute",
+    dest="execute",
     action="store_true",
 )
 
@@ -117,7 +117,7 @@ groupparser.add_argument(
     "-x",
     "--execute",
     help="Really execute moving/renaming of files/folders, not only in dry mode. Since the grouping features are powerful we do not want it to be the default behavior that something is really done.",
-    dest="group_execute",
+    dest="execute",
     action="store_true",
 )
 
@@ -126,7 +126,15 @@ rateparser.add_argument(
     "--execute",
     help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
     action="store_true",
-    dest="rate_execute",
+    dest="execute",
+)
+
+rateparser.add_argument(
+    "-f",
+    "--filter",
+    help="Only treat files matching this regex (including all subfolders as path).",
+    type=str,
+    dest="filter",
 )
 
 tagparser.add_argument(
@@ -134,7 +142,7 @@ tagparser.add_argument(
     "--execute",
     help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
     action="store_true",
-    dest="tag_execute",
+    dest="execute",
 )
 
 localizeparser.add_argument(
@@ -142,7 +150,7 @@ localizeparser.add_argument(
     "--execute",
     help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
     action="store_true",
-    dest="localize_execute",
+    dest="execute",
 )
 
 aggregateparser.add_argument(
@@ -150,39 +158,35 @@ aggregateparser.add_argument(
     "--execute",
     help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
     action="store_true",
-    dest="aggregate_execute",
+    dest="execute",
 )
 
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    mow = Mow(".mowsettings.yml")
+    mow = Mow(".mowsettings.yml", dry=not args.execute, filter=args.filter)
 
     if args.command == "rename":
         mow.rename(
             useCurrentFilename=args.rename_usecurrent,
             replace=args.rename_replace if args.rename_replace is not None else "",
-            dry=not args.rename_execute,
         )
     if args.command == "convert":
-        mow.convert(
-            dry=not args.convert_execute, enforcePassthrough=args.convert_passthrough
-        )
+        mow.convert(enforcePassthrough=args.convert_passthrough)
     if args.command == "group":
         mow.group(
             automate=args.group_automate,
             distance=args.group_separate,
-            dry=not args.group_execute,
             undoAutomatedGrouping=args.group_undogrouping,
             addMissingTimestampsToSubfolders=args.group_timestamps,
         )
     if args.command == "rate":
-        mow.rate(dry=not args.rate_execute)
+        mow.rate()
     if args.command == "tag":
-        mow.tag(dry=not args.tag_execute)
+        mow.tag()
     if args.command == "localize":
-        mow.localize(dry=not args.localize_execute)
+        mow.localize()
     if args.command == "aggregate":
-        mow.aggregate(dry=not args.aggregate_execute)
+        mow.aggregate()
     if args.command == "status":
         mow.status()

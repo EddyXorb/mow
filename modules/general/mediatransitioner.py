@@ -7,6 +7,7 @@ from typing import Dict, List, Callable
 from exiftool import ExifToolHelper
 from math import sqrt
 from tqdm import tqdm
+import re
 
 from ..general.mediafile import MediaFile
 from ..general.verboseprinterclass import VerbosePrinterClass
@@ -28,7 +29,7 @@ class TransitionTask:
     skipReason: str = None
     XMPTags: Dict[str, str] = field(default_factory=dict)
 
-    def getFailed(index:int, reason:str) -> "TransitionTask":
+    def getFailed(index: int, reason: str) -> "TransitionTask":
         return TransitionTask(index=index, skip=True, skipReason=reason)
 
 
@@ -45,6 +46,7 @@ class TransitionerInput:
     maintainFolderStructure: copy nested folders iff true
     removeEmptySubfolders: clean empty subfolders of source after transition
     writeXMPTags: writes XMP tags to Files
+    filter: regex for filtering files that should only be treated (searching the complete subpath with all subfolders of the current stage)
     """
 
     src: str
@@ -56,6 +58,7 @@ class TransitionerInput:
     maintainFolderStructure: bool = True
     removeEmptySubfolders: bool = False
     writeXMPTags: bool = True
+    filter: str = ""
     mediaFileFactory: Callable[[str], MediaFile] = field(
         default_factory=lambda: None
     )  # this can also be a type with its constructor, e.g. ImageFile
@@ -77,6 +80,11 @@ class MediaTransitioner(VerbosePrinterClass):
         self.maintainFolderStructure = input.maintainFolderStructure
         self.removeEmptySubfolders = input.removeEmptySubfolders
         self.writeXMPTags = input.writeXMPTags
+        self.filter: re.Pattern = (
+            re.compile(input.filter)
+            if input.filter is not None and input.filter != ""
+            else None
+        )
 
         self.toTreat: List[MediaFile] = []
         self.deleteFolder = join(self.src, "deleted")
@@ -109,19 +117,32 @@ class MediaTransitioner(VerbosePrinterClass):
 
     def collectMediaFilesToTreat(self):
         self.printv("Collect files..")
+
         for root, dirs, files in os.walk(self.src, topdown=True):
             if not self.recursive and root != self.src:
                 return
             # ignore all files in deleteFolder
             dirs[:] = [d for d in dirs if d != basename(self.deleteFolder)]
 
+            filtermatches = 0
             for file in files:
                 path = Path(join(root, file))
+
+                if not self.filter is None:
+                    if self.filter.search(str(path)) is None:
+                        continue
+                    else:
+                        filtermatches += 1
+
                 mfile = self.mediaFileFactory(str(path))
                 if not mfile.isValid():
                     continue
+                
                 self.toTreat.append(mfile)
-
+                
+            if not self.filter is None and filtermatches > 0:
+                self.printv(f"Matched files in {root} {'.'*filtermatches}")
+            
         self.printv(f"Collected {len(self.toTreat)} files.")
 
     def getTargetDirectory(self, file: str, destinationFolder: str) -> str:
@@ -219,7 +240,7 @@ class MediaTransitioner(VerbosePrinterClass):
                         task.XMPTags,
                         params=["-P", "-overwrite_original"],  # , "-v2"],
                     )
-                    
+
                 except Exception as e:
                     task.skip = True
                     task.skipReason = (

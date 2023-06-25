@@ -101,7 +101,7 @@ def test_filewasmoved():
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).rename(dry=False)
+    Mow(settingsfile=settingsfile,dry=False).rename()
     assert not exists(srcfile)
     assert exists(join(convertdir, "subfolder", "2022-07-27@215555_test3.JPG"))
 
@@ -115,7 +115,7 @@ def test_groupingMovesDirectoriesIntoRateFolder():
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).group(automate=False, distance=12, dry=False)
+    Mow(settingsfile=settingsfile, dry=False).group(automate=False, distance=12)
 
     assert not exists(srcfile)
     assert exists(
@@ -127,7 +127,7 @@ def test_emptyDirsAreremovedInRenameFolder():
     prepareRenameTest()
 
     assert exists(join(renamedir, "subfolder"))
-    Mow(settingsfile=settingsfile).rename(dry=False)
+    Mow(settingsfile=settingsfile,dry=False).rename()
     assert not exists(join(renamedir, "subfolder"))
 
 
@@ -136,7 +136,7 @@ def test_conversionOfImageWorks():
     srcfile = join(workingdir, "3_convert", "subfolder", "test3.JPG")
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).convert(dry=False)
+    Mow(settingsfile=settingsfile,dry=False).convert()
 
     assert not exists(srcfile)
     assert exists(join(workingdir, "4_group", "subfolder", "test3.JPG"))
@@ -148,7 +148,7 @@ def test_conversionOfVideoWorks():
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).convert(dry=False)
+    Mow(settingsfile=settingsfile,dry=False).convert()
 
     assert not exists(srcfile)
     assert exists(join(workingdir, "4_group", "subfolder", "test_original.MOV"))
@@ -161,7 +161,7 @@ def test_ratedImageIsTransitioned():
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).rate(dry=False)
+    Mow(settingsfile=settingsfile,dry=False).rate()
 
     assert not exists(srcfile)
     assert exists(join(tagdir, "subfolder", "rated.jpg"))
@@ -173,7 +173,7 @@ def test_taggedImageIsTransitioned():
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).tag(dry=False)
+    Mow(settingsfile=settingsfile,dry=False).tag()
 
     assert not exists(srcfile)
     assert exists(join(localizedir, "subfolder", "tagged.jpg"))
@@ -185,7 +185,7 @@ def test_localizedImageIsTransitioned():
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).localize(dry=False)
+    Mow(settingsfile=settingsfile,dry=False).localize()
 
     assert not exists(srcfile)
     assert exists(join(aggregatedir, "subfolder", "localized.jpg"))
@@ -199,7 +199,29 @@ def test_aggregatableImageIsTransitioned():
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile).aggregate(dry=False)
+    Mow(settingsfile=settingsfile,dry=False).aggregate()
 
     assert not exists(srcfile)
     assert exists(join(archivedir, group, file))
+    
+def test_filteringfiles_passes():
+    prepareLocalizeTransitionTest()
+    srcfile = join(localizedir, "subfolder", "localized.jpg")
+
+    assert exists(srcfile)
+
+    Mow(settingsfile=settingsfile,dry=False,filter="localized.*").localize()
+
+    assert not exists(srcfile)
+    assert exists(join(aggregatedir, "subfolder", "localized.jpg"))
+    
+def test_filteringfiles_blocks():
+    prepareLocalizeTransitionTest()
+    srcfile = join(localizedir, "subfolder", "localized.jpg")
+
+    assert exists(srcfile)
+
+    Mow(settingsfile=settingsfile,dry=False,filter="THERE_IS_NO_FILE_WITH_THIS_NAME").localize()
+
+    assert exists(srcfile)
+    assert not exists(join(aggregatedir, "subfolder", "localized.jpg"))

@@ -30,7 +30,7 @@ class Mow:
     Stands for "M(edia) (fl)OW" - a design to structure your media workflow, be it photos, videos or audio data.
     """
 
-    def __init__(self, settingsfile: str):
+    def __init__(self, settingsfile: str, dry: bool = True, filter: str = None):
         logging.basicConfig(
             format="%(asctime)s [%(levelname)s]: %(message)s",
             level=logging.INFO,
@@ -40,8 +40,7 @@ class Mow:
             ],
             datefmt=timestampformat,
         )
-
-        #logging.info(f"{'#'*30} Start new MOW session. {'#'*30}")
+        # logging.info(f"{'#'*30} Start new MOW session. {'#'*30}")
 
         self.settingsfile = settingsfile
         self.settings = self._readsettings()
@@ -67,12 +66,14 @@ class Mow:
             "removeEmptySubfolders": True,
             "writeXMPTags": True,
             "move": True,
+            "dry": dry,
+            "filter": filter
         }
 
     def copy(self):
         pass
 
-    def rename(self, useCurrentFilename=False, replace="", dry: bool = True):
+    def rename(self, useCurrentFilename=False, replace=""):
         src, dst = self._getSrcDstForStage("rename")
         renamers = [ImageRenamer, VideoRenamer]
         for renamer in renamers:
@@ -81,14 +82,13 @@ class Mow:
                 RenamerInput(
                     src=src,
                     dst=dst,
-                    dry=dry,
                     useCurrentFilename=useCurrentFilename,
                     replace=replace,
                     **self.basicInputParameter,
                 )
             )()
 
-    def convert(self, dry: bool, enforcePassthrough: bool = False):
+    def convert(self,enforcePassthrough: bool = False):
         src, dst = self._getSrcDstForStage("convert")
         converters = [ImageConverter, VideoConverter]
         for converter in converters:
@@ -97,7 +97,6 @@ class Mow:
                 ConverterInput(
                     src=src,
                     dst=dst,
-                    dry=dry,
                     deleteOriginals=False,
                     enforcePassthrough=enforcePassthrough,
                     **self.basicInputParameter,
@@ -108,7 +107,6 @@ class Mow:
         self,
         automate=False,
         distance=12,
-        dry: bool = True,
         undoAutomatedGrouping=False,
         addMissingTimestampsToSubfolders=False,
     ):
@@ -120,50 +118,46 @@ class Mow:
                 dst=dst,
                 automaticGrouping=automate,
                 separationDistanceInHours=distance,
-                dry=dry,
                 addMissingTimestampsToSubfolders=addMissingTimestampsToSubfolders,
                 undoAutomatedGrouping=undoAutomatedGrouping,
                 **self.basicInputParameter,
             )
         )()
 
-    def rate(self, dry: bool = True):
+    def rate(self):
         src, dst = self._getSrcDstForStage("rate")
         self._printEmphasized("Stage Rate")
         MediaRater(
             input=TransitionerInput(
                 src=src,
                 dst=dst,
-                dry=dry,
                 **self.basicInputParameter,
             )
         )()
 
-    def tag(self, dry: bool = True):
+    def tag(self):
         src, dst = self._getSrcDstForStage("tag")
         self._printEmphasized("Stage Tag")
         MediaTagger(
             TransitionerInput(
                 src=src,
                 dst=dst,
-                dry=dry,
                 **self.basicInputParameter,
             )
         )()
 
-    def localize(self, dry: bool = True):
+    def localize(self):
         src, dst = self._getSrcDstForStage("localize")
         self._printEmphasized("Stage Localize")
         MediaTagger(
             TransitionerInput(
                 src=src,
                 dst=dst,
-                dry=dry,
                 **self.basicInputParameter,
             )
         )()
 
-    def aggregate(self, dry: bool = True):
+    def aggregate(self):
         src, dst = self._getSrcDstForStage("aggregate")
         self._printEmphasized("Stage Aggregate")
         for aggregator in [ImageAggregator, VideoAggregator]:
@@ -171,7 +165,6 @@ class Mow:
                 TransitionerInput(
                     src=src,
                     dst=dst,
-                    dry=dry,
                     **self.basicInputParameter,
                 )
             )()
