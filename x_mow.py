@@ -56,22 +56,6 @@ renameparser.add_argument(
     dest="rename_replace",
 )
 
-renameparser.add_argument(
-    "-x",
-    "--execute",
-    help="Really execute moving/renaming of files/folders, not only in dry mode. Since the renaming features are powerful we do not want it to be the default behavior that something is really done.",
-    dest="execute",
-    action="store_true",
-)
-
-convertparser.add_argument(
-    "-x",
-    "--execute",
-    help="Really execute conversion/deletion/moving of files/folders, not only in dry mode.",
-    dest="execute",
-    action="store_true",
-)
-
 convertparser.add_argument(
     "-p",
     "--passthrough",
@@ -113,53 +97,30 @@ groupparser.add_argument(
     action="store_true",
 )
 
-groupparser.add_argument(
-    "-x",
-    "--execute",
-    help="Really execute moving/renaming of files/folders, not only in dry mode. Since the grouping features are powerful we do not want it to be the default behavior that something is really done.",
-    dest="execute",
-    action="store_true",
-)
-
-rateparser.add_argument(
-    "-x",
-    "--execute",
-    help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
-    action="store_true",
-    dest="execute",
-)
-
-rateparser.add_argument(
-    "-f",
-    "--filter",
-    help="Only treat files matching this regex (including all subfolders as path).",
-    type=str,
-    dest="filter",
-)
-
-tagparser.add_argument(
-    "-x",
-    "--execute",
-    help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
-    action="store_true",
-    dest="execute",
-)
-
-localizeparser.add_argument(
-    "-x",
-    "--execute",
-    help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
-    action="store_true",
-    dest="execute",
-)
-
-aggregateparser.add_argument(
-    "-x",
-    "--execute",
-    help="Really execute moving/renaming of files/folders, not only in dry mode, which is default.",
-    action="store_true",
-    dest="execute",
-)
+stageparsers = [
+    renameparser,
+    convertparser,
+    rateparser,
+    tagparser,
+    groupparser,
+    localizeparser,
+    aggregateparser,
+]
+for currentparser in stageparsers:
+    currentparser.add_argument(
+        "-x",
+        "--execute",
+        help="Really execute moving/renaming of files/folders, not only in dry mode. Since the grouping features are powerful we do not want it to be the default behavior that something is really done.",
+        dest="execute",
+        action="store_true",
+    )
+    currentparser.add_argument(
+        "-f",
+        "--filter",
+        help="Only treat files matching this regex (including all subfolders as path).",
+        type=str,
+        dest="filter",
+    )
 
 
 if __name__ == "__main__":
