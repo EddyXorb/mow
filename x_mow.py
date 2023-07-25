@@ -125,6 +125,11 @@ for currentparser in stageparsers:
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    if not hasattr(args,"execute"):
+        args.execute = False
+    if not hasattr(args,"filter"):
+        args.filter = ""
+        
     mow = Mow(".mowsettings.yml", dry=not args.execute, filter=args.filter)
 
     if args.command == "rename":
