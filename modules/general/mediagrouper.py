@@ -105,29 +105,24 @@ class MediaGrouper(MediaTransitioner):
         input.mediaFileFactory = createAnyValidMediaFile
         input.maintainFolderStructure = True
         super().__init__(input)
-        # TODO: remove these redundant member declarations
-        self.undoAutomatedGrouping = input.undoAutomatedGrouping
-        self.groupUngroupedFiles = input.automaticGrouping
-        self.addMissingTimestampsToSubfolders = input.addMissingTimestampsToSubfolders
-        self.separationDistanceInHours = input.separationDistanceInHours
-        self.checkSequence = input.checkSequence
         self.toTransition: List[TransitionTask] = []
 
     def prepareTransition(self):
-        if self.undoAutomatedGrouping:
+        if self.input.undoAutomatedGrouping:
             self.printv("Start undo grouping..")
             self.undoGrouping()
             return
-        if self.groupUngroupedFiles:
+        if self.input.automaticGrouping:
             self.printv("Start automated grouping..")
             self.groupUngrouped()
             return
-        if self.addMissingTimestampsToSubfolders:
+        if self.input.addMissingTimestampsToSubfolders:
             self.printv("Start adding missing timestamps..")
             self.addMissingTimestamps()
             return
-        if self.checkSequence:
+        if self.input.checkSequence:
             self.printv("Start checking if grouped files are in correct folders..")
+            return
 
         self.printv("Start transitioning from group stage..")
         grouped = self.getCorrectlyGroupedFiles()
@@ -273,7 +268,7 @@ class MediaGrouper(MediaTransitioner):
         for file in tqdm(ungrouped):
             if (
                 (extractDatetimeFrom(str(file)) - lastTime).total_seconds() / 3600.0
-            ) >= self.separationDistanceInHours:
+            ) >= self.input.separationDistanceInHours:
                 currentGroup = self.getGroupBasedOnFirstFile(str(file))
             groupToFiles[currentGroup].append(file)
             lastTime = extractDatetimeFrom(str(file))

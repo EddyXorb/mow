@@ -73,6 +73,7 @@ class MediaTransitioner(VerbosePrinterClass):
         super().__init__(input.verbose)
         self.src = os.path.abspath(input.src)
         self.dst = os.path.abspath(input.dst)
+        self.input = input
         self.move = input.move
         self.recursive = input.recursive
         self.dry = input.dry
