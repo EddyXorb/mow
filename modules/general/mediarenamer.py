@@ -25,7 +25,7 @@ class RenamerInput(TransitionerInput):
     writeXMPTags: sets XMP:Source to original filename and XMP:date to creationDate
     replace: a string such as '"^[0-9].*$",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
     """
-
+    
     restoreOldNames = False
     filerenamer: Callable[[str], str] = None
     useCurrentFilename = False
@@ -156,7 +156,7 @@ class MediaRenamer(MediaTransitioner):
         if self.input.useCurrentFilename:
             return os.path.basename(file), None
 
-        return os.path.basename(self.input.renamer(file)), None
+        return os.path.basename(self.input.filerenamer(file)), None
 
     def fileWasAlreadyRenamed(self, file: str):
         if "_" in os.path.basename(file) and "@" in os.path.basename(file):
