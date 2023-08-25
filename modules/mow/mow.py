@@ -13,6 +13,7 @@ from ..image.imagerenamer import ImageRenamer
 from ..image.imageconverter import ImageConverter
 from ..video.videoconverter import VideoConverter
 from ..video.videorenamer import VideoRenamer
+from ..audio.audiorenamer import AudioRenamer
 from ..general.mediaconverter import ConverterInput
 from ..general.mediagrouper import GrouperInput, MediaGrouper
 from ..general.filenamehelper import timestampformat
@@ -75,7 +76,7 @@ class Mow:
 
     def rename(self, useCurrentFilename=False, replace=""):
         src, dst = self._getSrcDstForStage("rename")
-        renamers = [ImageRenamer, VideoRenamer]
+        renamers = [ImageRenamer, VideoRenamer,AudioRenamer]
         for renamer in renamers:
             self._printEmphasized(f"Stage rename: {renamer.__name__}")
             renamer(
