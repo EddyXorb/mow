@@ -37,6 +37,7 @@ class GrouperInput(TransitionerInput):
     automaticGrouping = False
     addMissingTimestampsToSubfolders = False
     separationDistanceInHours = 12
+    checkSequence = False
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -104,10 +105,12 @@ class MediaGrouper(MediaTransitioner):
         input.mediaFileFactory = createAnyValidMediaFile
         input.maintainFolderStructure = True
         super().__init__(input)
+        # TODO: remove these redundant member declarations
         self.undoAutomatedGrouping = input.undoAutomatedGrouping
         self.groupUngroupedFiles = input.automaticGrouping
         self.addMissingTimestampsToSubfolders = input.addMissingTimestampsToSubfolders
         self.separationDistanceInHours = input.separationDistanceInHours
+        self.checkSequence = input.checkSequence
         self.toTransition: List[TransitionTask] = []
 
     def prepareTransition(self):
@@ -123,6 +126,8 @@ class MediaGrouper(MediaTransitioner):
             self.printv("Start adding missing timestamps..")
             self.addMissingTimestamps()
             return
+        if self.checkSequence:
+            self.printv("Start checking if grouped files are in correct folders..")
 
         self.printv("Start transitioning from group stage..")
         grouped = self.getCorrectlyGroupedFiles()

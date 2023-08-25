@@ -137,12 +137,12 @@ class MediaTransitioner(VerbosePrinterClass):
                 mfile = self.mediaFileFactory(str(path))
                 if not mfile.isValid():
                     continue
-                
+
                 self.toTreat.append(mfile)
-                
+
             if not self.filter is None and filtermatches > 0:
                 self.printv(f"Matched files in {root} {'.'*filtermatches}")
-            
+
         self.printv(f"Collected {len(self.toTreat)} files.")
 
     def getTargetDirectory(self, file: str, destinationFolder: str) -> str:
@@ -252,6 +252,8 @@ class MediaTransitioner(VerbosePrinterClass):
         return self.getNonSkippedOf(tasks)
 
     def doRelocationOf(self, tasks: List[TransitionTask]):
+
+        failed = 0
         for task in tasks:
             toTransition = self.toTreat[task.index]
             newPath = self.getNewNameFor(task)
@@ -259,14 +261,19 @@ class MediaTransitioner(VerbosePrinterClass):
             self.printv(
                 f"{Path(str(toTransition)).relative_to(Path(self.src).parent)}    --->    {os.path.basename(self.dst)}\\...\\{os.path.basename(newPath)}"
             )
+            try:
+                if not self.dry:
+                    if self.move:
+                        toTransition.moveTo(newPath)
+                    else:
+                        toTransition.copyTo(newPath)
+            except Exception as e:
+                task.skip = True
+                task.skipReason = str(e)
+                failed += 1
 
-            if not self.dry:
-                if self.move:
-                    toTransition.moveTo(newPath)
-                else:
-                    toTransition.copyTo(newPath)
-
-        self.printv(f"Finished transition of {len(tasks)} files.")
+        self.printv(f"Finished transition of {len(tasks) - failed} files.")
+        self.printv(f"Failed Tasks: {failed}")
 
     def optionallyRemoveEmptyFolders(self):
         if self.removeEmptySubfolders:

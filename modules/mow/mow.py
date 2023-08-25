@@ -67,7 +67,7 @@ class Mow:
             "writeXMPTags": True,
             "move": True,
             "dry": dry,
-            "filter": filter
+            "filter": filter,
         }
 
     def copy(self):
@@ -88,7 +88,7 @@ class Mow:
                 )
             )()
 
-    def convert(self,enforcePassthrough: bool = False):
+    def convert(self, enforcePassthrough: bool = False):
         src, dst = self._getSrcDstForStage("convert")
         converters = [ImageConverter, VideoConverter]
         for converter in converters:
@@ -109,6 +109,7 @@ class Mow:
         distance=12,
         undoAutomatedGrouping=False,
         addMissingTimestampsToSubfolders=False,
+        checkSequence=False,
     ):
         src, dst = self._getSrcDstForStage("group")
         self._printEmphasized("Stage Group")
@@ -120,6 +121,7 @@ class Mow:
                 separationDistanceInHours=distance,
                 addMissingTimestampsToSubfolders=addMissingTimestampsToSubfolders,
                 undoAutomatedGrouping=undoAutomatedGrouping,
+                checkSequence=checkSequence,
                 **self.basicInputParameter,
             )
         )()
