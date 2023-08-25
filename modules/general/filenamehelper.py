@@ -59,7 +59,7 @@ def isCorrectTimestamp(candidate: str) -> CheckResult:
         return CheckResult(False, f"Candidate {candidate}'s timestamp is wrong")
 
 
-def extractDatetimeFrom(file: str, verbose=True) -> dt.datetime:
+def extractDatetimeFromFileName(file: str, verbose=True) -> dt.datetime:
     try:
         return dt.datetime.strptime(basename(file)[0:17], timestampformat)
     except Exception as e:
