@@ -13,6 +13,7 @@ from ..image.imagerenamer import ImageRenamer
 from ..image.imageconverter import ImageConverter
 from ..video.videoconverter import VideoConverter
 from ..video.videorenamer import VideoRenamer
+from ..audio.audiorenamer import AudioRenamer
 from ..general.mediaconverter import ConverterInput
 from ..general.mediagrouper import GrouperInput, MediaGrouper
 from ..general.filenamehelper import timestampformat
@@ -67,7 +68,7 @@ class Mow:
             "writeXMPTags": True,
             "move": True,
             "dry": dry,
-            "filter": filter
+            "filter": filter,
         }
 
     def copy(self):
@@ -75,7 +76,7 @@ class Mow:
 
     def rename(self, useCurrentFilename=False, replace=""):
         src, dst = self._getSrcDstForStage("rename")
-        renamers = [ImageRenamer, VideoRenamer]
+        renamers = [ImageRenamer, VideoRenamer,AudioRenamer]
         for renamer in renamers:
             self._printEmphasized(f"Stage rename: {renamer.__name__}")
             renamer(
@@ -88,7 +89,7 @@ class Mow:
                 )
             )()
 
-    def convert(self,enforcePassthrough: bool = False):
+    def convert(self, enforcePassthrough: bool = False):
         src, dst = self._getSrcDstForStage("convert")
         converters = [ImageConverter, VideoConverter]
         for converter in converters:
@@ -109,6 +110,7 @@ class Mow:
         distance=12,
         undoAutomatedGrouping=False,
         addMissingTimestampsToSubfolders=False,
+        checkSequence=False,
     ):
         src, dst = self._getSrcDstForStage("group")
         self._printEmphasized("Stage Group")
@@ -120,6 +122,7 @@ class Mow:
                 separationDistanceInHours=distance,
                 addMissingTimestampsToSubfolders=addMissingTimestampsToSubfolders,
                 undoAutomatedGrouping=undoAutomatedGrouping,
+                checkSequence=checkSequence,
                 **self.basicInputParameter,
             )
         )()

@@ -7,6 +7,7 @@ from ..general.mediafile import MediaFile
 from ..general.checkresult import CheckResult
 from ..image.imagefile import ImageFile
 from ..video.videofile import VideoFile
+from ..audio.audiofile import AudioFile
 
 import logging
 
@@ -20,7 +21,7 @@ def getFileModifyDateFrom(file: str) -> dt.datetime:
 
 def getMediaCreationDateFrom(file: str) -> dt.datetime:
     result = None
-    toCheck = [ImageFile, VideoFile]
+    toCheck = [ImageFile, VideoFile, AudioFile]
     for mediatype in toCheck:
         mediafile: MediaFile = mediatype(file)
         if not mediafile.isValid():
@@ -59,7 +60,7 @@ def isCorrectTimestamp(candidate: str) -> CheckResult:
         return CheckResult(False, f"Candidate {candidate}'s timestamp is wrong")
 
 
-def extractDatetimeFrom(file: str, verbose=True) -> dt.datetime:
+def extractDatetimeFromFileName(file: str, verbose=True) -> dt.datetime:
     try:
         return dt.datetime.strptime(basename(file)[0:17], timestampformat)
     except Exception as e:

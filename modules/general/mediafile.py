@@ -44,18 +44,25 @@ class MediaFile:
 
         return newBaseName
 
-    def moveTo(self, dst: str) -> MediaFile:
+    def moveTo(self, dst: str):
         """
         dst : fullpath of new file. Extension will be ignored. After the operation the objects points to the new location.
         """
+        self.relocationSanityCheck(pathNoExt=self.pathnoext)
+
         self.pathnoext = self._relocate(dst, move)
-        # return self
+
+        self.relocationSanityCheck(pathNoExt=self.pathnoext)
 
     def copyTo(self, dst: str) -> str:
         """
         dst : fullpath of new file. Extension will be ignored. Returns new path as string.
         """
         newBaseName = self._relocate(dst, copyfile)
+
+        self.relocationSanityCheck(pathNoExt=self.pathnoext)
+        self.relocationSanityCheck(pathNoExt=os.path.splitext(dst)[0])
+
         return newBaseName + self.extensions[0]
 
     def readDateTime(self) -> dt.datetime:
@@ -63,3 +70,8 @@ class MediaFile:
 
     def getAllFileNames(self) -> List[str]:
         return [self.pathnoext + ext for ext in self.extensions]
+
+    def relocationSanityCheck(self, pathNoExt):
+        for ext in self.extensions:
+            if not os.path.exists(pathNoExt + ext):
+                raise Exception(f"Relocation of file {self.pathnoext} failed!")

@@ -25,7 +25,7 @@ class RenamerInput(TransitionerInput):
     writeXMPTags: sets XMP:Source to original filename and XMP:date to creationDate
     replace: a string such as '"^[0-9].*$",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
     """
-
+    
     restoreOldNames = False
     filerenamer: Callable[[str], str] = None
     useCurrentFilename = False
@@ -56,9 +56,6 @@ class MediaRenamer(MediaTransitioner):
         if input.filerenamer is None:
             raise Exception("Filerenamer was not given to MediaRenamer!")
 
-        self.renamer = input.filerenamer
-        self.restoreOldNames = input.restoreOldNames
-        self.useCurrentFilename = input.useCurrentFilename
         self.replace: str = input.replace
         self.transitionTasks: List[TransitionTask] = []
 
@@ -109,7 +106,7 @@ class MediaRenamer(MediaTransitioner):
             mediafile = self.toTreat[task.index]
             filename = os.path.basename(str(mediafile))
 
-            if self.useCurrentFilename:
+            if self.input.useCurrentFilename:
                 creationDate = datetime.strptime(
                     filename[0:17], timestampformat
                 ).strftime("%Y:%m:%d %H:%M:%S")
@@ -144,7 +141,7 @@ class MediaRenamer(MediaTransitioner):
         self.printv("Created new names for files.")
 
     def getRenamedFileFrom(self, file: str) -> Tuple[str, str]:  # new name, errorreason
-        if self.restoreOldNames:
+        if self.input.restoreOldNames:
             splitted = os.path.basename(file).split("_")
             if len(splitted) != 2:
                 return (
@@ -153,13 +150,13 @@ class MediaRenamer(MediaTransitioner):
                 )
             return splitted[1], None
 
-        if not self.useCurrentFilename and self.fileWasAlreadyRenamed(file):
+        if not self.input.useCurrentFilename and self.fileWasAlreadyRenamed(file):
             return None, f"File appears to be already renamed."
 
-        if self.useCurrentFilename:
+        if self.input.useCurrentFilename:
             return os.path.basename(file), None
 
-        return os.path.basename(self.renamer(file)), None
+        return os.path.basename(self.input.filerenamer(file)), None
 
     def fileWasAlreadyRenamed(self, file: str):
         if "_" in os.path.basename(file) and "@" in os.path.basename(file):

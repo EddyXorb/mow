@@ -97,6 +97,14 @@ groupparser.add_argument(
     action="store_true",
 )
 
+groupparser.add_argument(
+    "-c",
+    "--check-seq",
+    help="Checks if grouped files are in their respective groups, i.e. if there are two groups A, B and the timestamp from A < B, then check is okay iff  every timestamp of every mediafile x in A is smaller than timestamp of B.",
+    dest="group_check_seq",
+    action="store_true",
+)
+
 stageparsers = [
     renameparser,
     convertparser,
@@ -125,11 +133,11 @@ for currentparser in stageparsers:
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    if not hasattr(args,"execute"):
+    if not hasattr(args, "execute"):
         args.execute = False
-    if not hasattr(args,"filter"):
+    if not hasattr(args, "filter"):
         args.filter = ""
-        
+
     mow = Mow(".mowsettings.yml", dry=not args.execute, filter=args.filter)
 
     if args.command == "rename":
@@ -145,6 +153,7 @@ if __name__ == "__main__":
             distance=args.group_separate,
             undoAutomatedGrouping=args.group_undogrouping,
             addMissingTimestampsToSubfolders=args.group_timestamps,
+            checkSequence=args.group_check_seq,
         )
     if args.command == "rate":
         mow.rate()
