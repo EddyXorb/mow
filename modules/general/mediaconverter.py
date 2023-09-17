@@ -69,7 +69,11 @@ class MediaConverter(MediaTransitioner):
                         try:
                             xmptagstowrite = et.get_tags(str(file), MowTags.all)[0]
                             xmptagstowrite.pop("SourceFile")
-                            et.set_tags(convertedFile, xmptagstowrite)
+                            et.set_tags(
+                                convertedFile,
+                                xmptagstowrite,
+                                params=["-P", "-overwrite_original"],
+                            )
                         except:
                             success = False
                 if not success:
