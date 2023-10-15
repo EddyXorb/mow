@@ -11,3 +11,4 @@ tests/test_treated*
 mow.log
 .pytest_cache
 tests/test_aggregate*
+.venv

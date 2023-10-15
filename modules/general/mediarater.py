@@ -11,6 +11,8 @@ from ..general.mediafile import MediaFile
 from .mediatransitioner import MediaTransitioner, TransitionerInput, TransitionTask
 from ..general.medafilefactories import createAnyValidMediaFile
 
+from ..video.videofile import VideoFile #replace this. The rater should be agnostic to concrete filetype
+
 from exiftool import ExifToolHelper
 
 
@@ -34,10 +36,14 @@ class MediaRater(MediaTransitioner):
         self, et: ExifToolHelper, index: int, file: MediaFile
     ) -> Tuple[CheckResult, int]:
         try:
+            if isinstance(file,VideoFile): # TODO: remove this special case for videos: always rating 2
+                return TransitionTask(index, XMPTags={"XMP:Rating": 2})
+            
             tags = et.get_tags(file.getAllFileNames(), "XMP:Rating")
             ratings = [
                 filetags["XMP:Rating"] for filetags in tags if "XMP:Rating" in filetags
             ]
+
             match len(set(ratings)):
                 case 0:
                     return TransitionTask.getFailed(index, "No rating found!")
