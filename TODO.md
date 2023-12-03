@@ -1,2 +1,2 @@
 # Todos 
-- Write tests for sequence checker of grouper
+- Write tests for sequence checker of grouper+

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Dict, List, Set
 
 from pathlib import Path
@@ -5,19 +6,42 @@ from os.path import basename, splitext
 from exiftool import ExifToolHelper
 from tqdm import tqdm
 
+
 from ..mow.mowtags import MowTags
 
 from .mediatransitioner import MediaTransitioner, TransitionTask, TransitionerInput
 from .mediagrouper import MediaGrouper
 from .filenamehelper import isCorrectTimestamp
 from ..general.checkresult import CheckResult
+from ..general.mediafile import MediaFile
+
+
+@dataclass(kw_only=True)
+class AggregatorInput(TransitionerInput):
+    """
+    src : directory which will be search for files
+    dst : directory where renamed files should be placed
+    recursive : if true, dives into every subdir to look for image files
+    move : if true, moves files, else copies them
+    restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
+    maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
+    dry: don't actually rename files
+    writeXMPTags: sets XMP:Source to original filename and XMP:date to creationDate
+    replace: a string such as '"^[0-9].*$",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
+    jpgSingleSourceOfTruth: if true, will look only at jpg when processing images to determine if tags are correct
+    """
+
+    jpgSingleSourceOfTruth: bool = False
 
 
 class MediaAggregator(MediaTransitioner):
-    def __init__(self, input: TransitionerInput):
+    def __init__(self, input: AggregatorInput):
         super().__init__(input)
 
         self.toTransition: List[TransitionTask] = []
+
+    def getAllTagRelevantFilenamesFor(self, file: MediaFile) -> List[str]:
+        return file.getAllFileNames()
 
     def getTagsFromTasks(self) -> Dict[int, List[Dict[str, str]]]:
         """
@@ -28,8 +52,7 @@ class MediaAggregator(MediaTransitioner):
 
         with ExifToolHelper() as et:
             for task in tqdm(self.toTransition):
-
-                files = self.toTreat[task.index].getAllFileNames()
+                files = self.getAllTagRelevantFilenamesFor(self.toTreat[task.index])
                 try:
                     tags = et.get_tags(files, tags=MowTags.all)
                     out[task.index] = tags
@@ -54,7 +77,6 @@ class MediaAggregator(MediaTransitioner):
 
     def checkFileNamesHaveCorrectTimestamp(self):
         for index, file in enumerate(self.toTreat):
-
             filename = basename(str(file))
             if len(filename) < 17:
                 result = CheckResult(

@@ -22,6 +22,7 @@ from ..image.imageaggregator import ImageAggregator
 from ..video.videoaggregator import VideoAggregator
 from ..general.medialocalizer import MediaLocalizer
 from ..general.mediatagger import MediaTagger
+from ..general.mediaaggregator import AggregatorInput
 
 from .mowstatusprinter import MowStatusPrinter
 
@@ -76,7 +77,7 @@ class Mow:
 
     def rename(self, useCurrentFilename=False, replace=""):
         src, dst = self._getSrcDstForStage("rename")
-        renamers = [ImageRenamer, VideoRenamer,AudioRenamer]
+        renamers = [ImageRenamer, VideoRenamer, AudioRenamer]
         for renamer in renamers:
             self._printEmphasized(f"Stage rename: {renamer.__name__}")
             renamer(
@@ -160,14 +161,15 @@ class Mow:
             )
         )()
 
-    def aggregate(self):
+    def aggregate(self, jpgIsSingleSourceOfTruth: bool):
         src, dst = self._getSrcDstForStage("aggregate")
         self._printEmphasized("Stage Aggregate")
         for aggregator in [ImageAggregator, VideoAggregator]:
             aggregator(
-                TransitionerInput(
+                AggregatorInput(
                     src=src,
                     dst=dst,
+                    jpgSingleSourceOfTruth=jpgIsSingleSourceOfTruth,
                     **self.basicInputParameter,
                 )
             )()

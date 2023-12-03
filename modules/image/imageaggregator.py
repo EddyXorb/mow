@@ -2,7 +2,7 @@ from typing import List
 
 from ..general.mediatransitioner import TransitionTask
 from ..image.imagefile import ImageFile
-from ..general.mediaaggregator import MediaAggregator, TransitionerInput
+from ..general.mediaaggregator import AggregatorInput, MediaAggregator
 
 from shutil import move
 from os.path import basename, join, dirname
@@ -10,9 +10,15 @@ import os
 
 
 class ImageAggregator(MediaAggregator):
-    def __init__(self, input: TransitionerInput):
+    def __init__(self, input: AggregatorInput):
         input.mediaFileFactory = ImageFile
+        self.jpgSingleSourceOfTruth = input.jpgSingleSourceOfTruth
         super().__init__(input)
+
+    def getAllTagRelevantFilenamesFor(self, file: ImageFile) -> List[str]:
+        return (
+            [file.getJpg()] if self.jpgSingleSourceOfTruth else file.getAllFileNames()
+        )
 
     def treatTaskBasedOnRating(self, task: TransitionTask, rating: int):
         mfile: ImageFile = self.toTreat[task.index]

@@ -105,6 +105,14 @@ groupparser.add_argument(
     action="store_true",
 )
 
+aggregateparser.add_argument(
+    "-j",
+    "--jpg-single-source-of-truth",
+    help="If set, the tags that are contained in jpgs (including ratings) are taken only from jpg. This will overwrite any different tags set on the raw-file, if present.",
+    action="store_true",
+    dest="aggregate_jpgsinglesourceoftruth",
+)
+
 stageparsers = [
     renameparser,
     convertparser,
@@ -162,6 +170,6 @@ if __name__ == "__main__":
     if args.command == "localize":
         mow.localize()
     if args.command == "aggregate":
-        mow.aggregate()
+        mow.aggregate(jpgIsSingleSourceOfTruth=args.aggregate_jpgsinglesourceoftruth)
     if args.command == "status":
         mow.status()

@@ -3,9 +3,9 @@ from os.path import join, exists, splitext, abspath
 import os
 from time import sleep
 
+from ..modules.general.mediaaggregator import AggregatorInput
 from ..modules.image.imageaggregator import (
     ImageAggregator,
-    TransitionerInput,
     ImageFile,
 )
 from pathlib import Path
@@ -62,9 +62,7 @@ def test_correctImageIsTransitioned():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -83,9 +81,7 @@ def test_wrongTimestampOfFileIsRecognized():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
@@ -104,9 +100,7 @@ def test_wrongTimestampOfGroupIsRecognized():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
@@ -125,9 +119,7 @@ def test_tooshortGroupnameIsRecognized():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
@@ -153,15 +145,43 @@ def test_differentXMPTagsBetweenJPGandRawAreRecognized():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
     assert not exists(join(dst, str(Path(fullname).relative_to(src))))
     assert not exists(
+        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
+    )
+
+
+def test_jpgSingleSourceOfTruthWorks():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+    prepareTest(srcname=fullname)
+
+    with ExifToolHelper() as et:
+        et.set_tags(
+            fullname,
+            {"XMP:Source": "IamDifferent"},
+            params=["-P", "-overwrite_original"],
+        )
+
+    assert exists(fullname)
+    assert exists(fullname.replace(".jpg", ".ORF"))
+
+    ImageAggregator(
+        input=AggregatorInput(
+            src=src, dst=dst, dry=False, verbose=True, jpgSingleSourceOfTruth=True
+        )
+    )()
+
+    assert not exists(fullname)
+    assert not exists(fullname.replace(".jpg", ".ORF"))
+
+    assert exists(join(dst, str(Path(fullname).relative_to(src))))
+    assert exists(
         join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
     )
 
@@ -178,7 +198,7 @@ def test_missingXMPTagSourceInRawIsCopiedFromJpg():
     assert exists(fullname.replace(".jpg", ".ORF"))
 
     ImageAggregator(
-        input=TransitionerInput(
+        input=AggregatorInput(
             src=src, dst=dst, dry=False, verbose=True, writeXMPTags=True
         )
     )()
@@ -208,9 +228,7 @@ def test_missingXMPTagSourceInJpgIsCopiedFromRaw():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -237,9 +255,7 @@ def test_missingXMPTagDescriptionIsCopiedFromRaw():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -268,9 +284,7 @@ def test_completelyMissingXMPTagDescriptionIsRecognized():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
@@ -292,9 +306,7 @@ def test_completelyMissingXMPTagDateIsRecognized():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
@@ -316,9 +328,7 @@ def test_missingXMPTagDateIsCopiedFromRaw():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -346,9 +356,7 @@ def test_completelyMissingXMPTagRatingIsRecognized():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
@@ -371,9 +379,7 @@ def test_missingXMPTagRatingIsCopiedFromRaw():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -403,9 +409,7 @@ def test_optionalXMPTagLabelIsCopiedFromJpg():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -431,9 +435,7 @@ def test_optionalXMPTagSubjectIsCopiedFromJpg():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -464,9 +466,7 @@ def test_optionalXMPTagHierarchicalSubjectIsCopiedFromJpg():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -504,9 +504,7 @@ def test_multipleHSubjectsAreNoProblem():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -546,9 +544,7 @@ def test_multipleHierarchicalSubjectsAreNoProblem():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -582,9 +578,7 @@ def test_rating1ImageIsMovedIntoDeleteFolder():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -596,6 +590,39 @@ def test_rating1ImageIsMovedIntoDeleteFolder():
 
     assert exists(join(src, "deleted", str(Path(fullname).relative_to(src))))
     assert exists(
+        join(src, "deleted", str(Path(fullname.replace("jpg", "ORF")).relative_to(src)))
+    )
+
+
+def test_rating1Rawrating5jpgAndJPGSingleSourceOfTruthDoesNotDelete():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+    prepareTest(srcname=fullname)
+    ifile = ImageFile(fullname)
+
+    with ExifTool() as et:
+        et.execute("-xmp:Rating=5", "-P", "-overwrite_original", ifile.getJpg())
+        et.execute("-xmp:Rating=1", "-P", "-overwrite_original", ifile.getRaw())
+
+    assert exists(fullname)
+    assert exists(fullname.replace(".jpg", ".ORF"))
+
+    ImageAggregator(
+        input=AggregatorInput(
+            src=src, dst=dst, dry=False, verbose=True, jpgSingleSourceOfTruth=True
+        )
+    )()
+
+    assert not exists(fullname)
+    assert not exists(fullname.replace(".jpg", ".ORF"))
+
+    assert exists(join(dst, str(Path(fullname).relative_to(src))))
+    assert exists(
+        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
+    )
+
+    assert not exists(join(src, "deleted", str(Path(fullname).relative_to(src))))
+    assert not exists(
         join(src, "deleted", str(Path(fullname.replace("jpg", "ORF")).relative_to(src)))
     )
 
@@ -614,9 +641,7 @@ def test_rating2ImagesRawIsMovedIntoDeleteFolderJpgTransitioned():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -646,9 +671,7 @@ def test_rating3ImagesRawIsMovedIntoDeleteFolderJpgTransitioned():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -677,9 +700,7 @@ def test_rating4BothImagefilesAreTransitioned():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
@@ -715,9 +736,7 @@ def test_rating5BothImagefilesAreTransitioned():
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, verbose=True)
-    )()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
