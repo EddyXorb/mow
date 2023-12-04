@@ -1,2 +1,3 @@
 # Todos 
-- Write tests for sequence checker of grouper+
+- Write tests for sequence checker of grouper
+- Conversion: assure xmp-tags are maintained after conversion (especially for videos: xmp:date is vanished) by reading them before conversion and writing them to result
