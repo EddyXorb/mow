@@ -72,7 +72,7 @@ class MediaConverter(MediaTransitioner):
                             et.set_tags(
                                 convertedFile,
                                 xmptagstowrite,
-                                params=["-P", "-overwrite_original"],
+                                params=["-P", "-overwrite_original", "-L", "-m"],
                             )
                         except:
                             success = False
