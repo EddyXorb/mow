@@ -239,7 +239,7 @@ class MediaTransitioner(VerbosePrinterClass):
                     et.set_tags(
                         files,
                         task.XMPTags,
-                        params=["-P", "-overwrite_original"],  # , "-v2"],
+                        params=["-P", "-overwrite_original","-L","-m"],  # , "-v2"], # -L : use latin encoding for umlaute -m: Ignore minor warnings and errors
                     )
 
                 except Exception as e:

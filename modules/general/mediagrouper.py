@@ -329,11 +329,10 @@ class MediaGrouper(MediaTransitioner):
                     f"The group {currGroup} should have timestamp {minFileTime} based on her files."
                 )
                 wrongGroupTimestamps[currGroup] = minFileTime
-            
 
         self.printv(f"Found {len(overlappingFiles)} overlapping grouped files.")
         self.printv(f"Found {len(wrongGroupTimestamps)} wrong group timestamps.")
-        
+
     def setOptionalXMP(self, grouped: DefaultDict[str, List[int]]):
         if not self.writeXMPTags:
             return
@@ -341,7 +340,6 @@ class MediaGrouper(MediaTransitioner):
         inverted = {}
         for group, indices in grouped.items():
             inverted.update({index: group for index in indices})
-
         for task in [task for task in self.toTransition if not task.skip]:
             groupname = inverted[task.index]
             task.XMPTags = {"XMP:Description": groupname}
