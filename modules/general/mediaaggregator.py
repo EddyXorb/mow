@@ -54,8 +54,20 @@ class MediaAggregator(MediaTransitioner):
             for task in tqdm(self.toTransition):
                 files = self.getAllTagRelevantFilenamesFor(self.toTreat[task.index])
                 try:
-                    tags = et.get_tags(files, tags=MowTags.all)
-                    out[task.index] = tags
+                    tagdictlist: List[Dict[str, str]] = et.get_tags(
+                        files, tags=MowTags.all, params=["-L"]
+                    )
+                    out[task.index] = [
+                        {
+                            key: value.encode("1252").decode(
+                                "utf-8"
+                            )  # to avoid problems with umlauten
+                            if type(value) == str
+                            else value
+                            for key, value in tagdict.items()
+                        }
+                        for tagdict in tagdictlist
+                    ]
                 except Exception as e:
                     out[task.index] = []
                     task.skip = True
