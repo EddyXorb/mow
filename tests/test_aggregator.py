@@ -82,38 +82,52 @@ def prepareXMPData(description):
     logging.info(result)
 
 
-def bothFilesAreInSRC(fullname):
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+def bothFilesAreInSRC(jpgname):
+    return exists(jpgname) and exists(jpgname.replace(".jpg", ".ORF"))
 
 
-def bothFilesAreNOTinSRC(fullname):
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+def bothFilesAreNOTinSRC(jpgname):
+    return not exists(jpgname) and not exists(jpgname.replace(".jpg", ".ORF"))
 
 
-def bothFilesAreInDST(fullname):
-    assert exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
+def bothFilesAreInDST(jpgname):
+    return jpgIsInDST(jpgname) and rawIsInDST(jpgname)
+
+
+def bothFilesAreNOTInDST(jpgname):
+    return not jpgIsInDST(jpgname) and not rawIsInDST(jpgname)
+
+
+def jpgIsInDST(jpgname):
+    return exists(join(dst, str(Path(jpgname).relative_to(src))))
+
+
+def rawIsInDST(jpgname):
+    return exists(
+        join(dst, str(Path(jpgname.replace(".jpg", ".ORF")).relative_to(src)))
     )
 
 
-def bothFilesAreNOTInDST(fullname):
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
+def transitionTookPlace(jpgname):
+    return bothFilesAreNOTinSRC(jpgname) and bothFilesAreInDST(jpgname)
+
+
+def assertTransitionTookNOTPlace(jpgname):
+    return bothFilesAreInSRC(jpgname) and bothFilesAreNOTInDST(jpgname)
+
+
+def jpgWasDeleted(jpgname):
+    return exists(join(src, "deleted", str(Path(jpgname).relative_to(src))))
+
+
+def rawWasDeleted(jpgname):
+    return exists(
+        join(src, "deleted", str(Path(jpgname.replace("jpg", "ORF")).relative_to(src)))
     )
 
 
-def transitionTookPlace(fullname):
-    bothFilesAreNOTinSRC(fullname)
-    bothFilesAreInDST(fullname)
-
-
-def transitionTookNOTPlace(fullname):
-    bothFilesAreInSRC(fullname)
-    bothFilesAreNOTInDST(fullname)
+def bothWereNotDeleted(fullname):
+    return not jpgWasDeleted(fullname) and not rawWasDeleted(fullname)
 
 
 def test_correctImageIsTransitioned():
@@ -121,11 +135,11 @@ def test_correctImageIsTransitioned():
     fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
 
     prepareTest(srcname=fullname)
-    bothFilesAreInSRC(fullname)
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    transitionTookPlace(fullname)
+    assert transitionTookPlace(fullname)
 
 
 def test_wrongTimestampOfFileIsRecognized():
@@ -133,18 +147,11 @@ def test_wrongTimestampOfFileIsRecognized():
     fullname = join(src, groupname, "202-12-12@121212_test.jpg")
     prepareTest(srcname=fullname)
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
-
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
+    assertTransitionTookNOTPlace(fullname)
 
 
 def test_wrongTimestampOfGroupIsRecognized():
@@ -152,18 +159,11 @@ def test_wrongTimestampOfGroupIsRecognized():
     fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
     prepareTest(srcname=fullname)
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
-
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
+    assertTransitionTookNOTPlace(fullname)
 
 
 def test_wrongDescriptionTagIsRecognized():
@@ -171,11 +171,11 @@ def test_wrongDescriptionTagIsRecognized():
     fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
     prepareTest(srcname=fullname, xmp_description=groupname + "_I_AM_DIFFERENT")
 
-    bothFilesAreInSRC(fullname)
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    transitionTookNOTPlace(fullname)
+    assertTransitionTookNOTPlace(fullname)
 
 
 def test_tooshortGroupnameIsRecognized():
@@ -183,18 +183,11 @@ def test_tooshortGroupnameIsRecognized():
     fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
     prepareTest(srcname=fullname)
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
-
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
+    assertTransitionTookNOTPlace(fullname)
 
 
 def test_differentXMPTagsBetweenJPGandRawAreRecognized():
@@ -209,18 +202,11 @@ def test_differentXMPTagsBetweenJPGandRawAreRecognized():
             params=["-P", "-overwrite_original"],
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
-
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
+    assertTransitionTookNOTPlace(fullname)
 
 
 def test_jpgSingleSourceOfTruthWorks():
@@ -235,8 +221,7 @@ def test_jpgSingleSourceOfTruthWorks():
             params=["-P", "-overwrite_original"],
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(
         input=AggregatorInput(
@@ -244,13 +229,7 @@ def test_jpgSingleSourceOfTruthWorks():
         )
     )()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
-
-    assert exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
+    assert transitionTookPlace(fullname)
 
 
 def test_missingXMPTagSourceInRawIsCopiedFromJpg():
@@ -261,8 +240,7 @@ def test_missingXMPTagSourceInRawIsCopiedFromJpg():
     with ExifTool() as et:
         et.execute("-xmp:source=", "-P", "-overwrite_original", fullname)
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(
         input=AggregatorInput(
@@ -270,17 +248,13 @@ def test_missingXMPTagSourceInRawIsCopiedFromJpg():
         )
     )()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreInDST(fullname)
 
-    expectedTarget = join(
-        dst, str(Path(fullname.replace(".ORF", ".jpg")).relative_to(src))
-    )
-    assert exists(expectedTarget)
-    assert exists(expectedTarget.replace(".jpg", ".ORF"))
+    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
 
     with ExifToolHelper() as et:
-        tag = et.get_tags(expectedTarget.replace(".jpg", ".ORF"), "XMP:Source")[0]
+        tag = et.get_tags(expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:Source")[0]
         assert tag["XMP:Source"] == "test_aggregate.jpg"
 
 
@@ -292,17 +266,14 @@ def test_missingXMPTagSourceInJpgIsCopiedFromRaw():
     with ExifTool() as et:
         et.execute("-xmp:source=", "-P", "-overwrite_original", fullname)
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreInDST(fullname)
 
     expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert exists(expectedTargetJpg)
-    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
 
     with ExifToolHelper() as et:
         tag = et.get_tags(expectedTargetJpg, "XMP:Source")[0]
@@ -319,17 +290,14 @@ def test_missingXMPTagDescriptionIsCopiedFromRaw():
     with ExifTool() as et:
         et.execute("-xmp:Description=", "-P", "-overwrite_original", str(ifile))
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreInDST(fullname)
 
     expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert exists(expectedTargetJpg)
-    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
 
     with ExifToolHelper() as et:
         tag = et.get_tags(expectedTargetJpg, "XMP:Description")[0]
@@ -348,17 +316,11 @@ def test_completelyMissingXMPTagDescriptionIsRecognized():
             "-xmp:Description=", "-P", "-overwrite_original", *ifile.getAllFileNames()
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
-
-    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert not exists(expectedTargetJpg)
-    assert not exists(expectedTargetJpg.replace(".jpg", ".ORF"))
+    assertTransitionTookNOTPlace(fullname)
 
 
 def test_completelyMissingXMPTagDateIsRecognized():
@@ -370,17 +332,11 @@ def test_completelyMissingXMPTagDateIsRecognized():
     with ExifTool() as et:
         et.execute("-xmp:Date=", "-P", "-overwrite_original", *ifile.getAllFileNames())
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
-
-    expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert not exists(expectedTargetJpg)
-    assert not exists(expectedTargetJpg.replace(".jpg", ".ORF"))
+    assertTransitionTookNOTPlace(fullname)
 
 
 def test_missingXMPTagDateIsCopiedFromRaw():
@@ -392,18 +348,14 @@ def test_missingXMPTagDateIsCopiedFromRaw():
     with ExifTool() as et:
         et.execute("-xmp:Date=", "-P", "-overwrite_original", str(ifile))
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreInDST(fullname)
 
     expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert exists(expectedTargetJpg)
-    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
-
     with ExifToolHelper() as et:
         tag = et.get_tags(expectedTargetJpg, "XMP:Date")[0]
         assert tag["XMP:Date"] == "2022:07:27 21:55:55"
@@ -420,18 +372,11 @@ def test_completelyMissingXMPTagRatingIsRecognized():
             "-xmp:Rating=", "-P", "-overwrite_original", *ifile.getAllFileNames()
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
-
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
+    assertTransitionTookNOTPlace(fullname)
 
 
 def test_missingXMPTagRatingIsCopiedFromRaw():
@@ -443,18 +388,14 @@ def test_missingXMPTagRatingIsCopiedFromRaw():
     with ExifTool() as et:
         et.execute("-xmp:Rating=", "-P", "-overwrite_original", str(ifile))
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreInDST(fullname)
 
     expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert exists(expectedTargetJpg)
-    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
-
     with ExifToolHelper() as et:
         tag = et.get_tags(expectedTargetJpg, "XMP:Rating")[0]
         assert tag["XMP:Rating"] == 4
@@ -473,17 +414,14 @@ def test_optionalXMPTagLabelIsCopiedFromJpg():
             files=str(ifile),
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreInDST(fullname)
 
     expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert exists(expectedTargetJpg)
-    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
 
     with ExifToolHelper() as et:
         tag = et.get_tags(expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:Label")[0]
@@ -499,17 +437,14 @@ def test_optionalXMPTagSubjectIsCopiedFromJpg():
     with ExifTool() as et:
         et.execute("-xmp:Subject=Haus", "-P", "-overwrite_original", str(ifile))
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreInDST(fullname)
 
     expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert exists(expectedTargetJpg)
-    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
 
     with ExifToolHelper() as et:
         tag = et.get_tags(expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:Subject")[0]
@@ -530,17 +465,14 @@ def test_optionalXMPTagHierarchicalSubjectIsCopiedFromJpg():
             str(ifile),
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreInDST(fullname)
 
     expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert exists(expectedTargetJpg)
-    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
 
     with ExifToolHelper() as et:
         tag = et.get_tags(
@@ -568,17 +500,14 @@ def test_multipleHSubjectsAreNoProblem():
             params=["-P", "-overwrite_original"],
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreInDST(fullname)
 
     expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert exists(expectedTargetJpg)
-    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
 
     with ExifToolHelper() as et:
         tag = et.get_tags(expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:Subject")[0]
@@ -608,17 +537,14 @@ def test_multipleHierarchicalSubjectsAreNoProblem():
             params=["-P", "-overwrite_original"],
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreInDST(fullname)
 
     expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
-    assert exists(expectedTargetJpg)
-    assert exists(expectedTargetJpg.replace(".jpg", ".ORF"))
 
     with ExifToolHelper() as et:
         tag = et.get_tags(
@@ -642,23 +568,13 @@ def test_rating1ImageIsMovedIntoDeleteFolder():
             "-xmp:Rating=1", "-P", "-overwrite_original", *ifile.getAllFileNames()
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
-
-    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
-
-    assert exists(join(src, "deleted", str(Path(fullname).relative_to(src))))
-    assert exists(
-        join(src, "deleted", str(Path(fullname.replace("jpg", "ORF")).relative_to(src)))
-    )
+    assert bothFilesAreNOTinSRC(fullname)
+    assert bothFilesAreNOTInDST(fullname)
+    assert jpgWasDeleted(fullname) and rawWasDeleted(fullname)
 
 
 def test_rating1Rawrating5jpgAndJPGSingleSourceOfTruthDoesNotDelete():
@@ -671,8 +587,7 @@ def test_rating1Rawrating5jpgAndJPGSingleSourceOfTruthDoesNotDelete():
         et.execute("-xmp:Rating=5", "-P", "-overwrite_original", ifile.getJpg())
         et.execute("-xmp:Rating=1", "-P", "-overwrite_original", ifile.getRaw())
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(
         input=AggregatorInput(
@@ -680,18 +595,9 @@ def test_rating1Rawrating5jpgAndJPGSingleSourceOfTruthDoesNotDelete():
         )
     )()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert transitionTookPlace(fullname)
 
-    assert exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
-
-    assert not exists(join(src, "deleted", str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(src, "deleted", str(Path(fullname.replace("jpg", "ORF")).relative_to(src)))
-    )
+    bothWereNotDeleted(fullname)
 
 
 def test_rating2ImagesRawIsMovedIntoDeleteFolderJpgTransitioned():
@@ -705,22 +611,17 @@ def test_rating2ImagesRawIsMovedIntoDeleteFolderJpgTransitioned():
             "-xmp:Rating=2", "-P", "-overwrite_original", *ifile.getAllFileNames()
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreNOTinSRC(fullname)
 
-    assert exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
-
-    assert not exists(join(src, "deleted", str(Path(fullname).relative_to(src))))
-    assert exists(
-        join(src, "deleted", str(Path(fullname.replace("jpg", "ORF")).relative_to(src)))
+    assert (
+        jpgIsInDST(fullname)
+        and not rawIsInDST(fullname)
+        and not jpgWasDeleted(fullname)
+        and rawWasDeleted(fullname)
     )
 
 
@@ -735,21 +636,17 @@ def test_rating3ImagesRawIsMovedIntoDeleteFolderJpgTransitioned():
             "-xmp:Rating=3", "-P", "-overwrite_original", *ifile.getAllFileNames()
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
-    assert exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
+    assert bothFilesAreNOTinSRC(fullname)
 
-    assert not exists(join(src, "deleted", str(Path(fullname).relative_to(src))))
-    assert exists(
-        join(src, "deleted", str(Path(fullname.replace("jpg", "ORF")).relative_to(src)))
+    assert (
+        jpgIsInDST(fullname)
+        and not rawIsInDST(fullname)
+        and not jpgWasDeleted(fullname)
+        and rawWasDeleted(fullname)
     )
 
 
@@ -764,23 +661,12 @@ def test_rating4BothImagefilesAreTransitioned():
             "-xmp:Rating=4", "-P", "-overwrite_original", *ifile.getAllFileNames()
         )
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
-
-    assert exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
-
-    assert not exists(join(src, "deleted", str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(src, "deleted", str(Path(fullname.replace("jpg", "ORF")).relative_to(src)))
-    )
+    assert transitionTookPlace(fullname)
+    assert not jpgWasDeleted(fullname) and not rawWasDeleted(fullname)
 
 
 def test_rating5BothImagefilesAreTransitioned():
@@ -800,20 +686,9 @@ def test_rating5BothImagefilesAreTransitioned():
     with ExifTool() as et:
         logging.info(et.execute(*args))
 
-    assert exists(fullname)
-    assert exists(fullname.replace(".jpg", ".ORF"))
+    assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
-    assert not exists(fullname)
-    assert not exists(fullname.replace(".jpg", ".ORF"))
-
-    assert exists(join(dst, str(Path(fullname).relative_to(src))))
-    assert exists(
-        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
-    )
-
-    assert not exists(join(src, "deleted", str(Path(fullname).relative_to(src))))
-    assert not exists(
-        join(src, "deleted", str(Path(fullname.replace("jpg", "ORF")).relative_to(src)))
-    )
+    assert transitionTookPlace(fullname)
+    assert not jpgWasDeleted(fullname) and not rawWasDeleted(fullname)
