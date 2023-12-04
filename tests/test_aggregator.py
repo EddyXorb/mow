@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import shutil
 from os.path import join, exists, splitext, abspath
 import os
@@ -25,25 +26,37 @@ testfilejpg = join(testsfolder, "test_aggregate.jpg")
 testfileraw = join(testsfolder, "test_aggregate.ORF")
 
 
-def prepareTest(srcname="test.JPG"):
-    if not exists(testfilejpg) or not exists(testfileraw):
+@dataclass
+class Cached:
+    xmp_description = "2022-12-12@121212_TEST"
+    need_to_init = True
+
+
+cached = Cached()
+
+
+def prepareTest(srcname="test.JPG", xmp_description="2022-12-12@121212_TEST"):
+    """
+    Here we create a test_aggregate version of each file, which we cache in 'testsfolder'. Without caching, we had to call exiftoolhelper too often which would slowdown a lot.
+    """
+    if (
+        not exists(testfilejpg)
+        or not exists(testfileraw)
+        or (xmp_description != cached.xmp_description)
+        or cached.need_to_init
+    ):
         shutil.copy(join(testsfolder, "test.jpg"), testfilejpg)
         shutil.copy(join(testsfolder, "test.ORF"), testfileraw)
-        with ExifToolHelper() as et:
-            result = et.set_tags(
-                [testfilejpg, testfileraw],
-                {
-                    "XMP:Rating": 4,
-                    "XMP:Date": "2022:07:27 21:55:55",
-                    "XMP:Source": "test_aggregate.jpg",
-                    "XMP:Description": "2022-12-12@121212_TEST",
-                },
-                params=["-P", "-overwrite_original", "-v2"],
-            )
-        logging.info(result)
+
+        prepareXMPData(xmp_description)
+        cached.xmp_description = xmp_description
+        cached.need_to_init = False
+
     shutil.rmtree(src, ignore_errors=True)
     shutil.rmtree(dst, ignore_errors=True)
+
     os.makedirs(os.path.dirname(srcname))
+
     shutil.copy(
         join(testsfolder, testfilejpg),
         splitext(srcname)[0] + ".jpg",
@@ -54,23 +67,65 @@ def prepareTest(srcname="test.JPG"):
     )
 
 
-def test_correctImageIsTransitioned():
-    groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
-    prepareTest(srcname=fullname)
+def prepareXMPData(description):
+    with ExifToolHelper() as et:
+        result = et.set_tags(
+            [testfilejpg, testfileraw],
+            {
+                "XMP:Rating": 4,
+                "XMP:Date": "2022:07:27 21:55:55",
+                "XMP:Source": "test_aggregate.jpg",
+                "XMP:Description": description,
+            },
+            params=["-P", "-overwrite_original", "-v2"],
+        )
+    logging.info(result)
 
+
+def bothFilesAreInSRC(fullname):
     assert exists(fullname)
     assert exists(fullname.replace(".jpg", ".ORF"))
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
 
+def bothFilesAreNOTinSRC(fullname):
     assert not exists(fullname)
     assert not exists(fullname.replace(".jpg", ".ORF"))
 
+
+def bothFilesAreInDST(fullname):
     assert exists(join(dst, str(Path(fullname).relative_to(src))))
     assert exists(
         join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
     )
+
+
+def bothFilesAreNOTInDST(fullname):
+    assert not exists(join(dst, str(Path(fullname).relative_to(src))))
+    assert not exists(
+        join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
+    )
+
+
+def transitionTookPlace(fullname):
+    bothFilesAreNOTinSRC(fullname)
+    bothFilesAreInDST(fullname)
+
+
+def transitionTookNOTPlace(fullname):
+    bothFilesAreInSRC(fullname)
+    bothFilesAreNOTInDST(fullname)
+
+
+def test_correctImageIsTransitioned():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+
+    prepareTest(srcname=fullname)
+    bothFilesAreInSRC(fullname)
+
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+
+    transitionTookPlace(fullname)
 
 
 def test_wrongTimestampOfFileIsRecognized():
@@ -109,6 +164,18 @@ def test_wrongTimestampOfGroupIsRecognized():
     assert not exists(
         join(dst, str(Path(fullname.replace(".jpg", ".ORF")).relative_to(src)))
     )
+
+
+def test_wrongDescriptionTagIsRecognized():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+    prepareTest(srcname=fullname, xmp_description=groupname + "_I_AM_DIFFERENT")
+
+    bothFilesAreInSRC(fullname)
+
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+
+    transitionTookNOTPlace(fullname)
 
 
 def test_tooshortGroupnameIsRecognized():

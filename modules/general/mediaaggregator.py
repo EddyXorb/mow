@@ -65,9 +65,9 @@ class MediaAggregator(MediaTransitioner):
 
     def prepareTransition(self):
         self.checkFileNamesHaveCorrectTimestamp()
-        self.checkGrouping()
 
         indexToTags = self.getTagsFromTasks()
+        self.checkGrouping(indexToTags)
         self.setXMPTagsToWrite(indexToTags)
         self.deleteBasedOnRating(indexToTags)
 
@@ -90,15 +90,45 @@ class MediaAggregator(MediaTransitioner):
             else:
                 self.toTransition.append(TransitionTask(index=index))
 
-    def checkGrouping(self):
+    def checkGrouping(self, indexToTags: Dict[int, List[Dict[str, str]]]):
         for task in self.toTransition:
             if task.skip:
                 continue
-            groupnameToTest = basename(str(Path(str(self.toTreat[task.index])).parent))
-            result = MediaGrouper.isCorrectGroupName(groupnameToTest)
+
+            fullpath = Path(str(self.toTreat[task.index])).parent
+
+            result = MediaGrouper.isCorrectGroupSubfolder(
+                str(fullpath), rootFolder=self.src
+            )
+
             if not result.ok:
                 task.skip = True
                 task.skipReason = result.error
+                continue
+
+            result = self.isCorrectDescriptionTag(
+                groupnameToTest=str(fullpath.relative_to(self.src)),
+                tagDicts=indexToTags[task.index],
+            )
+
+            if not result.ok:
+                task.skip = True
+                task.skipReason = result.error
+
+    def isCorrectDescriptionTag(
+        self, groupnameToTest: str, tagDicts: List[Dict[str, str]]
+    ):
+        for tagDict in tagDicts:
+            if not MowTags.description in tagDict:
+                continue
+
+            if tagDict[MowTags.description] != groupnameToTest:
+                return CheckResult(
+                    False,
+                    error=f"XMP-Tag {MowTags.description}:'{tagDict[MowTags.description] if MowTags.description in tagDict else ''}' is not reflecting grouping of '{tagDict['SourceFile']}'",
+                )
+
+        return CheckResult(ok=True)
 
     def setXMPTagsToWrite(self, indexToTags: Dict[int, List[Dict[str, str]]]):
         for task in self.toTransition:
