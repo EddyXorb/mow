@@ -122,10 +122,10 @@ class MediaAggregator(MediaTransitioner):
             if not MowTags.description in tagDict:
                 continue
 
-            if tagDict[MowTags.description] != groupnameToTest:
+            if str(Path(tagDict[MowTags.description])) != str(Path(groupnameToTest)):
                 return CheckResult(
                     False,
-                    error=f"XMP-Tag {MowTags.description}:'{tagDict[MowTags.description] if MowTags.description in tagDict else ''}' is not reflecting grouping of '{tagDict['SourceFile']}'",
+                    error=f"XMP-Tag {MowTags.description}:'{str(Path(tagDict[MowTags.description])) if MowTags.description in tagDict else ''}' is not reflecting grouping of '{str(Path(groupnameToTest))}'",
                 )
 
         return CheckResult(ok=True)
