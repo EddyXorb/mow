@@ -37,7 +37,7 @@ class AggregatorInput(TransitionerInput):
 class MediaAggregator(MediaTransitioner):
     def __init__(self, input: AggregatorInput):
         super().__init__(input)
-
+        self.jpgSingleSourceOfTruth = input.jpgSingleSourceOfTruth
         self.toTransition: List[TransitionTask] = []
 
     def getAllTagRelevantFilenamesFor(self, file: MediaFile) -> List[str]:
@@ -171,7 +171,9 @@ class MediaAggregator(MediaTransitioner):
                     atLeastOneMissing = True
                     tagMissingForExtension.append(splitext(tagsDict["SourceFile"])[1])
 
-            if len(allValuesThisTag) == 1 and atLeastOneMissing:
+            if len(allValuesThisTag) == 1 and (
+                atLeastOneMissing or self.jpgSingleSourceOfTruth
+            ):
                 task.XMPTags[tag] = actualTagValue
             elif len(allValuesThisTag) == 0 and tag in MowTags.expected:
                 return CheckResult(
