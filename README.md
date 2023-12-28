@@ -1,5 +1,10 @@
 # Medienworkflow - MOW
 
+## Wichtige Hinweise
+- Wenn mit Lightroom im Postediting gearbeitet wird, muss sichergestellt sein, dass beim Exportieren der Haken "Stichwörter als Lightroom-Hierarchie exportieren" gesetzt ist, sonst werden eventuelle hierarchische Stichwörter beim überschreiben der JPG's gelöscht und durch flache "xmp:subject" Stichwörter ersetzt
+- Es ist ratsam nicht mit orignal-RAW-Dateien zu arbeiten, sondern alle RAW-Dateien in DNG zu konvertieren, weil das ein quelloffenes Format ist und Lightroom die XMP-Metadaten direkt darin speichern kann. Außerdem braucht DNG weniger Speicherplatz
+- bei Lightroom: beim Exportieren darauf achten, dass es ".JPG" nicht ".jpg" heißt, damit die bestehenden Dateien überschrieben werden
+
 ## Überblick
 
 Es gibt 4 verschiedene Medientypen (jpg, raw, audio und video) die
@@ -120,3 +125,4 @@ Dazu gehören
 Die Reihenfolge müsste nicht fest sein, soll sie aber. Das Leitmotiv ist „Konvention vor Konfiguration“ und ich verspreche mir durch das Festlegen der obigen Reihenfolge einen klareren, einfacheren und übersichtlicheren Arbeitsfluss. 
 
 Grundsätzlich kann in jedem Schritt eine Pause eingelegt werden, um die Arbeit an dem jeweiligen Ordner später wieder aufzunehmen. Um festzulegen, welche Datei der nach Aufnahmedatum sortierten Medien des aktuellen Ordners zuletzt bearbeitet wurde, wird vor die Dateierweiterung der betreffenden Datei das Kürzel \~LAST geschrieben, z.B. wird aus *P273744.jpg* die Datei *P273744\~LAST.jpg*. Bei Wiederaufnahme der Bearbeitung des Ordners wird das Suffix wieder entfernt. So erkennt man auf den ersten Blick, wo man steht und wieviel noch fehlt. Gibt es keine solche Endung muss davon ausgegangen werden, dass der anstehende Schritt noch nicht bearbeitet wurde.
+
