@@ -109,6 +109,10 @@ class MediaTransitioner(VerbosePrinterClass):
         self._performedTransition = True
 
         self.optionallyRemoveEmptyFolders()
+        self.finalExecution()
+
+    def finalExecution(self):
+        pass
 
     def createDestinationDir(self):
         if os.path.isdir(self.dst):
@@ -123,7 +127,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
         for root, dirs, files in os.walk(self.src, topdown=True):
             if not self.recursive and root != self.src:
-                return
+                return out
             # ignore all files in deleteFolder
             dirs[:] = [d for d in dirs if d != basename(self.deleteFolder)]
 
