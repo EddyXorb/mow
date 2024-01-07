@@ -43,16 +43,19 @@ class MediaCopier(MediaTransitioner):
         return out
 
     def finalExecution(self):
-        print(f"indexWithLast: {self.indexWithLAST}")
         if self.indexWithLAST > -1:
             mFile = self.toTreat[self.indexWithLAST]
             newName = mFile.pathnoext
             assert newName.endswith("_LAST")
             newName = newName[: -len("_LAST")]
-            mFile.moveTo(newName)
+            self.printv(f"Rename {mFile} to {newName}.")
+            if not self.dry:
+                mFile.moveTo(newName)
 
         if self.indexWithLAST != len(self.toTreat) - 1:
             mFile = self.toTreat[-1]
             newName = mFile.pathnoext
             newName += "_LAST"
-            mFile.moveTo(newName)
+            self.printv(f"Rename {mFile} to {newName}.")
+            if not self.dry:
+                mFile.moveTo(newName)
