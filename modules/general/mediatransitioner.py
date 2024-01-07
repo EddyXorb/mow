@@ -101,7 +101,7 @@ class MediaTransitioner(VerbosePrinterClass):
             )
 
         self.createDestinationDir()
-        self.collectMediaFilesToTreat()
+        self.toTreat = self.collectMediaFilesToTreat()
 
         self._toTransition = self.getTasks()
         self.performTransitionOf(self._toTransition)
@@ -116,7 +116,9 @@ class MediaTransitioner(VerbosePrinterClass):
         os.makedirs(self.dst, exist_ok=True)
         self.printv(f"Created dir {self.dst}")
 
-    def collectMediaFilesToTreat(self):
+    def collectMediaFilesToTreat(self) -> List[MediaFile]:
+        out: List[MediaFile] = []
+
         self.printv("Collect files..")
 
         for root, dirs, files in os.walk(self.src, topdown=True):
@@ -139,12 +141,14 @@ class MediaTransitioner(VerbosePrinterClass):
                 if not mfile.isValid():
                     continue
 
-                self.toTreat.append(mfile)
+                out.append(mfile)
 
             if not self.filter is None and filtermatches > 0:
                 self.printv(f"Matched files in {root} {'.'*filtermatches}")
 
-        self.printv(f"Collected {len(self.toTreat)} files.")
+        self.printv(f"Collected {len(out)} files.")
+
+        return out
 
     def getTargetDirectory(self, file: str, destinationFolder: str) -> str:
         if self.maintainFolderStructure:
@@ -239,7 +243,12 @@ class MediaTransitioner(VerbosePrinterClass):
                     et.set_tags(
                         files,
                         task.XMPTags,
-                        params=["-P", "-overwrite_original","-L","-m"],  # , "-v2"], # -L : use latin encoding for umlaute -m: Ignore minor warnings and errors
+                        params=[
+                            "-P",
+                            "-overwrite_original",
+                            "-L",
+                            "-m",
+                        ],  # , "-v2"], # -L : use latin encoding for umlaute -m: Ignore minor warnings and errors
                     )
 
                 except Exception as e:
@@ -253,7 +262,6 @@ class MediaTransitioner(VerbosePrinterClass):
         return self.getNonSkippedOf(tasks)
 
     def doRelocationOf(self, tasks: List[TransitionTask]):
-
         failed = 0
         for task in tasks:
             toTransition = self.toTreat[task.index]

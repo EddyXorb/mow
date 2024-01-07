@@ -6,6 +6,7 @@ from os.path import join
 import logging
 
 
+from ..general.mediacopier import MediaCopier
 from ..general.mediatransitioner import TransitionerInput
 from ..general.tkinterhelper import getInputDir
 from ..general.mediarenamer import RenamerInput
@@ -45,7 +46,9 @@ class Mow:
         # logging.info(f"{'#'*30} Start new MOW session. {'#'*30}")
 
         self.settingsfile = settingsfile
-        self.settings = self._readsettings() # settings are stored in yaml-file at root dir of the script and tags are snake_case
+        self.settings = (
+            self._readsettings()
+        )  # settings are stored in yaml-file at root dir of the script and tags are snake_case
         self.stageFolders = [
             "1_copy",
             "2_rename",
@@ -73,10 +76,13 @@ class Mow:
         }
 
     def copy(self, askForNewSource: bool = False):
-        if askForNewSource or not "copySourcePath" in self.settings:
+        if askForNewSource or not "copy_source_dir" in self.settings:
             self._readSourceDir()
 
-        
+        src, dst = self._getSrcDstForStage("copy")
+        self._printEmphasized(f"Stage copy")
+
+        MediaCopier(TransitionerInput(src=src, dst=dst, **self.basicInputParameter))()
 
     def _readSourceDir(self):
         sourceDir = getInputDir("Specify source dir from where to copy!")
@@ -215,6 +221,11 @@ class Mow:
         return out
 
     def _getStageFolder(self, stagename: str) -> str:
+        if (
+            stagename == "copy"
+        ):  # this is the only exception: for copying from foreign sources
+            return self.settings["copy_source_dir"]
+
         return join(self.settings["working_dir"], self.stageToFolder[stagename])
 
     def _getSrcDstForStage(self, stage: str) -> Tuple[str, str]:
