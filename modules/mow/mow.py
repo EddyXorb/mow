@@ -45,7 +45,7 @@ class Mow:
         # logging.info(f"{'#'*30} Start new MOW session. {'#'*30}")
 
         self.settingsfile = settingsfile
-        self.settings = self._readsettings()
+        self.settings = self._readsettings() # settings are stored in yaml-file at root dir of the script and tags are snake_case
         self.stageFolders = [
             "1_copy",
             "2_rename",
@@ -73,13 +73,17 @@ class Mow:
         }
 
     def copy(self, askForNewSource: bool = False):
-        if not "copySourcePath" in self.settings:
-            copySourcePath = getInputDir("Specify source dir from where to copy!")
-            self.settings["copySourcePath"] = copySourcePath
-            print(f"Chose {self.settings}")
+        if askForNewSource or not "copySourcePath" in self.settings:
+            self._readSourceDir()
 
-            with open(self.settingsfile, "w") as f:
-                return yaml.safe_dump(self.settings, f)
+        
+
+    def _readSourceDir(self):
+        sourceDir = getInputDir("Specify source dir from where to copy!")
+        self.settings["copy_source_dir"] = sourceDir
+
+        with open(self.settingsfile, "w") as f:
+            yaml.safe_dump(self.settings, f)
 
     def rename(self, useCurrentFilename=False, replace=""):
         src, dst = self._getSrcDstForStage("rename")
@@ -182,7 +186,7 @@ class Mow:
 
     def status(self):
         MowStatusPrinter(
-            self.stages, self.stageToFolder, self.settings["workingdir"]
+            self.stages, self.stageToFolder, self.settings["working_dir"]
         ).printStatus()
 
     def _getStageAfter(self, stage: str) -> str:
@@ -196,14 +200,14 @@ class Mow:
     def _readsettings(self) -> Dict[str, str]:
         out = {}
         if not path.exists(self.settingsfile):
-            out["workingdir"] = getInputDir("Specify working directory!")
+            out["working_dir"] = getInputDir("Specify working directory!")
         else:
             with open(self.settingsfile, "r") as f:
                 out = yaml.safe_load(f)
             if out is None:
                 out = {}
-            if not "workingdir" in out:
-                out["workingdir"] = getInputDir("Specify working directory!")
+            if not "working_dir" in out:
+                out["working_dir"] = getInputDir("Specify working directory!")
 
         with open(self.settingsfile, "w") as f:
             yaml.safe_dump(out, f)
@@ -211,7 +215,7 @@ class Mow:
         return out
 
     def _getStageFolder(self, stagename: str) -> str:
-        return join(self.settings["workingdir"], self.stageToFolder[stagename])
+        return join(self.settings["working_dir"], self.stageToFolder[stagename])
 
     def _getSrcDstForStage(self, stage: str) -> Tuple[str, str]:
         return self._getStageFolder(stage), self._getStageFolder(
