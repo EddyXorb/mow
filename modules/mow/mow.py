@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Dict, Tuple
 import yaml
 
 from os import path
@@ -72,8 +72,14 @@ class Mow:
             "filter": filter,
         }
 
-    def copy(self):
-        pass
+    def copy(self, askForNewSource: bool = False):
+        if not "copySourcePath" in self.settings:
+            copySourcePath = getInputDir("Specify source dir from where to copy!")
+            self.settings["copySourcePath"] = copySourcePath
+            print(f"Chose {self.settings}")
+
+            with open(self.settingsfile, "w") as f:
+                return yaml.safe_dump(self.settings, f)
 
     def rename(self, useCurrentFilename=False, replace=""):
         src, dst = self._getSrcDstForStage("rename")
@@ -187,14 +193,22 @@ class Mow:
             raise Exception(f"Cannot get stage after {stage}!")
         return self.stages[indexStage + 1]
 
-    def _readsettings(self) -> str:
+    def _readsettings(self) -> Dict[str, str]:
+        out = {}
         if not path.exists(self.settingsfile):
-            workingdir = getInputDir("Specify working directory!")
-            with open(self.settingsfile, "w") as f:
-                yaml.safe_dump({"workingdir": workingdir}, f)
+            out["workingdir"] = getInputDir("Specify working directory!")
+        else:
+            with open(self.settingsfile, "r") as f:
+                out = yaml.safe_load(f)
+            if out is None:
+                out = {}
+            if not "workingdir" in out:
+                out["workingdir"] = getInputDir("Specify working directory!")
 
-        with open(self.settingsfile, "r") as f:
-            return yaml.safe_load(f)
+        with open(self.settingsfile, "w") as f:
+            yaml.safe_dump(out, f)
+
+        return out
 
     def _getStageFolder(self, stagename: str) -> str:
         return join(self.settings["workingdir"], self.stageToFolder[stagename])

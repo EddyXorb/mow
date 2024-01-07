@@ -7,6 +7,10 @@ parser = ArgumentParser(
 
 subparsers = parser.add_subparsers(dest="command")
 
+copyparser = subparsers.add_parser(
+    "copy", help=f"copying media files from external source (1 -> 2)."
+)
+
 renameparser = subparsers.add_parser(
     "rename", help=f"transition of renamed media files (2 -> 3)."
 )
@@ -114,6 +118,7 @@ aggregateparser.add_argument(
 )
 
 stageparsers = [
+    copyparser,
     renameparser,
     convertparser,
     rateparser,
@@ -148,6 +153,8 @@ if __name__ == "__main__":
 
     mow = Mow(".mowsettings.yml", dry=not args.execute, filter=args.filter)
 
+    if args.command == "copy":
+        mow.copy()
     if args.command == "rename":
         mow.rename(
             useCurrentFilename=args.rename_usecurrent,
