@@ -1,6 +1,8 @@
+import datetime
 import shutil
 from typing import List
 from pathlib import Path
+import os
 from ..general.mediafile import MediaFile
 from ..general.mediatransitioner import TransitionTask
 from ..general.medafilefactories import createAnyValidMediaFile
@@ -18,8 +20,8 @@ class MediaCopier(MediaTransitioner):
 
         self.indexWithLAST = -1
 
-    def _getName(self, mFile: MediaFile) -> bool:
-        return str(mFile)
+    def _getModificationDate(self, mFile: MediaFile) -> datetime:
+        return os.path.getmtime(str(mFile))
 
     def getIndexWithLast(self) -> int:
         for index, f in enumerate(self.toTreat):
@@ -28,7 +30,7 @@ class MediaCopier(MediaTransitioner):
         return -1
 
     def getTasks(self) -> List[TransitionTask]:
-        self.toTreat.sort(key=self._getName)
+        self.toTreat = sorted(self.toTreat, key=self._getModificationDate)
         self.indexWithLAST = self.getIndexWithLast()
 
         out = list(
