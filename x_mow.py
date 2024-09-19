@@ -109,6 +109,15 @@ groupparser.add_argument(
     action="store_true",
 )
 
+rateparser.add_argument(
+    "-o",
+    "--overrule",
+    help="Overrules conflicting ratings with rating for given fileending, if existent. E.g. if --overrule jpg is set, then the rating of a jpg will be taken as source of truth for the rating of the raw-file.",
+    dest="rate_overrule",
+    type=str,
+    default=None,
+)
+
 aggregateparser.add_argument(
     "-j",
     "--jpg-single-source-of-truth",
@@ -171,7 +180,7 @@ if __name__ == "__main__":
             checkSequence=args.group_check_seq,
         )
     if args.command == "rate":
-        mow.rate()
+        mow.rate(overrulingfiletype=args.rate_overrule)
     if args.command == "tag":
         mow.tag()
     if args.command == "localize":

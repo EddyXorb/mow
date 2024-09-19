@@ -144,7 +144,7 @@ class Mow:
             )
         )()
 
-    def rate(self):
+    def rate(self, overrulingfiletype: str = None):
         src, dst = self._getSrcDstForStage("rate")
         self._printEmphasized("Stage Rate")
         MediaRater(
@@ -152,7 +152,8 @@ class Mow:
                 src=src,
                 dst=dst,
                 **self.basicInputParameter,
-            )
+            ),
+            overrulingfiletype=overrulingfiletype,
         )()
 
     def tag(self):
