@@ -7,5 +7,5 @@ class AudioRenamer(MediaRenamer):
     def __init__(self, input: RenamerInput):
         input.mediaFileFactory = AudioFile
         input.filerenamer = getDateTimeFileNameFor
-        input.writeXMPTags = False
+        input.writeMetaTags = False
         super().__init__(input)

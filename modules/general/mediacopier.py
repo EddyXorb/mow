@@ -14,7 +14,7 @@ class MediaCopier(MediaTransitioner):
     def __init__(self, input: TransitionerInput):
         input.move = False
         input.recursive = False
-        input.writeXMPTags = False
+        input.writeMetaTags = False
         input.mediaFileFactory = createAnyValidMediaFile
         super().__init__(input)
 

@@ -21,7 +21,7 @@ from exiftool import ExifToolHelper
 class MediaRater(MediaTransitioner):
     def __init__(self, input: TransitionerInput, overrulingfiletype: str = None):
         input.mediaFileFactory = createAnyValidMediaFile
-        input.writeXMPTags = True
+        input.writeMetaTags = True
         super().__init__(input)
         self.overrulingfiletype = overrulingfiletype
 
@@ -42,7 +42,7 @@ class MediaRater(MediaTransitioner):
             if isinstance(
                 file, VideoFile
             ):  # TODO: remove this special case for videos: always rating 2
-                return TransitionTask(index, XMPTags={"XMP:Rating": 2})
+                return TransitionTask(index, metaTags={"XMP:Rating": 2})
 
             filenames = file.getAllFileNames()
             tags = et.get_tags(filenames, "XMP:Rating")
@@ -59,7 +59,7 @@ class MediaRater(MediaTransitioner):
                 case 1:
                     if len(tags) > 1:
                         return TransitionTask(
-                            index, XMPTags={"XMP:Rating": all_ratings[0]}
+                            index, metaTags={"XMP:Rating": all_ratings[0]}
                         )
                     return TransitionTask(index)
                 case _:
@@ -75,7 +75,7 @@ class MediaRater(MediaTransitioner):
                             )
                             return TransitionTask(
                                 index,
-                                XMPTags={
+                                metaTags={
                                     "XMP:Rating": list(overruled_ratings.values())[0]
                                 },
                             )
@@ -88,5 +88,5 @@ class MediaRater(MediaTransitioner):
                     )
         except Exception as e:
             return TransitionTask.getFailed(
-                index, f"Problem during reading rating from XMP: {e}"
+                index, f"Problem during reading rating from meta tags: {e}"
             )

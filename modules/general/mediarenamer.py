@@ -22,7 +22,7 @@ class RenamerInput(TransitionerInput):
     restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
     maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
     dry: don't actually rename files
-    writeXMPTags: sets XMP:Source to original filename and XMP:date to creationDate
+    writeMetaTags: sets XMP:Source to original filename and XMP:date to creationDate
     replace: a string such as '"^[0-9].*$",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
     """
     
@@ -45,7 +45,7 @@ class MediaRenamer(MediaTransitioner):
     restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
     maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
     dry: don't actually rename files
-    writeXMPTags: sets XMP:Source to original filename and XMP:date to creationDate
+    writeMetaTags: sets XMP:Source to original filename and XMP:date to creationDate
     useCurrentFilename: file will only be moved/copied, not renamed again, and use filename as source of truth for XMP
     """
 
@@ -96,7 +96,7 @@ class MediaRenamer(MediaTransitioner):
         return self.transitionTasks
 
     def setXMPTags(self):
-        if not self.writeXMPTags:
+        if not self.writeMetaTags:
             return
 
         for task in tqdm(self.transitionTasks):
@@ -115,7 +115,7 @@ class MediaRenamer(MediaTransitioner):
                     "%Y:%m:%d %H:%M:%S"
                 )
 
-            task.XMPTags = {"XMP:Date": creationDate, "XMP:Source": filename}
+            task.metaTags = {"XMP:Date": creationDate, "XMP:Source": filename}
 
     def createNewNames(self):
         self.printv("Create new names for files..")

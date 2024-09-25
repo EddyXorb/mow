@@ -278,7 +278,7 @@ def test_XMPisWritten():
             dst=dst,
             dry=False,
             verbose=True,
-            writeXMPTags=True,
+            writeMetaTags=True,
         )
     )()
 
@@ -308,7 +308,7 @@ def test_XMPDescriptionContainsAllSuperfolders():
             dst=dst,
             dry=False,
             verbose=True,
-            writeXMPTags=True,
+            writeMetaTags=True,
         )
     )()
 

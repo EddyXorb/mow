@@ -75,7 +75,7 @@ def test_copiedRatingFromJPGToORF():
             fullname, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeXMPTags=True))()
+        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True))()
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
@@ -104,7 +104,7 @@ def test_copiedRatingFromORFToJPG():
             fullnameRaw, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeXMPTags=True))()
+        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True))()
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
@@ -136,7 +136,7 @@ def test_differentRatingBetweenJPGandRawpreventsTransition():
             fullname, {"XMP:rating": 2}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeXMPTags=True))()
+        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True))()
 
         assert exists(fullname)
         assert exists(fullnameRaw)
@@ -165,7 +165,7 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
             fullname, {"XMP:rating": 2}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeXMPTags=True),overrulingfiletype="JPG")()
+        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True),overrulingfiletype="JPG")()
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
@@ -196,7 +196,7 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
             fullname, {"XMP:rating": None}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeXMPTags=True),overrulingfiletype="JPG")()
+        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True),overrulingfiletype="JPG")()
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
@@ -227,7 +227,7 @@ def test_differentRatingBetweenJPGandRawPreventsTransitionIfOverrulingFileending
             fullname, {"XMP:rating": 2}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeXMPTags=True),overrulingfiletype="IMAMNOTHERE")()
+        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True),overrulingfiletype="IMAMNOTHERE")()
 
         assert exists(fullname)
         assert exists(fullnameRaw)

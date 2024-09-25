@@ -334,7 +334,7 @@ class MediaGrouper(MediaTransitioner):
         self.printv(f"Found {len(wrongGroupTimestamps)} wrong group timestamps.")
 
     def setOptionalXMP(self, grouped: DefaultDict[str, List[int]]):
-        if not self.writeXMPTags:
+        if not self.writeMetaTags:
             return
 
         inverted = {}
@@ -342,4 +342,4 @@ class MediaGrouper(MediaTransitioner):
             inverted.update({index: group for index in indices})
         for task in [task for task in self.toTransition if not task.skip]:
             groupname = inverted[task.index]
-            task.XMPTags = {"XMP:Description": groupname}
+            task.metaTags = {"XMP:Description": groupname}

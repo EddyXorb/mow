@@ -33,7 +33,7 @@ def test_fileisrenamed():
     prepareTest()
 
     renamer = VideoRenamer(
-        RenamerInput(src=src, dst=dst, move=True, verbose=True, writeXMPTags=True)
+        RenamerInput(src=src, dst=dst, move=True, verbose=True, writeMetaTags=True)
     )
     renamer()
     assert len(os.listdir(targetDir)) > 0
@@ -151,4 +151,6 @@ def test_conversionPreservesXMPTags():
         tags = et.get_tags(convertedFile, MowTags.all)[0]
 
     for tag in MowTags.all:
+        if not "XMP" in tag: 
+            continue
         assert tag in tags

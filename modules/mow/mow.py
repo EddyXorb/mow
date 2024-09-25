@@ -69,7 +69,7 @@ class Mow:
             "recursive": True,
             "maintainFolderStructure": True,
             "removeEmptySubfolders": True,
-            "writeXMPTags": True,
+            "writeMetaTags": True,
             "move": True,
             "dry": dry,
             "filter": filter,

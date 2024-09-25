@@ -244,7 +244,7 @@ def test_missingXMPTagSourceInRawIsCopiedFromJpg():
 
     ImageAggregator(
         input=AggregatorInput(
-            src=src, dst=dst, dry=False, verbose=True, writeXMPTags=True
+            src=src, dst=dst, dry=False, verbose=True, writeMetaTags=True
         )
     )()
 

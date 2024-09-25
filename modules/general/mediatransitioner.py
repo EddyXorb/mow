@@ -20,14 +20,15 @@ class TransitionTask:
     newName: name of mediafile in new location (only basename). If None, take old name
     skip: don' execute transition if True
     skipReason: reason for skipping transition
-    XMPTags: dict with xmp-key : value entries to set to file
+    metaTags: dict with meta-tag-key : value entries to set to file
+    gpsData: position information for file
     """
 
     index: int
     newName: str = None
     skip: bool = False
     skipReason: str = None
-    XMPTags: Dict[str, str] = field(default_factory=dict)
+    metaTags: Dict[str, str] = field(default_factory=dict)
 
     def getFailed(index: int, reason: str) -> "TransitionTask":
         return TransitionTask(index=index, skip=True, skipReason=reason)
@@ -45,7 +46,7 @@ class TransitionerInput:
     dry: don't execute actual transition
     maintainFolderStructure: copy nested folders iff true
     removeEmptySubfolders: clean empty subfolders of source after transition
-    writeXMPTags: writes XMP tags to Files
+    writeMetaTags: writes meta tags to Files
     filter: regex for filtering files that should only be treated (searching the complete subpath with all subfolders of the current stage)
     """
 
@@ -57,7 +58,7 @@ class TransitionerInput:
     dry: bool = False
     maintainFolderStructure: bool = True
     removeEmptySubfolders: bool = False
-    writeXMPTags: bool = True
+    writeMetaTags: bool = True
     filter: str = ""
     mediaFileFactory: Callable[[str], MediaFile] = field(
         default_factory=lambda: None
@@ -80,7 +81,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.mediaFileFactory = input.mediaFileFactory
         self.maintainFolderStructure = input.maintainFolderStructure
         self.removeEmptySubfolders = input.removeEmptySubfolders
-        self.writeXMPTags = input.writeXMPTags
+        self.writeMetaTags = input.writeMetaTags
         self.filter: re.Pattern = (
             re.compile(input.filter)
             if input.filter is not None and input.filter != ""
@@ -179,7 +180,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
         tasks = self.getNonSkippedOf(tasks)
         tasks = self.getNonOverwritingTasksOf(tasks)
-        tasks = self.getSuccesfulChangedXMPTasksOf(tasks)
+        tasks = self.getSuccesfulChangedMetaTagTasksOf(tasks)
 
         self.doRelocationOf(tasks)
 
@@ -232,21 +233,21 @@ class MediaTransitioner(VerbosePrinterClass):
         self.printv(f"Finished transition. Skipped files: {skipped}")
         return skipped
 
-    def getSuccesfulChangedXMPTasksOf(self, tasks: List[TransitionTask]):
-        if not self.writeXMPTags:
+    def getSuccesfulChangedMetaTagTasksOf(self, tasks: List[TransitionTask]):
+        if not self.writeMetaTags:
             return tasks
 
-        self.printv("Set XMP tags..")
+        self.printv("Set meta file tags..")
         with ExifToolHelper() as et:
             for task in tqdm(tasks):
-                if len(task.XMPTags) == 0 or self.dry:
+                if len(task.metaTags) == 0 or self.dry:
                     continue
                 try:
                     files = self.toTreat[task.index].getAllFileNames()
 
                     et.set_tags(
                         files,
-                        task.XMPTags,
+                        task.metaTags,
                         params=[
                             "-P",
                             "-overwrite_original",
@@ -258,7 +259,7 @@ class MediaTransitioner(VerbosePrinterClass):
                 except Exception as e:
                     task.skip = True
                     task.skipReason = (
-                        f"Problem setting XMP data {task.XMPTags} with exiftool: {e}"
+                        f"Problem setting meta tag data {task.metaTags} with exiftool: {e}"
                     )
                     if len(str(self.toTreat[task.index])) > 260:
                         task.skipReason += f"Filename is too long. Exiftool supports only 260 characters."

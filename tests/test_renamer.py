@@ -21,7 +21,7 @@ NR_MEDIAFILES = 2
 
 
 def executeRenamingWith(
-    writeXMPTags=False,
+    writeMetaTags=False,
     move=True,
     recursive=True,
     maintainFolderStructure=True,
@@ -32,7 +32,7 @@ def executeRenamingWith(
         return RenamerInput(
             src=src,
             dst=dst,
-            writeXMPTags=writeXMPTags,
+            writeMetaTags=writeMetaTags,
             move=move,
             verbose=True,
             maintainFolderStructure=maintainFolderStructure,
@@ -140,7 +140,7 @@ def test_timeStampIsCorrect():
 def test_writeXMPDateAndCreationWorks():
     prepareTest()
 
-    executeRenamingWith(writeXMPTags=True)
+    executeRenamingWith(writeMetaTags=True)
     from exiftool import ExifToolHelper
 
     with ExifToolHelper() as et:
@@ -198,7 +198,7 @@ def test_useFilenameAsSourceOfTruth():
 
     assert exists(newfile)
 
-    executeRenamingWith(useCurrentFilename=True, writeXMPTags=True)
+    executeRenamingWith(useCurrentFilename=True, writeMetaTags=True)
 
     renamedFile = join(targetDir, "2022-11-11@111111_test3.JPG")
     assert exists(renamedFile)

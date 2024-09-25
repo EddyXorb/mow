@@ -26,7 +26,7 @@ class AggregatorInput(TransitionerInput):
     restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
     maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
     dry: don't actually rename files
-    writeXMPTags: sets XMP:Source to original filename and XMP:date to creationDate
+    writeMetaTags: sets XMP:Source to original filename and XMP:date to creationDate
     replace: a string such as '"^[0-9].*$",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
     jpgSingleSourceOfTruth: if true, will look only at jpg when processing images to determine if tags are correct
     """
@@ -47,7 +47,7 @@ class MediaAggregator(MediaTransitioner):
         """
         Returns index to tags of all files of mediafile
         """
-        self.printv("Collect xmp-tags..")
+        self.printv("Collect file meta tags..")
         out: Dict[int, List[Dict[str, str]]] = {}
 
         with ExifToolHelper() as et:
@@ -71,7 +71,7 @@ class MediaAggregator(MediaTransitioner):
                 except Exception as e:
                     out[task.index] = []
                     task.skip = True
-                    task.skipReason = f"Could not parse XMP-tags: {e}"
+                    task.skipReason = f"Could not parse meta tags: {e}"
 
         return out
 
@@ -80,7 +80,7 @@ class MediaAggregator(MediaTransitioner):
 
         indexToTags = self.getTagsFromTasks()
         self.checkGrouping(indexToTags)
-        self.setXMPTagsToWrite(indexToTags)
+        self.setMetaTagsToWrite(indexToTags)
         self.deleteBasedOnRating(indexToTags)
 
     def getTasks(self) -> List[TransitionTask]:
@@ -137,24 +137,24 @@ class MediaAggregator(MediaTransitioner):
             if str(Path(tagDict[MowTags.description])) != str(Path(groupnameToTest)):
                 return CheckResult(
                     False,
-                    error=f"XMP-Tag {MowTags.description}:'{str(Path(tagDict[MowTags.description])) if MowTags.description in tagDict else ''}' is not reflecting grouping of '{str(Path(groupnameToTest))}'",
+                    error=f"meta Tag {MowTags.description}:'{str(Path(tagDict[MowTags.description])) if MowTags.description in tagDict else ''}' is not reflecting grouping of '{str(Path(groupnameToTest))}'",
                 )
 
         return CheckResult(ok=True)
 
-    def setXMPTagsToWrite(self, indexToTags: Dict[int, List[Dict[str, str]]]):
+    def setMetaTagsToWrite(self, indexToTags: Dict[int, List[Dict[str, str]]]):
         for task in self.toTransition:
             if task.skip:
                 continue
 
             tagsDictList = indexToTags[task.index]
-            result = self.setXMPTagsToWriteFor(task, tagsDictList)
+            result = self.setMetaTagsToWriteFor(task, tagsDictList)
 
             if not result.ok:
                 task.skip = True
                 task.skipReason = result.error
 
-    def setXMPTagsToWriteFor(
+    def setMetaTagsToWriteFor(
         self, task: TransitionTask, tagsDictList: List[Dict[str, str]]
     ) -> CheckResult:
         for tag in MowTags.all:
@@ -174,16 +174,16 @@ class MediaAggregator(MediaTransitioner):
             if len(allValuesThisTag) == 1 and (
                 atLeastOneMissing or self.jpgSingleSourceOfTruth
             ):
-                task.XMPTags[tag] = actualTagValue
+                task.metaTags[tag] = actualTagValue
             elif len(allValuesThisTag) == 0 and tag in MowTags.expected:
                 return CheckResult(
                     False,
-                    f"XMP tag {tag} is missing for extension(s): {','.join(tagMissingForExtension)}",
+                    f"meta tag {tag} is missing for extension(s): {','.join(tagMissingForExtension)}",
                 )
             elif len(allValuesThisTag) > 1:
                 return CheckResult(
                     False,
-                    f"XMP-tag {tag} differs between two files that belong to the same medium",
+                    f"meta tag {tag} differs between two files that belong to the same medium",
                 )
 
         return CheckResult(ok=True)
@@ -193,8 +193,8 @@ class MediaAggregator(MediaTransitioner):
             if task.skip:
                 continue
 
-            if "XMP:Rating" in task.XMPTags:
-                rating = task.XMPTags["XMP:Rating"]
+            if "XMP:Rating" in task.metaTags:
+                rating = task.metaTags["XMP:Rating"]
             else:
                 rating = int(indexToTags[task.index][0]["XMP:Rating"])
             if not (1 <= int(rating) <= 5):
