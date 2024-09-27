@@ -2,3 +2,5 @@ pyyaml>=6.0.0
 pyexiftool>=0.5.5
 tqdm>=4.66.1
 pillow>=10.0.0
+polars>=1.8.2
+gpxpy>=1.6.2
