@@ -8,8 +8,8 @@ import gpxpy
 from zoneinfo import ZoneInfo, available_timezones
 import datetime
 
-from ...modules.general.filenamehelper import extractDatetimeFromFileName
-from ...modules.mow.mowtags import MowTags
+from ..general.filenamehelper import extractDatetimeFromFileName
+from ..mow.mowtags import MowTags
 from ..general.medafilefactories import createAnyValidMediaFile
 from .mediatransitioner import MediaTransitioner, TransitionTask, TransitionerInput
 
@@ -35,8 +35,17 @@ class GpsData:
         return MowTags.gps_all
 
 
-@dataclass(kw_only=True)
-class LocalizerInput(TransitionerInput):
+@dataclass
+class BaseLocalizerInput:
+    time_offset_mediafile: datetime.timedelta = datetime.timedelta(seconds=0)
+    gps_time_tolerance: datetime.timedelta = datetime.timedelta(seconds=60)
+    mediafile_timezone: str = "Europe/Berlin"
+    force_gps_data: GpsData = None
+    transition_even_if_no_gps_data: bool = False
+    print_found_gps_coordinates: bool = False
+
+
+class LocalizerInput(BaseLocalizerInput, TransitionerInput):
     """
     src : directory which will be search for files
     dst : directory where renamed files should be placed
@@ -49,13 +58,6 @@ class LocalizerInput(TransitionerInput):
     force_gps_data: GpsData, if given, this gps data will be inserted into every media file. In this case, all files will be transitioned.
     transition_even_if_no_gps_data: bool, if true, the mediafile will be transitioned even if no gps data was found. In this case, the mediafile will be transitioned without gps data.
     """
-
-    time_offset_mediafile: datetime.timedelta = datetime.timedelta(seconds=0)
-    gps_time_tolerance: datetime.timedelta = datetime.timedelta(seconds=60)
-    mediafile_timezone: str = "Europe/Berlin"
-    force_gps_data: GpsData = None
-    transition_even_if_no_gps_data: bool = False
-    print_found_gps_coordinates: bool = False
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():

@@ -1,3 +1,4 @@
+import datetime
 from typing import Dict, Tuple
 import yaml
 
@@ -21,7 +22,11 @@ from ..general.filenamehelper import timestampformat
 from ..general.mediarater import MediaRater
 from ..image.imageaggregator import ImageAggregator
 from ..video.videoaggregator import VideoAggregator
-from ..general.medialocalizer import MediaLocalizer
+from ..general.medialocalizer import (
+    BaseLocalizerInput,
+    LocalizerInput,
+    MediaLocalizer,
+)
 from ..general.mediatagger import MediaTagger
 from ..general.mediaaggregator import AggregatorInput
 
@@ -167,14 +172,12 @@ class Mow:
             )
         )()
 
-    def localize(self):
+    def localize(self, localizerInput: BaseLocalizerInput):
         src, dst = self._getSrcDstForStage("localize")
         self._printEmphasized("Stage Localize")
-        MediaTagger(
-            TransitionerInput(
-                src=src,
-                dst=dst,
-                **self.basicInputParameter,
+        MediaLocalizer(
+            LocalizerInput(
+                src=src, dst=dst, **self.basicInputParameter, **localizerInput
             )
         )()
 

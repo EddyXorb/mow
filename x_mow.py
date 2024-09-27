@@ -1,3 +1,4 @@
+from modules.general.medialocalizer import BaseLocalizerInput
 from modules.mow.mow import Mow
 from argparse import ArgumentParser
 
@@ -118,6 +119,14 @@ rateparser.add_argument(
     default=None,
 )
 
+localizeparser.add_argument(
+    "-i",
+    "--ignore_missing_gps_data",
+    help="If set, will transition files even if they do not have GPS data.",
+    action="store_true",
+    dest="localize_ignore_missing_gps_data",
+)
+
 aggregateparser.add_argument(
     "-j",
     "--jpg-single-source-of-truth",
@@ -184,7 +193,11 @@ if __name__ == "__main__":
     if args.command == "tag":
         mow.tag()
     if args.command == "localize":
-        mow.localize()
+        mow.localize(
+            localizerInput=BaseLocalizerInput(
+                ignoreMissingGpsData=args.localize_ignore_missing_gps_data
+            )
+        )
     if args.command == "aggregate":
         mow.aggregate(jpgIsSingleSourceOfTruth=args.aggregate_jpgsinglesourceoftruth)
     if args.command == "status":
