@@ -1,85 +1,64 @@
-# %%
-import polars as pl
-import gpxpy
-from zoneinfo import ZoneInfo, available_timezones
-import datetime
+import shutil
+from os.path import join, exists
+import os
+from exiftool import ExifToolHelper
 
-GPS_TIME_TOLERANCE = datetime.timedelta(seconds=60)
-GPS_TIMEZONE = "Europe/Berlin"
+from ..modules.mow.mowtags import MowTags
+from ..modules.general.medialocalizer import GpsData, MediaLocalizer, LocalizerInput
 
 
-gpx_filepathes = ["test.gpx"]
-file_to_gpx_data = {}
-for gpx_filepath in gpx_filepathes:
-    with open(gpx_filepath, "r") as gpx_file:
-        file_to_gpx_data[gpx_filepath] = gpxpy.parse(gpx_file)
+testfolder = "tests"
+src = os.path.abspath(join(testfolder, "filestotreat"))
+dst = os.path.abspath("./tests/test_treated")
+targetDir = join(dst, "subsubfolder")
+imagename = "test3.JPG"
+srcfile = join(src, "subsubfolder", imagename)
+expectedTransitionedFile = join(dst, "subsubfolder", imagename)
 
-rawPositions = {"time": [], "lat": [], "lon": [], "elevation": [], "file": []}
 
-for gpx_filepath, gpx_data in file_to_gpx_data.items():
-    for track in gpx_data.tracks:
-        for segment in track.segments:
-            for point in segment.points:
-                rawPositions["time"].append(point.time)
-                rawPositions["lat"].append(point.latitude)
-                rawPositions["lon"].append(point.longitude)
-                rawPositions["elevation"].append(point.elevation)
-                rawPositions["file"].append(gpx_filepath)
+# def executeConversionWith(deleteOriginals=True, maintainFolderStructure=True):
+#     MediaLocalizer(
+#         LocalizerInput(
+#             src=src,
+#             dst=dst,
+#             deleteOriginals=deleteOriginals,
+#             maintainFolderStructure=maintainFolderStructure,
 
-df = pl.DataFrame(rawPositions)
-# df.write_parquet("test.gpx.parquet", compression="brotli")
-#%%
+#         )
+#     )()
 
-df = df.with_columns(df["time"].dt.convert_time_zone(GPS_TIMEZONE))
 
-image_time = datetime.datetime(2022, 7, 10, 18, 15, 23)
-offset = datetime.timedelta(seconds=0)
-image_time_in_gps_time = image_time + offset
+def prepareTest():
+    shutil.rmtree(src, ignore_errors=True)
+    shutil.rmtree(dst, ignore_errors=True)
+    os.makedirs(os.path.dirname(srcfile))
+    shutil.copy(
+        join(testfolder, "test3.JPG"),
+        srcfile,
+    )
 
-image_timezone_str = "Europe/Berlin"
-if image_time.tzinfo is None:
-    if image_timezone_str not in available_timezones():
-        print(f"Timezone {image_timezone_str} is an invalid time zone!")
-    else:
-        image_time_in_gps_time = image_time.replace(
-            tzinfo=ZoneInfo(image_timezone_str)
-        ).astimezone(ZoneInfo(GPS_TIMEZONE))
 
-df = df.sort("time")
-before = df.filter(
-    pl.col("time") < image_time_in_gps_time,
-    pl.col("time") >= image_time_in_gps_time - GPS_TIME_TOLERANCE,
-).tail(1)
-after = df.filter(
-    pl.col("time") > image_time_in_gps_time,
-    pl.col("time") <= image_time_in_gps_time + GPS_TIME_TOLERANCE,
-).head(1)
+def test_force_gps_works():
+    prepareTest()
 
-lat = None
-lon = None
-elev = None
+    MediaLocalizer(
+        LocalizerInput(
+            src=src,
+            dst=dst,
+            deleteOriginals=True,
+            maintainFolderStructure=True,
+            force_gps_data=GpsData(lat=1.0, lon=-2.0, elev=3.0),
+        )
+    )()
 
-if len(before) > 0 and len(after) > 0:
-    if after["time"][0] == before["time"][0]:
-        lat = before["lat"][0]
-        lon = before["lon"][0]
-        elev = before["elevation"][0]
-    else:
-        ratio = (image_time_in_gps_time - before["time"][0]).total_seconds() / (
-            after["time"][0] - before["time"][0]
-        ).total_seconds()
-    lat = (before["lat"] + (after["lat"] - before["lat"]) * ratio)[0]
-    lon = (before["lon"] + (after["lon"] - before["lon"]) * ratio)[0]
-    elev = (before["elevation"] + (after["elevation"] - before["elevation"]) * ratio)[0]
-elif len(before) > 0:
-    lat = before["lat"][0]
-    lon = before["lon"][0]
-    elev = before["elevation"][0]
-elif len(after) > 0:
-    lat = after["lat"][0]
-    lon = after["lon"][0]
-    elev = after["elevation"][0]
-else:
-    print(f"No GPS data found for {image_time_in_gps_time}")
+    assert not exists(srcfile)
+    assert exists(expectedTransitionedFile)
 
-# %%
+    with ExifToolHelper() as et:
+        tags = et.get_tags(expectedTransitionedFile, MowTags.gps_all, params=["-n"])[
+            0
+        ]  # -n formats the gps output as decimal numbers
+        print(tags)
+        assert tags[MowTags.gps_latitude] == 1.0
+        assert tags[MowTags.gps_longitude] == -2.0
+        assert tags[MowTags.gps_elevation_read_only] == 3.0

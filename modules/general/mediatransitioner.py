@@ -21,7 +21,6 @@ class TransitionTask:
     skip: don' execute transition if True
     skipReason: reason for skipping transition
     metaTags: dict with meta-tag-key : value entries to set to file
-    gpsData: position information for file
     """
 
     index: int
