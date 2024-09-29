@@ -201,6 +201,7 @@ class MediaLocalizer(MediaTransitioner):
                     tooltip=os.path.basename(file.pathnoext),
                 ).add_to(map)
         map.save(Path(self.src) / "map.html")
+        os.startfile(Path(self.src) / "map.html")
 
     def getAllGpxFiles(self) -> List[str]:
         all_files = os.listdir(self.src)
