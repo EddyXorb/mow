@@ -57,7 +57,7 @@ class BaseLocalizerInput:
     mediafile_timezone: str = "Europe/Berlin"
     force_gps_data: GpsData = None
     transition_even_if_no_gps_data: bool = False
-    print_found_gps_coordinates: bool = False
+    verbose: bool = False
 
 
 class LocalizerInput(BaseLocalizerInput, TransitionerInput):
@@ -94,7 +94,7 @@ class MediaLocalizer(MediaTransitioner):
         self.mediafile_timezone = input.mediafile_timezone
         self.force_gps_data = input.force_gps_data
         self.transition_even_if_no_gps_data = input.transition_even_if_no_gps_data
-        self.print_found_gps_coordinates = input.print_found_gps_coordinates
+        self.verbose = input.verbose
 
         if self.mediafile_timezone not in available_timezones():
             self.printv(
@@ -127,11 +127,15 @@ class MediaLocalizer(MediaTransitioner):
                                 TransitionTask(
                                     index,
                                     skip=True,
-                                    skipReason=f"Could not localize {mediafile} because of missing GPS data. File has time {mediafile_time}, which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}",
+                                    skipReason=f"Could not localize because of missing GPS data.",
                                 )
                             )
+                            if self.verbose:
+                                self.printv(
+                                    f"Could not find GPS data for file {Path(mediafile.pathnoext).relative_to(self.src)}, with time {mediafile_time} which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
+                                )
                     else:
-                        if self.print_found_gps_coordinates:
+                        if self.verbose:
                             self.printv(
                                 f"Found GPS data for {os.path.basename(mediafile.pathnoext)} : {gps_data}. File has time {mediafile_time}, which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
                             )
@@ -202,8 +206,14 @@ class MediaLocalizer(MediaTransitioner):
                 ).add_to(map)
         map.fit_bounds(
             [
-                [self.positions["lat"].min(), self.positions["lon"].min()],
-                [self.positions["lat"].max(), self.positions["lon"].max()],
+                [
+                    min([pos[0] for _, pos in fileWithPosition]),
+                    min([pos[1] for _, pos in fileWithPosition]),
+                ],
+                [
+                    max([pos[0] for _, pos in fileWithPosition]),
+                    max([pos[1] for _, pos in fileWithPosition]),
+                ],
             ]
         )
         map.save(Path(self.src) / "map.html")
