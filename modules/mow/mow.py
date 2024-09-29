@@ -177,7 +177,8 @@ class Mow:
         self._printEmphasized("Stage Localize")
         MediaLocalizer(
             LocalizerInput(
-                src=src, dst=dst, **self.basicInputParameter, **localizerInput
+                localizerInput,
+                TransitionerInput(src=src, dst=dst, **self.basicInputParameter),
             )
         )()
 

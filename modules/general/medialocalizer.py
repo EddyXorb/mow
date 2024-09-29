@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import os
+from pathlib import Path
 import sys
 import traceback
 from typing import List
@@ -7,6 +8,9 @@ import polars as pl
 import gpxpy
 from zoneinfo import ZoneInfo, available_timezones
 import datetime
+import folium
+
+from modules.general.mediafile import MediaFile
 
 from ..general.filenamehelper import extractDatetimeFromFileName
 from ..mow.mowtags import MowTags
@@ -34,6 +38,17 @@ class GpsData:
     def getGPSMetaTagsForReading(self):
         return MowTags.gps_all
 
+    def fromString(self, s: str):
+        parts = s.split(",")
+        if len(parts) != 3:
+            raise ValueError("Invalid gps data string")
+        self.lat = float(parts[0].strip())
+        self.lon = float(parts[1].strip())
+        self.elev = float(parts[2].strip())
+
+    def __str__(self):
+        return f"{self.lat},{self.lon},{self.elev}"
+
 
 @dataclass
 class BaseLocalizerInput:
@@ -59,9 +74,13 @@ class LocalizerInput(BaseLocalizerInput, TransitionerInput):
     transition_even_if_no_gps_data: bool, if true, the mediafile will be transitioned even if no gps data was found. In this case, the mediafile will be transitioned without gps data.
     """
 
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    def __init__(
+        self,
+        baselocalizerinput: BaseLocalizerInput,
+        transitionerinput: TransitionerInput,
+    ):
+        BaseLocalizerInput.__init__(self, **baselocalizerinput.__dict__)
+        TransitionerInput.__init__(self, **transitionerinput.__dict__)
 
 
 # TODO: add logic for inserting gps data to mediafiles based on given tracks
@@ -114,7 +133,7 @@ class MediaLocalizer(MediaTransitioner):
                     else:
                         if self.print_found_gps_coordinates:
                             self.printv(
-                                f"Found GPS data for {mediafile}:{gps_data}. File has time {mediafile_time}, which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
+                                f"Found GPS data for {os.path.basename(mediafile.pathnoext)} : {gps_data}. File has time {mediafile_time}, which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
                             )
                         out.append(
                             TransitionTask(
@@ -126,11 +145,62 @@ class MediaLocalizer(MediaTransitioner):
                     TransitionTask(
                         index,
                         skip=True,
-                        skipReason=f"Could not localize {mediafile} because of {e}",
+                        skipReason=f"Could not localize {mediafile} because of {e} and {traceback.format_exc()}",
                     )
                 )
 
+        self.createMapWithMediafiles(out)
+
         return out
+
+    def createMapWithMediafiles(self, tasks: list[TransitionTask]):
+        fileWithPosition: list[tuple[MediaFile, tuple[float, float]]] = []
+
+        for task in tasks:
+            if task.skip:
+                continue
+            if (
+                MowTags.gps_longitude not in task.metaTags
+                or MowTags.gps_latitude not in task.metaTags
+            ):
+                continue
+            fileWithPosition.append(
+                (
+                    self.toTreat[task.index],
+                    (
+                        task.metaTags[MowTags.gps_latitude],
+                        task.metaTags[MowTags.gps_longitude],
+                    ),
+                )
+            )
+        if len(fileWithPosition) == 0:
+            return
+
+        map = folium.Map(location=fileWithPosition[0][1], zoom_start=5)
+        for file, position in fileWithPosition:
+            image_path = None
+            for extension in file.extensions:
+                if extension.upper() in [".JPG", ".JPEG"]:
+                    image_path = file.pathnoext + extension
+                    break
+            if image_path is None:
+                folium.Marker(
+                    position,
+                    tooltip=os.path.basename(file.pathnoext),
+                    popup=file.pathnoext.replace("\\", "/"),
+                ).add_to(map)
+            else:
+                image_path = image_path.replace("\\", "/")
+                htmlcode = f"""<div>
+                        <img src="file://{image_path}" alt="Image" height=300 width=400>
+                        <br /><span>{os.path.basename(file.pathnoext)}</span>
+                        </div>"""
+                folium.Marker(
+                    position,
+                    popup=htmlcode,
+                    tooltip=os.path.basename(file.pathnoext),
+                ).add_to(map)
+        map.save(Path(self.src) / "map.html")
 
     def getAllGpxFiles(self) -> List[str]:
         all_files = os.listdir(self.src)

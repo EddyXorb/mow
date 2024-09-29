@@ -305,3 +305,14 @@ def test_image_made_after_last_gps_entry_but_too_small_tolerance_does_not_transi
 
     assert exists(untransitionedFile)
     assert not exists(transitionedFile)
+
+
+# %%
+import folium 
+
+map = folium.Map(location=[15, 0], zoom_start=5)
+folium.Marker([15, 0], popup="Transitioned Image",tooltip="TEST").add_to(map)
+map
+
+
+# %%

@@ -15,7 +15,7 @@ class MediaFile:
     def __init__(self, path, validExtensions):
         self.nrFiles = 1
         self.valid = True
-        self.extensions = []
+        self.extensions : list[str] = []
 
         splitted = os.path.splitext(path)
         self.pathnoext = splitted[0]

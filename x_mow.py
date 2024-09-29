@@ -1,4 +1,6 @@
-from modules.general.medialocalizer import BaseLocalizerInput
+import datetime
+import re
+from modules.general.medialocalizer import BaseLocalizerInput, GpsData
 from modules.mow.mow import Mow
 from argparse import ArgumentParser
 
@@ -125,7 +127,51 @@ localizeparser.add_argument(
     help="If set, will transition files even if they do not have GPS data.",
     action="store_true",
     dest="localize_ignore_missing_gps_data",
+    default=False,
 )
+
+localizeparser.add_argument(
+    "-o",
+    "--time_offset_mediafile",
+    help="Time offset for media files. E.g. if the cameras time is 10 seconds in the future, you can correct it by writing -o=-10s. General format: -o=1h30m15s.",
+    type=str,
+    dest="localize_time_offset_mediafile",
+)
+
+localizeparser.add_argument(
+    "-t",
+    "--gps_time_tolerance",
+    help="Time tolerance for GPS data. General format: -t=1h30m15s. If a mediafiles timestamp is within this tolerance of a GPS data timestamp, the GPS data is taken as source of truth for the mediafile.",
+    type=str,
+    dest="localize_gps_time_tolerance",
+    default="10m",
+)
+
+localizeparser.add_argument(
+    "-z",
+    "--timezone",
+    help="Timezone of the mediafiles. Default is Europe/Berlin. To see all available timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
+    type=str,
+    dest="localize_timezone",
+    default="Europe/Berlin",
+)
+
+localizeparser.add_argument(
+    "--force_gps_data",
+    help="Force GPS data. If set, all files get assigned this gps data, independently of gpx information available. Format: --force-gps-data -12,34.45,4556, interpreted as latitude,longitude,height.",
+    type=str,
+    dest="localize_force_gps_data",
+)
+
+localizeparser.add_argument(
+    "-p",
+    "--print_gps",
+    help="Print found GPS coordinates.",
+    action="store_true",
+    dest="localize_print_found_gps_coordinates",
+    default=False,
+)
+
 
 aggregateparser.add_argument(
     "-j",
@@ -162,6 +208,24 @@ for currentparser in stageparsers:
     )
 
 
+def parse_timedelta(time_str) -> datetime.timedelta:
+    # Define the regex pattern to match hours, minutes, and seconds
+    pattern = r"(-)?(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?"
+    match = re.match(pattern, time_str)
+
+    if not match:
+        raise ValueError(f"Invalid time format: {time_str}")
+
+    sign = -1 if match.group(1) else 1
+    hours = int(match.group(2)) if match.group(2) else 0
+    minutes = int(match.group(3)) if match.group(3) else 0
+    seconds = int(match.group(4)) if match.group(4) else 0
+
+    return datetime.timedelta(
+        hours=sign * hours, minutes=sign * minutes, seconds=sign * seconds
+    )
+
+
 if __name__ == "__main__":
     args = parser.parse_args()
     if not hasattr(args, "execute"):
@@ -193,11 +257,21 @@ if __name__ == "__main__":
     if args.command == "tag":
         mow.tag()
     if args.command == "localize":
-        mow.localize(
-            localizerInput=BaseLocalizerInput(
-                ignoreMissingGpsData=args.localize_ignore_missing_gps_data
-            )
+        inp = BaseLocalizerInput(
+            transition_even_if_no_gps_data=args.localize_ignore_missing_gps_data,
+            mediafile_timezone=args.localize_timezone,
+            print_found_gps_coordinates=args.localize_print_found_gps_coordinates,
         )
+        if args.localize_time_offset_mediafile is not None:
+            inp.time_offset_mediafile = parse_timedelta(
+                args.localize_time_offset_mediafile
+            )
+        if args.localize_gps_time_tolerance is not None:
+            inp.gps_time_tolerance = parse_timedelta(args.localize_gps_time_tolerance)
+        if args.localize_force_gps_data is not None:
+            inp.force_gps_data = GpsData.fromString(args.localize_force_gps_data)
+
+        mow.localize(localizerInput=inp)
     if args.command == "aggregate":
         mow.aggregate(jpgIsSingleSourceOfTruth=args.aggregate_jpgsinglesourceoftruth)
     if args.command == "status":

@@ -4,3 +4,4 @@ tqdm>=4.66.1
 pillow>=10.0.0
 polars>=1.8.2
 gpxpy>=1.6.2
+folium==0.17.0
