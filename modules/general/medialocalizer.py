@@ -57,7 +57,7 @@ class BaseLocalizerInput:
     mediafile_timezone: str = "Europe/Berlin"
     force_gps_data: GpsData = None
     transition_even_if_no_gps_data: bool = False
-    verbose: bool = False
+    gps_verbose: bool = False
 
 
 class LocalizerInput(BaseLocalizerInput, TransitionerInput):
@@ -94,7 +94,7 @@ class MediaLocalizer(MediaTransitioner):
         self.mediafile_timezone = input.mediafile_timezone
         self.force_gps_data = input.force_gps_data
         self.transition_even_if_no_gps_data = input.transition_even_if_no_gps_data
-        self.verbose = input.verbose
+        self.gps_verbose = input.gps_verbose
 
         if self.mediafile_timezone not in available_timezones():
             self.printv(
@@ -130,12 +130,12 @@ class MediaLocalizer(MediaTransitioner):
                                     skipReason=f"Could not localize because of missing GPS data.",
                                 )
                             )
-                            if self.verbose:
+                            if self.gps_verbose:
                                 self.printv(
                                     f"Could not find GPS data for file {Path(mediafile.pathnoext).relative_to(self.src)}, with time {mediafile_time} which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
                                 )
                     else:
-                        if self.verbose:
+                        if self.gps_verbose:
                             self.printv(
                                 f"Found GPS data for {os.path.basename(mediafile.pathnoext)} : {gps_data}. File has time {mediafile_time}, which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
                             )

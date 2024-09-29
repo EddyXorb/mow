@@ -260,7 +260,7 @@ if __name__ == "__main__":
         inp = BaseLocalizerInput(
             transition_even_if_no_gps_data=args.localize_ignore_missing_gps_data,
             mediafile_timezone=args.localize_timezone,
-            verbose=args.localize_verbose,
+            gps_verbose=args.localize_verbose,
         )
         if args.localize_time_offset_mediafile is not None:
             inp.time_offset_mediafile = parse_timedelta(
