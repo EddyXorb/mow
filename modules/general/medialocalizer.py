@@ -200,6 +200,12 @@ class MediaLocalizer(MediaTransitioner):
                     popup=htmlcode,
                     tooltip=os.path.basename(file.pathnoext),
                 ).add_to(map)
+        map.fit_bounds(
+            [
+                [self.positions["lat"].min(), self.positions["lon"].min()],
+                [self.positions["lat"].max(), self.positions["lon"].max()],
+            ]
+        )
         map.save(Path(self.src) / "map.html")
         os.startfile(Path(self.src) / "map.html")
 
