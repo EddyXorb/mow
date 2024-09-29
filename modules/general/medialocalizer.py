@@ -192,7 +192,7 @@ class MediaLocalizer(MediaTransitioner):
             else:
                 image_path = image_path.replace("\\", "/")
                 htmlcode = f"""<div>
-                        <img src="file://{image_path}" alt="Image" height=300 width=400>
+                        <img src="file://{image_path}" alt="Image" height=400>
                         <br /><span>{os.path.basename(file.pathnoext)}</span>
                         </div>"""
                 folium.Marker(
