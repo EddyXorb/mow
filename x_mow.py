@@ -2,7 +2,7 @@ import datetime
 import re
 from modules.general.medialocalizer import BaseLocalizerInput, GpsData
 from modules.mow.mow import Mow
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 
 parser = ArgumentParser(
     "M(edia) flo(OW) - helper to automate media workflow. Needs a working dir to be specified into .mowsettings.yml."
@@ -10,41 +10,69 @@ parser = ArgumentParser(
 
 subparsers = parser.add_subparsers(dest="command")
 
+command_aliases = {
+    "copy": ["cop"],
+    "rename": ["ren"],
+    "convert": ["con"],
+    "group": ["grp"],
+    "rate": ["rat"],
+    "tag": [],
+    "localize": ["loc"],
+    "aggregate": ["agg"],
+    "status": ["sta"],
+}
+
 copyparser = subparsers.add_parser(
-    "copy", help=f"copying media files from external source (1 -> 2)."
+    "copy",
+    help=f"copying media files from external source (1 -> 2).",
+    aliases=command_aliases["copy"],
 )
 
 renameparser = subparsers.add_parser(
-    "rename", help=f"transition of renamed media files (2 -> 3)."
+    "rename",
+    help=f"transition of renamed media files (2 -> 3).",
+    aliases=command_aliases["rename"],
 )
 convertparser = subparsers.add_parser(
-    "convert", help="transition of converted media files (3 -> 4)."
+    "convert",
+    help="transition of converted media files (3 -> 4).",
+    aliases=command_aliases["convert"],
 )
 
 groupparser = subparsers.add_parser(
     "group",
     help="transition of grouped media files. (4 -> 5). Comes with a bunch of helpers. If one of the helpers is called will not perform transition.",
+    aliases=command_aliases["group"],
 )
 
 rateparser = subparsers.add_parser(
-    "rate", help="transition of rated media files (5.1 -> 5.2)."
+    "rate",
+    help="transition of rated media files (5.1 -> 5.2).",
+    aliases=command_aliases["rate"],
 )
 
 tagparser = subparsers.add_parser(
-    "tag", help="transition of tagged media files (5.2 -> 5.3)."
+    "tag",
+    help="transition of tagged media files (5.2 -> 5.3).",
+    aliases=command_aliases["tag"],
 )
 
 localizeparser = subparsers.add_parser(
     "localize",
     help="transition of localized media files (5.3 -> 6).",
+    aliases=command_aliases["localize"],
 )
 
 aggregateparser = subparsers.add_parser(
-    "aggregate", help="transition of aggregated media files (6 -> 7)."
+    "aggregate",
+    help="transition of aggregated media files (6 -> 7).",
+    aliases=command_aliases["aggregate"],
 )
 
 statusparser = subparsers.add_parser(
-    "status", help="get some status information about the workingdirectory"
+    "status",
+    help="get some status information about the workingdirectory",
+    aliases=command_aliases["status"],
 )
 
 renameparser.add_argument(
@@ -198,6 +226,7 @@ for currentparser in stageparsers:
         help="Really execute moving/renaming of files/folders, not only in dry mode. Since the grouping features are powerful we do not want it to be the default behavior that something is really done.",
         dest="execute",
         action="store_true",
+        default=False,
     )
     currentparser.add_argument(
         "-f",
@@ -205,6 +234,7 @@ for currentparser in stageparsers:
         help="Only treat files matching this regex (including all subfolders as path).",
         type=str,
         dest="filter",
+        default="",
     )
 
 
@@ -226,25 +256,25 @@ def parse_timedelta(time_str) -> datetime.timedelta:
     )
 
 
+def should_execute_stage(stage: str, args: Namespace):
+    return stage == args.command or args.command in command_aliases[stage]
+
+
 if __name__ == "__main__":
     args = parser.parse_args()
-    if not hasattr(args, "execute"):
-        args.execute = False
-    if not hasattr(args, "filter"):
-        args.filter = ""
 
     mow = Mow(".mowsettings.yml", dry=not args.execute, filter=args.filter)
 
-    if args.command == "copy":
+    if should_execute_stage("copy", args):
         mow.copy()
-    if args.command == "rename":
+    elif should_execute_stage("rename", args):
         mow.rename(
             useCurrentFilename=args.rename_usecurrent,
             replace=args.rename_replace if args.rename_replace is not None else "",
         )
-    if args.command == "convert":
+    elif should_execute_stage("convert", args):
         mow.convert(enforcePassthrough=args.convert_passthrough)
-    if args.command == "group":
+    elif should_execute_stage("group", args):
         mow.group(
             automate=args.group_automate,
             distance=args.group_separate,
@@ -252,11 +282,11 @@ if __name__ == "__main__":
             addMissingTimestampsToSubfolders=args.group_timestamps,
             checkSequence=args.group_check_seq,
         )
-    if args.command == "rate":
+    elif should_execute_stage("rate", args):
         mow.rate(overrulingfiletype=args.rate_overrule)
-    if args.command == "tag":
+    elif should_execute_stage("tag", args):
         mow.tag()
-    if args.command == "localize":
+    elif should_execute_stage("localize", args):
         inp = BaseLocalizerInput(
             transition_even_if_no_gps_data=args.localize_ignore_missing_gps_data,
             mediafile_timezone=args.localize_timezone,
@@ -272,7 +302,7 @@ if __name__ == "__main__":
             inp.force_gps_data = GpsData.fromString(args.localize_force_gps_data)
 
         mow.localize(localizerInput=inp)
-    if args.command == "aggregate":
+    elif should_execute_stage("aggregate", args):
         mow.aggregate(jpgIsSingleSourceOfTruth=args.aggregate_jpgsinglesourceoftruth)
-    if args.command == "status":
+    elif should_execute_stage("status", args):
         mow.status()
