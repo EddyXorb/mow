@@ -4,6 +4,7 @@ from typing import DefaultDict, List, Tuple
 from os.path import basename, dirname
 from pathlib import Path
 from tqdm import tqdm
+import os
 
 from ..general.checkresult import CheckResult
 from ..general.mediafile import MediaFile
@@ -65,7 +66,7 @@ class MediaRater(MediaTransitioner):
                 case _:
                     if self.overrulingfiletype is not None:
                         overruled_ratings = {
-                            key: value
+                            os.path.basename(key): value
                             for key, value in ratings.items()
                             if key.endswith(self.overrulingfiletype)
                         }
@@ -83,8 +84,13 @@ class MediaRater(MediaTransitioner):
                             self.printv(
                                 f"Overruling file type set, but different ratings found: {overruled_ratings}"
                             )
+
+                    output_ratings = {
+                        os.path.basename(file): rating
+                        for (file, rating) in ratings.items()
+                    }
                     return TransitionTask.getFailed(
-                        index, f"Different ratings found:{ratings}"
+                        index, f"Different ratings found: {output_ratings}"
                     )
         except Exception as e:
             return TransitionTask.getFailed(

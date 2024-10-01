@@ -220,7 +220,7 @@ class MediaTransitioner(VerbosePrinterClass):
             cnt = 0
             for task in tasks:
                 self.printv(
-                    f"Skipped {str(self.toTreat[task.index])}: {task.skipReason}"
+                    f"Skipped {str(Path(self.toTreat[task.index].pathnoext).relative_to(self.src))}: {task.skipReason}"
                 )
                 cnt += 1
                 if cnt >= 5 and len(tasks) - 5 >= 5:
@@ -257,9 +257,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
                 except Exception as e:
                     task.skip = True
-                    task.skipReason = (
-                        f"Problem setting meta tag data {task.metaTags} with exiftool: {e}"
-                    )
+                    task.skipReason = f"Problem setting meta tag data {task.metaTags} with exiftool: {e}"
                     if len(str(self.toTreat[task.index])) > 260:
                         task.skipReason += f"Filename is too long. Exiftool supports only 260 characters."
 
