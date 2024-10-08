@@ -4,8 +4,15 @@ from os.path import join, exists
 import os
 from exiftool import ExifToolHelper
 
+
+from ..modules.general.mediatransitioner import TransitionerInput
 from ..modules.mow.mowtags import MowTags
-from ..modules.general.medialocalizer import GpsData, MediaLocalizer, LocalizerInput
+from ..modules.general.medialocalizer import (
+    BaseLocalizerInput,
+    GpsData,
+    MediaLocalizer,
+    LocalizerInput,
+)
 
 
 testfolder = "tests"
@@ -30,18 +37,43 @@ def prepareTest(image_name=IMAGENAME):
         shutil.copy(join(testfolder, "test.gpx"), join(src, "test.gpx"))
 
 
-def test_force_gps_works():
-    prepareTest()
+def perform_transition(
+    mediafile_timezone="UTC",
+    gps_time_tolerance=datetime.timedelta(seconds=5),
+    force_gps_data=None,
+    time_offset_mediafile=None,  # here we add the offset again
+    **kwargs,
+):
+    bli = BaseLocalizerInput(
+        suppress_map_open=True,  # we do not want to open a map during unit tests, as it is annoying
+        mediafile_timezone=mediafile_timezone,
+        gps_time_tolerance=gps_time_tolerance,
+    )
+
+    if force_gps_data is not None:
+        bli.force_gps_data = force_gps_data
+    if time_offset_mediafile is not None:
+        bli.time_offset_mediafile = time_offset_mediafile
+
+    for key, value in kwargs.items():
+        setattr(bli, key, value)
 
     MediaLocalizer(
         LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            force_gps_data=GpsData(lat=1.0, lon=-2.0, elev=3.0),
+            bli,
+            TransitionerInput(
+                maintainFolderStructure=True,
+                src=src,
+                dst=dst,
+            ),
         )
     )()
+
+
+def test_force_gps_works():
+    prepareTest()
+
+    perform_transition(force_gps_data=GpsData(lat=1.0, lon=-2.0, elev=3.0))
 
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
@@ -76,14 +108,7 @@ def test_no_gps_data_leads_to_no_transition():
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = join(dst, "subsubfolder", image)
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-        )
-    )()
+    perform_transition()
 
     assert exists(untransitionedFile)
     assert not exists(transitionedFile)
@@ -92,15 +117,8 @@ def test_no_gps_data_leads_to_no_transition():
 def test_correct_gps_data_leads_to_transition_and_interpolation():
     prepareTest()
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            mediafile_timezone="UTC",
-        )
-    )()
+    perform_transition()
+
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
 
@@ -117,15 +135,7 @@ def test_correct_gps_data_leads_to_transition_and_interpolation():
 def test_timezone_change_leads_to_no_gps_found():
     prepareTest()
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            mediafile_timezone="Europe/Berlin",
-        )
-    )()
+    perform_transition(mediafile_timezone="Europe/Berlin")
 
     assert exists(untransitionedFile)
     assert not exists(transitionedFile)
@@ -134,18 +144,10 @@ def test_timezone_change_leads_to_no_gps_found():
 def test_time_image_offset_works():
     prepareTest()
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            mediafile_timezone="Europe/Berlin",  # +1 hours offset to UTC
-            time_offset_mediafile=datetime.timedelta(
-                hours=+1
-            ),  # here we add the offset again
-        )
-    )()
+    perform_transition(
+        mediafile_timezone="Europe/Berlin",
+        time_offset_mediafile=datetime.timedelta(hours=+1),
+    )
 
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
@@ -154,16 +156,9 @@ def test_time_image_offset_works():
 def test_transition_even_if_no_gps_data_works():
     prepareTest()
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            mediafile_timezone="Europe/Berlin",  # +1 hours offset to UTC
-            transition_even_if_no_gps_data=True,  # here we add the offset again
-        )
-    )()
+    perform_transition(
+        mediafile_timezone="Europe/Berlin", transition_even_if_no_gps_data=True
+    )
 
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
@@ -172,16 +167,7 @@ def test_transition_even_if_no_gps_data_works():
 def test_gps_time_tolerance_when_too_small_avoids_transition():
     prepareTest()
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            mediafile_timezone="UTC",
-            gps_time_tolerance=datetime.timedelta(seconds=4),
-        )
-    )()
+    perform_transition(gps_time_tolerance=datetime.timedelta(seconds=4))
 
     assert exists(untransitionedFile)
     assert not exists(transitionedFile)
@@ -190,16 +176,7 @@ def test_gps_time_tolerance_when_too_small_avoids_transition():
 def test_gps_time_tolerance_when_big_enough_transitions():
     prepareTest()
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            mediafile_timezone="UTC",
-            gps_time_tolerance=datetime.timedelta(seconds=5),
-        )
-    )()
+    perform_transition(gps_time_tolerance=datetime.timedelta(seconds=5))
 
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
@@ -211,16 +188,7 @@ def test_image_made_before_first_gps_entry_works():
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = join(dst, "subsubfolder", image)
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            mediafile_timezone="UTC",
-            gps_time_tolerance=datetime.timedelta(seconds=10),
-        )
-    )()
+    perform_transition(gps_time_tolerance=datetime.timedelta(seconds=10))
 
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
@@ -241,16 +209,7 @@ def test_image_made_before_first_gps_entry_but_too_small_tolerance_does_not_tran
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = join(dst, "subsubfolder", image)
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            mediafile_timezone="UTC",
-            gps_time_tolerance=datetime.timedelta(seconds=2),
-        )
-    )()
+    perform_transition(gps_time_tolerance=datetime.timedelta(seconds=2))
 
     assert exists(untransitionedFile)
     assert not exists(transitionedFile)
@@ -262,16 +221,7 @@ def test_image_made_after_last_gps_entry_works():
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = join(dst, "subsubfolder", image)
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            mediafile_timezone="UTC",
-            gps_time_tolerance=datetime.timedelta(seconds=5),
-        )
-    )()
+    perform_transition()
 
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
@@ -292,27 +242,17 @@ def test_image_made_after_last_gps_entry_but_too_small_tolerance_does_not_transi
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = join(dst, "subsubfolder", image)
 
-    MediaLocalizer(
-        LocalizerInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            maintainFolderStructure=True,
-            mediafile_timezone="UTC",
-            gps_time_tolerance=datetime.timedelta(seconds=2),
-        )
-    )()
+    perform_transition(gps_time_tolerance=datetime.timedelta(seconds=2))
 
     assert exists(untransitionedFile)
     assert not exists(transitionedFile)
 
 
 # %%
-import folium 
+# import folium
 
-map = folium.Map(location=[15, 0], zoom_start=5)
-folium.Marker([15, 0], popup="Transitioned Image",tooltip="TEST").add_to(map)
-map
-
+# map = folium.Map(location=[15, 0], zoom_start=5)
+# folium.Marker([15, 0], popup="Transitioned Image", tooltip="TEST").add_to(map)
+# map.save("map.html")
 
 # %%
