@@ -86,5 +86,9 @@ class MediaConverter(MediaTransitioner):
                 # at the moment no else with append non-skip task needed as the converter handles everything. This should be refactored.
 
     def getTasks(self) -> List[TransitionTask]:
-        self.convert()
-        return []
+        if self.converter == passthrough:
+            return [TransitionTask(index=index) for index, _ in enumerate(self.toTreat)]
+        else:
+            self.convert()
+            return [] #TODO something is strange here and should be adressed. If transitions Tasks are returned, unittests don't run.
+            return self.transitionTasks

@@ -14,7 +14,6 @@ from exiftool import ExifToolHelper, ExifTool
 
 import logging
 
-
 testsfolder = abspath("tests")
 
 src = os.path.abspath(join(testsfolder, "filestotreat"))
@@ -413,6 +412,7 @@ def test_optionalXMPTagLabelIsCopiedFromJpg():
             params=["-P", "-overwrite_original"],
             files=str(ifile),
         )
+        
 
     assert bothFilesAreInSRC(fullname)
 

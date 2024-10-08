@@ -6,6 +6,7 @@ class MowTags:
     subject = "XMP:Subject"
     hierarchicalsubject = "XMP:HierarchicalSubject"
     label = "XMP:Label"
+    stagehistory = "XMP:Contributor"
 
     gps_latitude = "Composite:GPSLatitude"  # this avoids the need to use the GPSLatitudeRef tag when writing
     gps_longitude = "Composite:GPSLongitude"  # this avoids the need to use the GPSLongitudeRef tag when writing
@@ -23,6 +24,7 @@ class MowTags:
         subject,
         hierarchicalsubject,
         label,
+        stagehistory,
         *gps_all,
     ]
 

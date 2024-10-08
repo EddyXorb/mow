@@ -75,6 +75,7 @@ class MediaTransitioner(VerbosePrinterClass):
         super().__init__(input.verbose)
         self.src = os.path.abspath(input.src)
         self.dst = os.path.abspath(input.dst)
+        self.current_stage = os.path.basename(self.src)
         self.input = input
         self.move = input.move
         self.recursive = input.recursive
@@ -239,12 +240,16 @@ class MediaTransitioner(VerbosePrinterClass):
             return tasks
 
         self.printv("Set meta file tags..")
+
         with ExifToolHelper() as et:
             for task in tqdm(tasks):
-                if len(task.metaTags) == 0 or self.dry:
-                    continue
                 try:
                     files = self.toTreat[task.index].getAllFileNames()
+
+                    self.add_transition_to_files_stage_history(et, task, files)
+
+                    if len(task.metaTags) == 0 or self.dry:
+                        continue
 
                     et.set_tags(
                         files,
@@ -264,6 +269,24 @@ class MediaTransitioner(VerbosePrinterClass):
                         task.skipReason += f"Filename is too long. Exiftool supports only 260 characters."
 
         return self.getNonSkippedOf(tasks)
+
+    def add_transition_to_files_stage_history(self, et, task, files):
+        curr_stage_history = et.get_tags(
+            files[0],
+            MowTags.stagehistory,
+            params=[
+                "-m",
+                "-L",
+                "-struct",
+            ],  # -struct is needed, otherwise lists are flattened by exiftool
+        )[0]
+
+        if MowTags.stagehistory in curr_stage_history:
+            curr_stage_history[MowTags.stagehistory].append(self.current_stage)
+        else:
+            curr_stage_history[MowTags.stagehistory] = [self.current_stage]
+
+        task.metaTags[MowTags.stagehistory] = curr_stage_history[MowTags.stagehistory]
 
     def doRelocationOf(self, tasks: List[TransitionTask]):
         failed = 0

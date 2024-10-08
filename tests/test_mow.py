@@ -1,9 +1,11 @@
-from datetime import datetime
+from ..modules.general.medialocalizer import BaseLocalizerInput
+from ..modules.mow.mowtags import MowTags
 from ..modules.image.imagerenamer import *
 from ..modules.mow.mow import Mow
 import shutil
 from os.path import *
 import os
+from exiftool import ExifToolHelper
 
 testfolder = "tests"
 workingdir = abspath(join(testfolder, "mow_test_workingdir"))
@@ -106,6 +108,43 @@ def test_filewasmoved():
     assert exists(join(convertdir, "subfolder", "2022-07-27@215555_test3.JPG"))
 
 
+def test_stage_history_was_added():
+    prepareImageConversionTest()
+    prepareRenameTest()
+
+    srcfile = join(workingdir, "2_rename", "subfolder", "test3.JPG")
+
+    assert exists(srcfile)
+
+    Mow(settingsfile=settingsfile, dry=False).rename()
+    assert not exists(srcfile)
+    target_file_renaming = join(convertdir, "subfolder", "2022-07-27@215555_test3.JPG")
+    assert exists(target_file_renaming)
+
+    with ExifToolHelper() as et:
+        tags = et.get_tags(
+            target_file_renaming, ["XMP:Contributor"], params=["-struct"]
+        )[0]
+        assert MowTags.stagehistory in tags
+        assert os.path.basename(renamedir) in tags[MowTags.stagehistory]
+
+    Mow(settingsfile=settingsfile, dry=False).convert()
+
+    assert not exists(target_file_renaming)
+    target_file_conversion = join(
+        workingdir, "4_group", "subfolder", "2022-07-27@215555_test3.JPG"
+    )
+    assert exists(target_file_conversion)
+
+    with ExifToolHelper() as et:
+        tags = et.get_tags(
+            target_file_conversion, ["XMP:Contributor"], params=["-struct"]
+        )[0]
+        print(tags)
+        assert MowTags.stagehistory in tags
+        assert os.path.basename(convertdir) in tags[MowTags.stagehistory]
+
+
 def test_groupingMovesDirectoriesIntoRateFolder():
     prepareGroupingTest()
 
@@ -185,7 +224,9 @@ def test_localizedImageIsTransitioned():
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile, dry=False).localize()
+    Mow(settingsfile=settingsfile, dry=False).localize(
+        localizerInput=BaseLocalizerInput()
+    )
 
     assert not exists(srcfile)
     assert exists(join(aggregatedir, "subfolder", "localized.jpg"))
