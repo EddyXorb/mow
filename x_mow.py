@@ -200,6 +200,15 @@ localizeparser.add_argument(
     default=False,
 )
 
+localizeparser.add_argument(
+    "-s",
+    "--suppress-map-open",
+    help="Do not open a map with the found GPS data after calling the localizer, which is the default.",
+    action="store_true",
+    dest="localize_suppress_map_open",
+    default=False,
+)
+
 
 aggregateparser.add_argument(
     "-j",
@@ -262,8 +271,12 @@ def should_execute_stage(stage: str, args: Namespace):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-
-    mow = Mow(".mowsettings.yml", dry=not args.execute, filter=args.filter)
+    print(args)
+    mow = Mow(
+        ".mowsettings.yml",
+        dry=not args.execute if hasattr(args, "execute") else True,
+        filter=args.filter if hasattr(args, "filter") else "",
+    )
 
     if should_execute_stage("copy", args):
         mow.copy()
@@ -300,6 +313,8 @@ if __name__ == "__main__":
             inp.gps_time_tolerance = parse_timedelta(args.localize_gps_time_tolerance)
         if args.localize_force_gps_data is not None:
             inp.force_gps_data = GpsData.fromString(args.localize_force_gps_data)
+        if args.localize_suppress_map_open:
+            inp.suppress_map_open = True
 
         mow.localize(localizerInput=inp)
     elif should_execute_stage("aggregate", args):

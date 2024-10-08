@@ -10,8 +10,7 @@ from zoneinfo import ZoneInfo, available_timezones
 import datetime
 import folium
 
-from modules.general.mediafile import MediaFile
-
+from ..general.mediafile import MediaFile
 from ..general.filenamehelper import extractDatetimeFromFileName
 from ..mow.mowtags import MowTags
 from ..general.medafilefactories import createAnyValidMediaFile
@@ -58,6 +57,7 @@ class BaseLocalizerInput:
     force_gps_data: GpsData = None
     transition_even_if_no_gps_data: bool = False
     gps_verbose: bool = False
+    suppress_map_open: bool = False
 
 
 class LocalizerInput(BaseLocalizerInput, TransitionerInput):
@@ -95,6 +95,7 @@ class MediaLocalizer(MediaTransitioner):
         self.force_gps_data = input.force_gps_data
         self.transition_even_if_no_gps_data = input.transition_even_if_no_gps_data
         self.gps_verbose = input.gps_verbose
+        self.suppress_map_open = input.suppress_map_open
 
         if self.mediafile_timezone not in available_timezones():
             self.printv(
@@ -217,7 +218,9 @@ class MediaLocalizer(MediaTransitioner):
             ]
         )
         map.save(Path(self.src) / "map.html")
-        os.startfile(Path(self.src) / "map.html")
+
+        if not self.suppress_map_open:
+            os.startfile(Path(self.src) / "map.html")
 
     def getAllGpxFiles(self) -> List[str]:
         all_files = os.listdir(self.src)

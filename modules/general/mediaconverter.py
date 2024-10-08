@@ -38,6 +38,7 @@ class ConverterInput(TransitionerInput):
             setattr(self, key, value)
 
 
+# TODO: refactor mediaconvertion into transitioner to make conversion manageable by input to the TransitionTask
 class MediaConverter(MediaTransitioner):
     """
     converter: Convert mediafile and put result into directory given with second argument

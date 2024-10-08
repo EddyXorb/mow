@@ -9,6 +9,8 @@ from math import sqrt
 from tqdm import tqdm
 import re
 
+
+from ..mow.mowtags import MowTags
 from ..general.mediafile import MediaFile
 from ..general.verboseprinterclass import VerbosePrinterClass
 
