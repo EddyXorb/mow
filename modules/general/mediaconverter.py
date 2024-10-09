@@ -49,7 +49,7 @@ class MediaConverter(MediaTransitioner):
         input: ConverterInput,
         converter: Callable[[MediaFile, str], Tuple[bool, str]] = passthrough,
     ):
-        self.converter = converter
+        self.legacy_converter = converter
         self.deleteOriginals = input.deleteOriginals
         self.transitionTasks: List[TransitionTask] = []
         super().__init__(input)
@@ -65,8 +65,8 @@ class MediaConverter(MediaTransitioner):
                 success = True
 
                 if not self.dry:
-                    success, convertedFile = self.converter(file, targetDir)
-                    if self.converter != passthrough:
+                    success, convertedFile = self.legacy_converter(file, targetDir)
+                    if self.legacy_converter != passthrough:
                         try:
                             xmptagstowrite = et.get_tags(str(file), MowTags.all)[0]
                             xmptagstowrite.pop("SourceFile")
@@ -86,9 +86,11 @@ class MediaConverter(MediaTransitioner):
                 # at the moment no else with append non-skip task needed as the converter handles everything. This should be refactored.
 
     def getTasks(self) -> List[TransitionTask]:
-        if self.converter == passthrough:
+        if self.legacy_converter == passthrough:
             return [TransitionTask(index=index) for index, _ in enumerate(self.toTreat)]
         else:
             self.convert()
-            return [] #TODO something is strange here and should be adressed. If transitions Tasks are returned, unittests don't run.
+            return (
+                []
+            )  # TODO something is strange here and should be adressed. If transitions Tasks are returned, unittests don't run.
             return self.transitionTasks
