@@ -1,3 +1,4 @@
+from pathlib import Path
 from ..modules.general.medialocalizer import BaseLocalizerInput
 from ..modules.mow.mowtags import MowTags
 from ..modules.image.imagerenamer import *
@@ -81,10 +82,13 @@ def prepareTagTransitionTest():
 
 
 def prepareLocalizeTransitionTest():
+    shutil.rmtree(Path(localizedir) / "subfolder", ignore_errors=True)
     prepareTest(
         targetdir=join(aggregatedir, "subfolder"),
         untouchedfile=join(testfolder, "test3.jpg"),
-        starttransitionfile=join(localizedir, "subfolder", "localized.jpg"),
+        starttransitionfile=join(
+            localizedir, "subfolder", "2024-12-12@121212_TEST.jpg"
+        ),
     )
 
 
@@ -220,16 +224,16 @@ def test_taggedImageIsTransitioned():
 
 def test_localizedImageIsTransitioned():
     prepareLocalizeTransitionTest()
-    srcfile = join(localizedir, "subfolder", "localized.jpg")
+    srcfile = join(localizedir, "subfolder", "2024-12-12@121212_TEST.jpg")
 
     assert exists(srcfile)
 
     Mow(settingsfile=settingsfile, dry=False).localize(
-        localizerInput=BaseLocalizerInput()
+        localizerInput=BaseLocalizerInput(transition_even_if_no_gps_data=True)
     )
 
     assert not exists(srcfile)
-    assert exists(join(aggregatedir, "subfolder", "localized.jpg"))
+    assert exists(join(aggregatedir, "subfolder", "2024-12-12@121212_TEST.jpg"))
 
 
 def test_aggregatableImageIsTransitioned():
@@ -248,25 +252,27 @@ def test_aggregatableImageIsTransitioned():
 
 def test_filteringfiles_passes():
     prepareLocalizeTransitionTest()
-    srcfile = join(localizedir, "subfolder", "localized.jpg")
+    srcfile = join(localizedir, "subfolder", "2024-12-12@121212_TEST.jpg")
 
     assert exists(srcfile)
 
-    Mow(settingsfile=settingsfile, dry=False, filter="localized.*").localize()
+    Mow(
+        settingsfile=settingsfile, dry=False, filter="2024-12-12@121212_TES.*"
+    ).localize(BaseLocalizerInput(transition_even_if_no_gps_data=True))
 
     assert not exists(srcfile)
-    assert exists(join(aggregatedir, "subfolder", "localized.jpg"))
+    assert exists(join(aggregatedir, "subfolder", "2024-12-12@121212_TEST.jpg"))
 
 
 def test_filteringfiles_blocks():
     prepareLocalizeTransitionTest()
-    srcfile = join(localizedir, "subfolder", "localized.jpg")
+    srcfile = join(localizedir, "subfolder", "2024-12-12@121212_TEST.jpg")
 
     assert exists(srcfile)
 
     Mow(
         settingsfile=settingsfile, dry=False, filter="THERE_IS_NO_FILE_WITH_THIS_NAME"
-    ).localize()
+    ).localize(BaseLocalizerInput(transition_even_if_no_gps_data=True))
 
     assert exists(srcfile)
-    assert not exists(join(aggregatedir, "subfolder", "localized.jpg"))
+    assert not exists(join(aggregatedir, "subfolder", "2024-12-12@121212_TEST.jpg"))
