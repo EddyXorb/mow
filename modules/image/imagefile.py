@@ -11,14 +11,14 @@ from PIL import Image
 
 
 class ImageFile(MediaFile):
-    supportedjpgFormats = [".jpg", ".JPG", ".jpeg", ".JPEG"]
+    supportedJpgFormats = [".jpg", ".JPG", ".jpeg", ".JPEG"]
     supportedRawFormats = [".ORF", ".NEF"]
 
     def __init__(self, file):
         """
         file must be path to a jpg-file!
         """
-        super().__init__(path=file, validExtensions=self.supportedjpgFormats)
+        super().__init__(path=file, validExtensions=self.supportedJpgFormats)
         if not self.isValid():
             return
 

@@ -45,6 +45,7 @@ def prepareImageConversionTest():
 
 
 def prepareVideoConversionTest():
+    shutil.rmtree(Path(convertdir) / "deleted", ignore_errors=True)
     prepareTest(
         targetdir=join(workingdir, "4_group", "subfolder"),
         untouchedfile=join(testfolder, "test.MOV"),
@@ -194,8 +195,21 @@ def test_conversionOfVideoWorks():
     Mow(settingsfile=settingsfile, dry=False).convert()
 
     assert not exists(srcfile)
-    assert exists(join(workingdir, "4_group", "subfolder", "test_original.MOV"))
+    assert exists(join(workingdir, "3_convert", "deleted", "subfolder", "test.MOV"))
     assert exists(join(workingdir, "4_group", "subfolder", "test.mp4"))
+
+
+def test_conversionOfPassthroughVideoWorks():
+    prepareVideoConversionTest()
+    srcfile = join(workingdir, "3_convert", "subfolder", "test.MOV")
+
+    assert exists(srcfile)
+
+    Mow(settingsfile=settingsfile, dry=False).convert(enforcePassthrough=True)
+
+    assert not exists(srcfile)
+    assert not exists(join(workingdir, "3_convert", "deleted", "subfolder", "test.MOV"))
+    assert exists(join(workingdir, "4_group", "subfolder", "test.MOV"))
 
 
 def test_ratedImageIsTransitioned():

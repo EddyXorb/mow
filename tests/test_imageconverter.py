@@ -2,7 +2,7 @@ import shutil
 from os.path import join, exists
 import os
 
-from ..modules.general.mediaconverter import ConverterInput
+from ..modules.general.mediatransitioner import TransitionerInput
 from ..modules.image.imageconverter import ImageConverter
 from ..modules.image.imagerenamer import *
 
@@ -16,12 +16,11 @@ srcfile = join(src, "subsubfolder", imagename)
 expectedConvertedImageFile = join(dst, "subsubfolder", imagename)
 
 
-def executeConversionWith(deleteOriginals=True, maintainFolderStructure=True):
+def executeConversionWith(maintainFolderStructure=True):
     ImageConverter(
-        ConverterInput(
+        TransitionerInput(
             src=src,
             dst=dst,
-            deleteOriginals=deleteOriginals,
             maintainFolderStructure=maintainFolderStructure,
         )
     )()
@@ -40,7 +39,7 @@ def prepareTest():
 def test_moveworks():
     prepareTest()
 
-    executeConversionWith(deleteOriginals=True)
+    executeConversionWith()
 
     assert not exists(srcfile)
     assert exists(expectedConvertedImageFile)
@@ -49,7 +48,7 @@ def test_moveworks():
 def test_disablemaintainfolderstructureworks():
     prepareTest()
 
-    executeConversionWith(deleteOriginals=True, maintainFolderStructure=False)
+    executeConversionWith(maintainFolderStructure=False)
 
     assert not exists(srcfile)
     assert exists(join(dst, imagename))

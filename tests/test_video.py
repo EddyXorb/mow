@@ -1,11 +1,13 @@
+from pathlib import Path
 from exiftool import ExifToolHelper
+
 
 from ..modules.mow.mowtags import MowTags
 
+from ..modules.general.mediatransitioner import TransitionerInput
 from ..modules.video.videorenamer import VideoRenamer
 from ..modules.image.imagerenamer import *
 from ..modules.video.videoconverter import VideoConverter
-from ..modules.general.mediaconverter import ConverterInput
 
 import shutil
 from os.path import join, exists
@@ -39,85 +41,22 @@ def test_fileisrenamed():
     assert len(os.listdir(targetDir)) > 0
 
 
-def test_passthroughWorks():
+def test_conversionMovesOriginalsIntoDeletedAndCreatesConverted():
     prepareTest()
 
     assert exists(srcfile)
 
     VideoConverter(
-        ConverterInput(
+        TransitionerInput(
             src=src,
             dst=dst,
-            deleteOriginals=False,
             verbose=True,
-            enforcePassthrough=True,
-        )
-    )()
-
-    assert not exists(srcfile)
-    assert not exists(join(targetDir, "test.mp4"))
-    assert not exists(join(targetDir, "test_original.MOV"))
-    assert exists(join(targetDir, "test.MOV"))
-
-
-def test_conversionMovesOriginalsAndCreatesConverted():
-    prepareTest()
-
-    assert exists(srcfile)
-
-    VideoConverter(
-        ConverterInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=False,
-            verbose=True,
-            enforcePassthrough=False,
         )
     )()
 
     assert not exists(srcfile)
     assert exists(join(targetDir, "test.mp4"))
-    assert exists(join(targetDir, "test_original.MOV"))
-
-
-def test_conversionDeletesOriginalsIfWanted():
-    prepareTest()
-
-    assert exists(srcfile)
-    converter = VideoConverter(
-        ConverterInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=True,
-            verbose=True,
-            enforcePassthrough=False,
-        )
-    )
-    converter()
-
-    assert not exists(srcfile)
-    assert exists(join(targetDir, "test.mp4"))
-    assert not exists(join(targetDir, "test_original.MOV"))
-    assert exists(join(src, "deleted", "test_original.MOV"))
-
-
-def test_simpleConversionWorks():
-    prepareTest()
-
-    assert exists(srcfile)
-    VideoConverter(
-        ConverterInput(
-            src=src,
-            dst=dst,
-            deleteOriginals=False,
-            verbose=True,
-            enforcePassthrough=False,
-        )
-    )()
-
-    assert not exists(srcfile)
-    assert exists(join(targetDir, "test.mp4"))
-    assert exists(join(targetDir, "test_original.MOV"))
+    assert exists(join(Path(src) / "deleted" / "subsubfolder" / "test.MOV"))
 
 
 def test_conversionPreservesXMPTags():
@@ -125,32 +64,35 @@ def test_conversionPreservesXMPTags():
 
     assert exists(srcfile)
 
-    tagsDict = {tag: "DUMMY_VALUE"  for tag in MowTags.all if "Rating" not in tag and "Date" not in tag}
+    tagsDict = {
+        tag: "DUMMY_VALUE"
+        for tag in MowTags.all
+        if "Rating" not in tag and "Date" not in tag
+    }
     tagsDict["XMP:Rating"] = 2
     tagsDict["XMP:Date"] = "2022:07:27 21:55:55"
-    
+
     with ExifToolHelper() as et:
         et.set_tags(srcfile, tagsDict)
 
     VideoConverter(
-        ConverterInput(
+        TransitionerInput(
             src=src,
             dst=dst,
-            deleteOriginals=False,
             verbose=True,
-            enforcePassthrough=False,
         )
     )()
 
     convertedFile = join(targetDir, "test.mp4")
+
     assert not exists(srcfile)
     assert exists(convertedFile)
-    assert exists(join(targetDir, "test_original.MOV"))
+    assert exists(join(Path(src) / "deleted" / "subsubfolder" / "test.MOV"))
 
     with ExifToolHelper() as et:
         tags = et.get_tags(convertedFile, MowTags.all)[0]
 
     for tag in MowTags.all:
-        if not "XMP" in tag: 
+        if not "XMP" in tag:
             continue
         assert tag in tags

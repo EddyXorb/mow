@@ -76,7 +76,8 @@ class MediaFile:
             if not os.path.exists(pathNoExt + ext):
                 raise Exception(f"Relocation of file {self.pathnoext} failed!")
 
-    def exists(self):
-        for ext in self.extensions:
-            if not os.path.exists(self.pathnoext + ext):
+    def exists(self) -> bool:
+        for file in self.getAllFileNames():
+            if not os.path.exists(file):
                 return False
+        return True

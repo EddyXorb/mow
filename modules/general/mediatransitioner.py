@@ -4,7 +4,10 @@ import os
 from os.path import join, basename
 from pathlib import Path
 from shutil import move
+import shutil
 import sys
+from time import sleep
+import traceback
 from typing import Dict, List, Callable
 from exiftool import ExifToolHelper
 from math import sqrt
@@ -320,6 +323,8 @@ class MediaTransitioner(VerbosePrinterClass):
                 )
                 try:
                     if not self.dry:
+                        os.makedirs(os.path.dirname(newPath), exist_ok=True)
+
                         if self.converter is not None:
                             self._performConversionOf(toTransition, newPath, et)
                         else:
@@ -329,7 +334,7 @@ class MediaTransitioner(VerbosePrinterClass):
                                 toTransition.copyTo(newPath)
                 except Exception as e:
                     task.skip = True
-                    task.skipReason = str(e)
+                    task.skipReason = traceback.format_exc(e)
                     failed += 1
 
         self.printv(f"Finished transition of {len(tasks) - failed} files.")
@@ -341,12 +346,14 @@ class MediaTransitioner(VerbosePrinterClass):
         if self.dry:
             return
 
-        convertedFile = self.converter(toTransition, newPath)
+        convertedFile = self.converter(toTransition, os.path.dirname(newPath))
 
         if not convertedFile.exists():
             raise Exception(
                 f"Conversion of {toTransition} to {convertedFile} failed. Converted file does not exist."
             )
+
+        self.printv(f"Converted {toTransition} to {convertedFile}")
 
         if self.rewriteMetaTagsOnConverted:
             self._performMetaTagRewriteOf(toTransition, convertedFile, et)
@@ -384,6 +391,9 @@ class MediaTransitioner(VerbosePrinterClass):
     def _performMetaTagRewriteOf(
         self, toTransition: MediaFile, convertedFile: MediaFile, et: ExifToolHelper
     ):
+        self.printv(
+            f"Rewrite meta tags of {os.path.basename(convertedFile.pathnoext)} to {os.path.basename(toTransition.pathnoext)}"
+        )
         xmptagstowrite = et.get_tags(str(toTransition), MowTags.all)[0]
         xmptagstowrite.pop("SourceFile")
         et.set_tags(

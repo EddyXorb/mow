@@ -6,7 +6,9 @@ from os import path
 from os.path import join
 import logging
 
-
+from ..image.imagefile import ImageFile
+from ..video.videofile import VideoFile
+from ..general.mediaconverter import PassthroughConverter
 from ..general.mediacopier import MediaCopier
 from ..general.mediatransitioner import TransitionerInput
 from ..general.tkinterhelper import getInputDir
@@ -16,7 +18,6 @@ from ..image.imageconverter import ImageConverter
 from ..video.videoconverter import VideoConverter
 from ..video.videorenamer import VideoRenamer
 from ..audio.audiorenamer import AudioRenamer
-from ..general.mediaconverter import ConverterInput
 from ..general.mediagrouper import GrouperInput, MediaGrouper
 from ..general.filenamehelper import timestampformat
 from ..general.mediarater import MediaRater
@@ -113,18 +114,32 @@ class Mow:
 
     def convert(self, enforcePassthrough: bool = False):
         src, dst = self._getSrcDstForStage("convert")
-        converters = [ImageConverter, VideoConverter]
+        converters = (
+            [ImageConverter, VideoConverter]
+            if not enforcePassthrough
+            else [PassthroughConverter]
+        )
         for converter in converters:
             self._printEmphasized(f"Stage Convert: {converter.__name__}")
-            converter(
-                ConverterInput(
-                    src=src,
-                    dst=dst,
-                    deleteOriginals=False,
-                    enforcePassthrough=enforcePassthrough,
-                    **self.basicInputParameter,
-                )
-            )()
+            if converter == PassthroughConverter:
+                converter(
+                    TransitionerInput(
+                        src=src,
+                        dst=dst,
+                        **self.basicInputParameter,
+                    ),
+                    valid_extensions=ImageFile.supportedJpgFormats
+                    + ImageFile.supportedRawFormats
+                    + VideoFile.supportedFormats,
+                )()
+            else:
+                converter(
+                    TransitionerInput(
+                        src=src,
+                        dst=dst,
+                        **self.basicInputParameter,
+                    )
+                )()
 
     def group(
         self,

@@ -5,10 +5,10 @@ import datetime as dt
 
 
 class VideoFile(MediaFile):
-    supportedVideoFileEndings = [".MOV", ".mp4", ".3gp", ".m4v"]
+    supportedFormats = [".MOV", ".mp4", ".3gp", ".m4v"]
 
     def __init__(self, path: str):
-        super().__init__(path, validExtensions=self.supportedVideoFileEndings)
+        super().__init__(path, validExtensions=self.supportedFormats)
 
     def readDateTime(self) -> dt.datetime:
         file = self.pathnoext + self.extensions[0]
