@@ -70,11 +70,12 @@ class TransitionerInput:
         default_factory=lambda: None
     )  # this can also be a type with its constructor, e.g. ImageFile
     rewriteMetaTagsOnConverted: bool = False
-    converter: Callable[[MediaFile, str], tuple[MediaFile]] = (
+    converter: Callable[[MediaFile, str], MediaFile] = (
         None  # (file to convert, target directory) -> (converted file (possibly with different extensions)); if None, does not convert anything.
-        # If defined, converter should make sure that the source mediafile is updated in case of conversion, e.g. if .ORF and .JPG are converted to .DNG the
-        # source mediafile should be updated to contain only the .ORF file and the result media file should be the .JPG and .DNG file.
-        # In other words, the converter needs to take care of all extensions of the source mediafile, even if it does not touch/convert all of them,
+        # If defined, converter should make sure that the source mediafile is updated in case of conversion, e.g. if .ORF and .JPG are converted to .JPG and .DNG the
+        # source mediafile should be updated to contain only the .ORF file (as .JPG is only moved by the converter)
+        # and the result media file should be the .JPG and .DNG file.
+        # In other words, the converter needs to take care of all extensions of the source mediafile, even if it does not move/convert all of them,
         # they should at least be moved to the new location.
     )
 
@@ -309,38 +310,46 @@ class MediaTransitioner(VerbosePrinterClass):
 
     def doRelocationOf(self, tasks: List[TransitionTask]):
         failed = 0
-        for task in tasks:
-            toTransition = self.toTreat[task.index]
-            newPath = self.getNewNameFor(task)
+        with ExifToolHelper() as et:
+            for task in tasks:
+                toTransition = self.toTreat[task.index]
+                newPath = self.getNewNameFor(task)
 
-            self.printv(
-                f"{Path(str(toTransition)).relative_to(Path(self.src).parent)}    --->    {os.path.basename(self.dst)}\\...\\{os.path.basename(newPath)}"
-            )
-            try:
-                if not self.dry:
-                    if self.converter is not None:
-                        self._performConversionOf(toTransition, newPath)
-                    else:
-                        if self.move:
-                            toTransition.moveTo(newPath)
+                self.printv(
+                    f"{Path(str(toTransition)).relative_to(Path(self.src).parent)}    --->    {os.path.basename(self.dst)}\\...\\{os.path.basename(newPath)}"
+                )
+                try:
+                    if not self.dry:
+                        if self.converter is not None:
+                            self._performConversionOf(toTransition, newPath, et)
                         else:
-                            toTransition.copyTo(newPath)
-            except Exception as e:
-                task.skip = True
-                task.skipReason = str(e)
-                failed += 1
+                            if self.move:
+                                toTransition.moveTo(newPath)
+                            else:
+                                toTransition.copyTo(newPath)
+                except Exception as e:
+                    task.skip = True
+                    task.skipReason = str(e)
+                    failed += 1
 
         self.printv(f"Finished transition of {len(tasks) - failed} files.")
         self.printv(f"Failed Tasks: {failed}")
 
-    def _performConversionOf(self, toTransition: MediaFile, newPath: str):
+    def _performConversionOf(
+        self, toTransition: MediaFile, newPath: str, et: ExifToolHelper
+    ):
         if self.dry:
             return
 
         convertedFile = self.converter(toTransition, newPath)
 
+        if not convertedFile.exists():
+            raise Exception(
+                f"Conversion of {toTransition} to {convertedFile} failed. Converted file does not exist."
+            )
+
         if self.rewriteMetaTagsOnConverted:
-            self._performMetaTagRewriteOf(toTransition, convertedFile)
+            self._performMetaTagRewriteOf(toTransition, convertedFile, et)
 
         self.deleteMediaFile(toTransition)
 
@@ -373,16 +382,15 @@ class MediaTransitioner(VerbosePrinterClass):
         ]
 
     def _performMetaTagRewriteOf(
-        self, toTransition: MediaFile, convertedFile: MediaFile
+        self, toTransition: MediaFile, convertedFile: MediaFile, et: ExifToolHelper
     ):
-        with ExifToolHelper() as et:
-            xmptagstowrite = et.get_tags(str(toTransition), MowTags.all)[0]
-            xmptagstowrite.pop("SourceFile")
-            et.set_tags(
-                convertedFile.getAllFileNames(),
-                xmptagstowrite,
-                params=["-P", "-overwrite_original", "-L", "-m"],
-            )
+        xmptagstowrite = et.get_tags(str(toTransition), MowTags.all)[0]
+        xmptagstowrite.pop("SourceFile")
+        et.set_tags(
+            convertedFile.getAllFileNames(),
+            xmptagstowrite,
+            params=["-P", "-overwrite_original", "-L", "-m"],
+        )
 
     def optionallyRemoveEmptyFolders(self):
         if self.removeEmptySubfolders:
