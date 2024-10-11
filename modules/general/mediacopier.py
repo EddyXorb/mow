@@ -11,6 +11,12 @@ from ..general.mediatransitioner import MediaTransitioner
 
 
 class MediaCopier(MediaTransitioner):
+    """
+    The first matching file ending with '_LAST' (including all of its extensions) will mark all following files as to be copied to the destination folder,
+    even if other files ending with '_LAST' are present later on.
+    """
+    LAST_MARKER = "_LAST"
+
     def __init__(self, input: TransitionerInput):
         input.move = False
         input.recursive = False
@@ -25,7 +31,7 @@ class MediaCopier(MediaTransitioner):
 
     def getIndexWithLast(self) -> int:
         for index, f in enumerate(self.toTreat):
-            if f.pathnoext.endswith("_LAST"):
+            if f.pathnoext.endswith(self.LAST_MARKER):
                 return index
         return -1
 
@@ -48,8 +54,8 @@ class MediaCopier(MediaTransitioner):
         if self.indexWithLAST > -1:
             mFile = self.toTreat[self.indexWithLAST]
             newName = mFile.pathnoext
-            assert newName.endswith("_LAST")
-            newName = newName[: -len("_LAST")]
+            assert newName.endswith(self.LAST_MARKER)
+            newName = newName[: -len(self.LAST_MARKER)]
             self.printv(f"Rename {mFile} to {newName}.")
             if not self.dry:
                 mFile.moveTo(newName)
@@ -57,7 +63,7 @@ class MediaCopier(MediaTransitioner):
         if self.indexWithLAST != len(self.toTreat) - 1:
             mFile = self.toTreat[-1]
             newName = mFile.pathnoext
-            newName += "_LAST"
+            newName += self.LAST_MARKER
             self.printv(f"Rename {mFile} to {newName}.")
             if not self.dry:
                 mFile.moveTo(newName)
