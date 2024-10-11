@@ -79,6 +79,7 @@ class Mow:
             "move": True,
             "dry": dry,
             "filter": filter,
+            "settings": self.settings,
         }
 
     def copy(self, askForNewSource: bool = False):

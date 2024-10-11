@@ -57,6 +57,7 @@ class TransitionerInput:
     filter: regex for filtering files that should only be treated (searching the complete subpath with all subfolders of the current stage)
     rewriteMetaTagsOnConverted: a transition can include a conversion, which should rewrite the meta tags of the converted file (copying the meta tags of the original file). If converter is None, this option is ignored.
     converter: function to convert files, if None, no conversion is done. Signature: (file to convert, target directory) -> (converted file (possibly with different extensions AND name, if transition Task has diffent "newName" specified), success)
+    settings: contains settings given in the .mowsettings-file, such as copy_source_dir, working_dir, etc.
     """
 
     src: str
@@ -81,6 +82,7 @@ class TransitionerInput:
         # In other words, the converter needs to take care of all extensions of the source mediafile, even if it does not move/convert all of them,
         # they should at least be moved to the new location.
     )
+    settings: dict[str, str] = field(default_factory=dict)
 
 
 class MediaTransitioner(VerbosePrinterClass):
@@ -112,6 +114,7 @@ class MediaTransitioner(VerbosePrinterClass):
             if input.filter is not None and input.filter != ""
             else None
         )
+        self.settings = input.settings
 
         self.toTreat: List[MediaFile] = []
         self.deleteFolder = join(self.src, "deleted")
