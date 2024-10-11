@@ -71,7 +71,13 @@ def convertImage(
             source.remove_extension(os.path.splitext(rawfile)[1])
         else:
             check_output(
-                [settings["dng_converter_exe"], "-cr11.2", "-d", target_dir, rawfile]
+                [
+                    settings["dng_converter_exe"],
+                    "-cr11.2",
+                    "-d",
+                    target_dir,
+                    rawfile,
+                ]
             )
 
             new_rawfile_location = os.path.join(

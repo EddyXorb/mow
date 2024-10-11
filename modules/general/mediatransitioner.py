@@ -227,6 +227,7 @@ class MediaTransitioner(VerbosePrinterClass):
         tasks = self.getNonOverwritingTasksOf(tasks)
         tasks = self.getSuccesfulChangedMetaTagTasksOf(tasks)
 
+        self.printv(f"Start transition of {len(tasks)} mediafiles..")
         if self.converter is None:
             self.doRelocationOf(tasks)
         else:
@@ -389,7 +390,9 @@ class MediaTransitioner(VerbosePrinterClass):
                 basename(sourceLocation),
             )
 
-            self.printv(f"Delete file {sourceLocation} ( ---> {self.deleteFolder})")
+            self.printv(
+                f"'Delete' file {self.getTransitionInfoString(file, basename(sourceLocation), self.deleteFolder)}"
+            )
 
             if not self.dry:
                 os.makedirs(os.path.dirname(targetLocation), exist_ok=True)
@@ -399,13 +402,18 @@ class MediaTransitioner(VerbosePrinterClass):
             ext for ext in file.extensions if ext in extensions_to_maintain
         ]
 
-    def getTransitionInfoString(self, toTransition: MediaFile, newName: str):
+    def getTransitionInfoString(
+        self, toTransition: MediaFile, newName: str, destinationFolder: str = None
+    ) -> str:
         source_path = Path(toTransition.pathnoext).relative_to(Path(self.src).parent)
         toTransition_is_in_subfolder = str(source_path.parent) != str(
             Path(self.src).name
         )
         backslashes = "\\...\\" if toTransition_is_in_subfolder else "\\"
-        return f"{source_path}({','.join(toTransition.extensions)})    --->    {os.path.basename(self.dst)}{backslashes}{newName}"
+        dst = os.path.basename(
+            self.dst if destinationFolder is None else destinationFolder
+        )
+        return f"{source_path}({','.join(toTransition.extensions)})    --->    {dst}{backslashes}{newName}"
 
     def optionallyRemoveEmptyFolders(self):
         if self.removeEmptySubfolders:
