@@ -44,7 +44,6 @@ class ImageFile(MediaFile):
             return None
         return self.pathnoext + raw_ending.pop()
 
-
     def readDateTime(self):
         try:
             date = None
