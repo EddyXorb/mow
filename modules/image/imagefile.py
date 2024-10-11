@@ -44,9 +44,6 @@ class ImageFile(MediaFile):
             return None
         return self.pathnoext + raw_ending.pop()
 
-    def markRawAsRemoved(self):
-        if len(self.extensions) > 1:
-            self.extensions.pop()
 
     def readDateTime(self):
         try:
