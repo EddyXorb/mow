@@ -121,6 +121,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self._performedTransition = False
         self._toTransition: List[TransitionTask] = []
+        self.et = ExifToolHelper()
 
     def __call__(self):
         self.printv(f"Start transition from source {self.src} into {self.dst}")
@@ -139,6 +140,8 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self.optionallyRemoveEmptyFolders()
         self.finalExecution()
+        
+        self.et.terminate() # in order to avoid usage of destructor for that
 
     def finalExecution(self):
         pass
@@ -273,37 +276,40 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self.printv("Set meta file tags..")
 
-        with ExifToolHelper() as et:
-            for task in tqdm(tasks):
-                try:
-                    files = self.toTreat[task.index].getAllFileNames()
+        for task in tqdm(tasks):
+            try:
+                files = self.toTreat[task.index].getAllFileNames()
 
-                    self.add_transition_to_files_stage_history(et, task, files)
+                self.add_transition_to_files_stage_history(task, files)
 
-                    if len(task.metaTags) == 0 or self.dry:
-                        continue
+                if len(task.metaTags) == 0 or self.dry:
+                    continue
 
-                    et.set_tags(
-                        files,
-                        task.metaTags,
-                        params=[
-                            "-P",
-                            "-overwrite_original",
-                            "-L",
-                            "-m",
-                        ],  # , "-v2"], # -L : use latin encoding for umlaute -m: Ignore minor warnings and errors
+                self.et.set_tags(
+                    files,
+                    task.metaTags,
+                    params=[
+                        "-P",
+                        "-overwrite_original",
+                        "-L",
+                        "-m",
+                    ],  # , "-v2"], # -L : use latin encoding for umlaute -m: Ignore minor warnings and errors
+                )
+
+            except Exception as e:
+                task.skip = True
+                task.skipReason = (
+                    f"Problem setting meta tag data {task.metaTags} with exiftool: {e}"
+                )
+                if len(str(self.toTreat[task.index])) > 260:
+                    task.skipReason += (
+                        f"Filename is too long. Exiftool supports only 260 characters."
                     )
-
-                except Exception as e:
-                    task.skip = True
-                    task.skipReason = f"Problem setting meta tag data {task.metaTags} with exiftool: {e}"
-                    if len(str(self.toTreat[task.index])) > 260:
-                        task.skipReason += f"Filename is too long. Exiftool supports only 260 characters."
 
         return self.getNonSkippedOf(tasks)
 
-    def add_transition_to_files_stage_history(self, et, task, files):
-        curr_stage_history = et.get_tags(
+    def add_transition_to_files_stage_history(self, task, files):
+        curr_stage_history = self.et.get_tags(
             files[0],
             MowTags.stagehistory,
             params=[
@@ -320,38 +326,37 @@ class MediaTransitioner(VerbosePrinterClass):
 
         task.metaTags[MowTags.stagehistory] = curr_stage_history[MowTags.stagehistory]
 
-    def doRelocationOf(self, tasks: List[TransitionTask]):
-        failed = 0
-        with ExifToolHelper() as et:
-            for task in tasks:
-                toTransition = self.toTreat[task.index]
-                newPath = self.getNewNameFor(task)
+    def doRelocationOf(self, tasks: List[TransitionTask]) -> list[MediaFile]:
+        for task in tasks:
+            self.relocateSingleTask(task)
 
-                self.printv(
-                    f"{Path(str(toTransition)).relative_to(Path(self.src).parent)}    --->    {os.path.basename(self.dst)}\\...\\{os.path.basename(newPath)}"
-                )
-                try:
-                    if not self.dry:
-                        os.makedirs(os.path.dirname(newPath), exist_ok=True)
+        failed_tasks = len([task for task in tasks if task.skip])
+        self.printv(f"Finished transition of {len(tasks) - failed_tasks} files.")
+        self.printv(f"Failed Tasks: {failed_tasks}")
 
-                        if self.converter is not None:
-                            self._performConversionOf(toTransition, newPath, et)
-                        else:
-                            if self.move:
-                                toTransition.moveTo(newPath)
-                            else:
-                                toTransition.copyTo(newPath)
-                except Exception as e:
-                    task.skip = True
-                    task.skipReason = traceback.format_exc(e)
-                    failed += 1
+    def relocateSingleTask(self, task: TransitionTask):
+        toTransition = self.toTreat[task.index]
+        newPath = self.getNewNameFor(task)
 
-        self.printv(f"Finished transition of {len(tasks) - failed} files.")
-        self.printv(f"Failed Tasks: {failed}")
+        self.printv(
+            f"{Path(str(toTransition)).relative_to(Path(self.src).parent)}    --->    {os.path.basename(self.dst)}\\...\\{os.path.basename(newPath)}"
+        )
+        try:
+            if not self.dry:
+                os.makedirs(os.path.dirname(newPath), exist_ok=True)
 
-    def _performConversionOf(
-        self, toTransition: MediaFile, newPath: str, et: ExifToolHelper
-    ):
+                if self.converter is not None:
+                    self._performConversionOf(toTransition, newPath)
+                else:
+                    if self.move:
+                        toTransition.moveTo(newPath)
+                    else:
+                        toTransition.copyTo(newPath)
+        except Exception as e:
+            task.skip = True
+            task.skipReason = traceback.format_exc(e)
+
+    def _performConversionOf(self, toTransition: MediaFile, newPath: str):
         if self.dry:
             return
 
@@ -366,7 +371,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.printv(f"Converted {toTransition} to {convertedFile}")
 
         if self.rewriteMetaTagsOnConverted:
-            self._performMetaTagRewriteOf(toTransition, convertedFile, et)
+            self._performMetaTagRewriteOf(toTransition, convertedFile)
 
         if not toTransition.empty():
             self.deleteMediaFile(toTransition)
@@ -400,14 +405,15 @@ class MediaTransitioner(VerbosePrinterClass):
         ]
 
     def _performMetaTagRewriteOf(
-        self, toTransition: MediaFile, convertedFile: MediaFile, et: ExifToolHelper
+        self, toTransition: MediaFile, convertedFile: MediaFile
     ):
         self.printv(
             f"Rewrite meta tags of {os.path.basename(convertedFile.pathnoext)} to {os.path.basename(toTransition.pathnoext)}"
         )
-        xmptagstowrite = et.get_tags(str(toTransition), MowTags.all)[0]
+
+        xmptagstowrite = self.et.get_tags(str(toTransition), MowTags.all)[0]
         xmptagstowrite.pop("SourceFile")
-        et.set_tags(
+        self.et.set_tags(
             convertedFile.getAllFileNames(),
             xmptagstowrite,
             params=["-P", "-overwrite_original", "-L", "-m"],
