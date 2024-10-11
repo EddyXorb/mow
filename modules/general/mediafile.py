@@ -72,6 +72,12 @@ class MediaFile:
     def getAllFileNames(self) -> List[str]:
         return [self.pathnoext + ext for ext in self.extensions]
 
+    def getDescriptiveBasenames(self) -> str:
+        """
+        Returns something like 'file(.jpg,.raw)'
+        """
+        return f"{os.path.basename(self.pathnoext)}({','.join(self.extensions)})"
+
     def relocationSanityCheck(self, pathNoExt):
         for ext in self.extensions:
             if not os.path.exists(pathNoExt + ext):
