@@ -12,29 +12,37 @@ from PIL import Image
 
 class ImageFile(MediaFile):
     supportedJpgFormats = [".jpg", ".JPG", ".jpeg", ".JPEG"]
-    supportedRawFormats = [".ORF", ".NEF"]
+    supportedRawFormats = [".ORF", ".NEF", ".dng", ".DNG"]
 
     def __init__(self, file):
-        """
-        file must be path to a jpg-file!
-        """
-        super().__init__(path=file, validExtensions=self.supportedJpgFormats)
+        super().__init__(
+            path=file,
+            validExtensions=self.supportedJpgFormats + self.supportedRawFormats,
+        )
         if not self.isValid():
             return
 
-        for rawExt in ImageFile.supportedRawFormats:
-            rawFileCandidate = os.path.splitext(file)[0] + rawExt
-            if os.path.exists(rawFileCandidate):
-                self.extensions.append(rawExt)
-                self.nrFiles += 1
+        for ext in ImageFile.supportedRawFormats + ImageFile.supportedJpgFormats:
+            if ext in self.extensions:
+                continue
+
+            otherFileCandidate = os.path.basename(self.pathnoext) + ext
+            if otherFileCandidate in os.listdir(
+                os.path.dirname(self.pathnoext)
+            ):  # this is to avoid problems regarding case-insensitivity on windows. Otherwise .JPG and .jpg will both be in the list
+                self.extensions.append(ext)
 
     def getJpg(self) -> str:
-        return self.pathnoext + self.extensions[0]
+        jpg_ending = set(self.supportedJpgFormats).intersection(set(self.extensions))
+        if len(jpg_ending) == 0:
+            return None
+        return self.pathnoext + jpg_ending.pop()
 
     def getRaw(self) -> str:
-        if len(self.extensions) > 1:
-            return self.pathnoext + self.extensions[1]
-        return None
+        raw_ending = set(self.supportedRawFormats).intersection(set(self.extensions))
+        if len(raw_ending) == 0:
+            return None
+        return self.pathnoext + raw_ending.pop()
 
     def markRawAsRemoved(self):
         if len(self.extensions) > 1:

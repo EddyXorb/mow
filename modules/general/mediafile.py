@@ -13,7 +13,6 @@ class MediaFile:
     """
 
     def __init__(self, path, validExtensions):
-        self.nrFiles = 1
         self.valid = True
         self.extensions: list[str] = []
 
@@ -30,6 +29,8 @@ class MediaFile:
             return
 
     def __str__(self):
+        if len(self.extensions) == 0:
+            return self.pathnoext
         return self.pathnoext + self.extensions[0]
 
     def isValid(self) -> bool:
@@ -81,3 +82,10 @@ class MediaFile:
             if not os.path.exists(file):
                 return False
         return True
+
+    def remove_extension(self, extension: str):
+        if extension in self.extensions:
+            self.extensions.remove(extension)
+
+    def empty(self):
+        return len(self.extensions) == 0
