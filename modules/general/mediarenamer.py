@@ -25,15 +25,11 @@ class RenamerInput(TransitionerInput):
     writeMetaTags: sets XMP:Source to original filename and XMP:date to creationDate
     replace: a string such as '"^[0-9].*$",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
     """
-    
-    restoreOldNames = False
-    filerenamer: Callable[[str], str] = None
-    useCurrentFilename = False
-    replace = ""
 
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    restoreOldNames: bool = False
+    filerenamer: Callable[[str], str] = None
+    useCurrentFilename: bool = False
+    replace: str = ""
 
 
 class MediaRenamer(MediaTransitioner):

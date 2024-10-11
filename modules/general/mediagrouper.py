@@ -33,15 +33,11 @@ class GrouperInput(TransitionerInput):
     separationDistanceInHours: when groupUngroupedFiles is active, if time between two neighboring mediafiles is greater equal than this time in hours, they will be put into separate groups
     """
 
-    undoAutomatedGrouping = False
-    automaticGrouping = False
-    addMissingTimestampsToSubfolders = False
-    separationDistanceInHours = 12
-    checkSequence = False
-
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    undoAutomatedGrouping: bool = False
+    automaticGrouping: bool = False
+    addMissingTimestampsToSubfolders: bool = False
+    separationDistanceInHours: bool = 12
+    checkSequence: bool = False
 
 
 class MediaGrouper(MediaTransitioner):
@@ -296,9 +292,9 @@ class MediaGrouper(MediaTransitioner):
     def checkCorrectSequence(self):
         groupToFiles, _ = self.getCorrectlyGroupedFiles()
 
-        orderedFiles: List[
-            Tuple[str, List[str]]
-        ] = []  # Tuple[0] = groupname, Tuple[1] = filenames
+        orderedFiles: List[Tuple[str, List[str]]] = (
+            []
+        )  # Tuple[0] = groupname, Tuple[1] = filenames
 
         for key, values in groupToFiles.items():
             orderedFiles.append(

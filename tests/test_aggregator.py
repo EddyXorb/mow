@@ -27,8 +27,8 @@ testfileraw = join(testsfolder, "test_aggregate.ORF")
 
 @dataclass
 class Cached:
-    xmp_description = "2022-12-12@121212_TEST"
-    need_to_init = True
+    xmp_description: str = "2022-12-12@121212_TEST"
+    need_to_init: bool = True
 
 
 cached = Cached()
@@ -412,7 +412,6 @@ def test_optionalXMPTagLabelIsCopiedFromJpg():
             params=["-P", "-overwrite_original"],
             files=str(ifile),
         )
-        
 
     assert bothFilesAreInSRC(fullname)
 
