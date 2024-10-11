@@ -603,7 +603,7 @@ def test_addMissingTimestampWillNotRenameIfAtIsPresent():
     )
 
 
-def test_addMissingTimestampWillWillWorkIfSomeNumberIsPresent():
+def test_addMissingTimestampWillWorkIfSomeNumberIsPresent():
     fullname = join(src, "TEST12", "2022-12-12@120000_test.JPG")
     prepareTest(srcname=fullname)
 
@@ -626,7 +626,7 @@ def test_addMissingTimestampWillWillWorkIfSomeNumberIsPresent():
     assert exists(join(src, "2022-12-12@120000 TEST12", "2022-12-12@120000_test.JPG"))
 
 
-def test_addMissingTimestampWillWillWorkIfSomeNumberAndNotDateDashesArePresent():
+def test_addMissingTimestampWillWorkIfSomeNumberAndNotDateDashesArePresent():
     fullname = join(src, "TEST122-122-122", "2022-12-12@120000_test.JPG")
     prepareTest(srcname=fullname)
 
