@@ -1,3 +1,4 @@
+from datetime import time
 from pathlib import Path
 import shutil
 from os.path import join, exists
@@ -8,6 +9,7 @@ import yaml
 from ..modules.general.mediatransitioner import TransitionerInput
 from ..modules.image.imageconverter import ImageConverter
 from ..modules.image.imagerenamer import *
+import time
 
 testfolder = (Path(__file__).parent.parent / "tests").absolute().__str__()
 tempsrcfolder = "filestotreat"
@@ -19,7 +21,7 @@ targetDir = join(dst, "subsubfolder")
 expectedConvertedImageFile = join(targetDir, imagename)
 
 
-def executeConversionWith(maintainFolderStructure=True):
+def executeConversionWith(maintainFolderStructure=True, filterstring=""):
     with open(Path(__file__).parent.parent / ".mow_test_settings.yml") as f:
         settings = yaml.safe_load(f)
 
@@ -29,22 +31,24 @@ def executeConversionWith(maintainFolderStructure=True):
             dst=dst,
             maintainFolderStructure=maintainFolderStructure,
             settings=settings,
+            filter=filterstring,
         )
     )()
 
 
-def prepareTest():
+def prepareTest(n: int = 1):
     shutil.rmtree(src, ignore_errors=True)
     shutil.rmtree(dst, ignore_errors=True)
     os.makedirs(os.path.dirname(srcfile))
-    shutil.copy(
-        join(testfolder, "test.jpg"),
-        os.path.dirname(srcfile),
-    )
-    shutil.copy(
-        join(testfolder, "test.ORF"),
-        os.path.dirname(srcfile),
-    )
+    for i in range(0, n):
+        shutil.copy(
+            join(testfolder, f"test.jpg"),
+            os.path.join(os.path.dirname(srcfile), f"test{i if n > 1 else ''}.jpg"),
+        )
+        shutil.copy(
+            join(testfolder, f"test.ORF"),
+            os.path.join(os.path.dirname(srcfile), f"test{i if n > 1 else ''}.ORF"),
+        )
 
 
 def test_moveworks():
@@ -75,6 +79,7 @@ def test_dng_conversion_works():
     assert exists(join(dst, "subsubfolder", os.path.splitext(imagename)[0] + ".dng"))
     assert exists(join(src, "deleted", "subsubfolder", "test.ORF"))
 
+
 def test_dng_conversion_does_not_convert_dng_again():
     shutil.rmtree(src, ignore_errors=True)
     shutil.rmtree(dst, ignore_errors=True)
@@ -94,3 +99,37 @@ def test_dng_conversion_does_not_convert_dng_again():
     assert exists(join(dst, "subsubfolder", imagename))
     assert exists(join(dst, "subsubfolder", os.path.splitext(imagename)[0] + ".dng"))
     assert not exists(join(src, "deleted", "subsubfolder", "test.dng"))
+
+
+def test_dng_conversion_is_multithreaded():
+    n = 5
+    prepareTest(n)
+
+    start = time.time()
+    for i in range(0, n):
+        executeConversionWith(filterstring=f"test{i}")
+    duration_singlethreaded = time.time() - start
+
+    for i in range(0, n):
+        assert not exists(join(src, "subsubfolder", f"test{i}.jpg"))
+        assert exists(join(dst, "subsubfolder", f"test{i}.jpg"))
+        assert exists(join(dst, "subsubfolder", f"test{i}.dng"))
+        assert exists(join(src, "deleted", "subsubfolder", f"test{i}.ORF"))
+
+    prepareTest(n)
+
+    start = time.time()
+    executeConversionWith()
+    duration_multithreaded = time.time() - start
+
+    for i in range(0, n):
+        assert not exists(join(src, "subsubfolder", f"test{i}.jpg"))
+        assert exists(join(dst, "subsubfolder", f"test{i}.jpg"))
+        assert exists(join(dst, "subsubfolder", f"test{i}.dng"))
+        assert exists(join(src, "deleted", "subsubfolder", f"test{i}.ORF"))
+
+    print(
+        f"Singlethreaded: {duration_singlethreaded}, Multithreaded: {duration_multithreaded}"
+    )
+
+    assert duration_singlethreaded / n > duration_multithreaded / 2

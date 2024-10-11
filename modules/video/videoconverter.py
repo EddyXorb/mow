@@ -10,6 +10,7 @@ from os.path import join, basename
 def convertVideo(
     source: VideoFile,
     target_dir: str,
+    settings: dict = None,
 ) -> VideoFile:
     noExt = basename(source.pathnoext)
     newExt = ".mp4"

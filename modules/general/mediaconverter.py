@@ -1,3 +1,4 @@
+import os
 from ..general.mediafile import MediaFile
 from ..general.mediatransitioner import (
     MediaTransitioner,
@@ -15,7 +16,6 @@ class MediaConverter(MediaTransitioner):
         self,
         input: TransitionerInput,
     ):
-
         super().__init__(input)
 
     def getTasks(self) -> list[TransitionTask]:

@@ -13,11 +13,13 @@ from exiftool import ExifToolHelper
 from math import sqrt
 from tqdm import tqdm
 import re
+import multiprocessing
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from ..mow.mowtags import MowTags
-from ..general.mediafile import MediaFile
-from ..general.verboseprinterclass import VerbosePrinterClass
+from modules.mow.mowtags import MowTags
+from modules.general.mediafile import MediaFile
+from modules.general.verboseprinterclass import VerbosePrinterClass
 
 
 @dataclass
@@ -66,7 +68,9 @@ class TransitionerInput:
     recursive: bool = True
     verbose: bool = False
     dry: bool = False
-    maintainFolderStructure: bool = True
+    maintainFolderStructure: bool = (
+        True  # TODO: make it usable by all transitioners through commandline
+    )
     removeEmptySubfolders: bool = False
     writeMetaTags: bool = True
     filter: str = ""
@@ -74,14 +78,15 @@ class TransitionerInput:
         default_factory=lambda: None
     )  # this can also be a type with its constructor, e.g. ImageFile
     rewriteMetaTagsOnConverted: bool = False
-    converter: Callable[[MediaFile, str], MediaFile] = (
-        None  # (file to convert, target directory) -> (converted file (possibly with different extensions)); if None, does not convert anything.
+    converter: Callable[[MediaFile, str, dict[str, str]], MediaFile] = (
+        None  # (file to convert, target directory,settings) -> (converted file (possibly with different extensions)); if None, does not convert anything.
         # If defined, converter should make sure that the source mediafile is updated in case of conversion, e.g. if .ORF and .JPG are converted to .JPG and .DNG the
         # source mediafile should be updated to contain only the .ORF file (as .JPG is only moved by the converter)
         # and the result media file should be the .JPG and .DNG file.
         # In other words, the converter needs to take care of all extensions of the source mediafile, even if it does not move/convert all of them,
         # they should at least be moved to the new location.
     )
+    use_multiprocessing_for_conversion: bool = False
     settings: dict[str, str] = field(default_factory=dict)
 
 
@@ -105,6 +110,9 @@ class MediaTransitioner(VerbosePrinterClass):
         self.dry = input.dry
         self.mediaFileFactory = input.mediaFileFactory
         self.converter = input.converter
+        self.use_multiprocessing_for_conversion = (
+            input.use_multiprocessing_for_conversion
+        )
         self.rewriteMetaTagsOnConverted = input.rewriteMetaTagsOnConverted
         self.maintainFolderStructure = input.maintainFolderStructure
         self.removeEmptySubfolders = input.removeEmptySubfolders
@@ -361,58 +369,91 @@ class MediaTransitioner(VerbosePrinterClass):
             task.skipReason = traceback.format_exc(e)
 
     def doConversionOf(self, tasks: List[TransitionTask]):
-        convertedFiles: list[tuple[MediaFile, MediaFile]] = (
-            []
-        )  # (toTransition, convertedFile)
+        convertedFiles: list[tuple[MediaFile, MediaFile]] = []
 
-        for task in tasks:
-            toTransition = self.toTreat[task.index]
-            newPath = self.getNewNameFor(task)
+        conversion_tasks = self.get_conversion_tasks(tasks)
+        results = self.get_conversion_results(conversion_tasks)
 
-            if not self.dry:
-                convertedFile = self.performConversionOf(toTransition, newPath)
-                if convertedFile is None:
-                    task.skip = True
-                    task.skipReason = f"Conversion of {toTransition} failed."
-                    continue
+        for toTransition, convertedFile, task_index in results:
+            if convertedFile is None:
+                tasks[task_index].skip = True
+                tasks[task_index].skipReason = "Conversion failed"
+                continue
 
-                convertedFiles.append((toTransition, convertedFile))
+            convertedFiles.append((toTransition, convertedFile))
 
             self.printv(
                 self.getTransitionInfoString(
                     toTransition=toTransition,
-                    newName=(
-                        convertedFile.getDescriptiveBasenames()
-                        if not self.dry
-                        else os.path.basename(toTransition.pathnoext)
-                    ),
-                )
+                    newName=(convertedFile.getDescriptiveBasenames()),
+                ),
             )
 
         self.printv(
-            f"Finished conversion of {len(tasks)} mediafiles of which {len(convertedFiles)} were successful."
+            f"Finished conversion of {len(tasks)} mediafiles of which {len([file[1] for file in convertedFiles if file[1] is not None])} were successful."
         )
 
-        for toTransition, convertedFile in convertedFiles:
-            if self.rewriteMetaTagsOnConverted:
+        if self.rewriteMetaTagsOnConverted:
+            self.printv("Rewrite meta file tags on converted..")
+            for toTransition, convertedFile in tqdm(convertedFiles):
                 self.performMetaTagRewriteOf(toTransition, convertedFile)
 
-            if not toTransition.empty():
+        self.printv("Delete original files..")
+        for toTransition, convertedFile in convertedFiles:
+            if not toTransition.empty() and not self.dry:
                 self.deleteMediaFile(toTransition)
 
-    def performConversionOf(self, toTransition: MediaFile, newPath: str) -> MediaFile:
+    def get_conversion_results(
+        self, conversion_tasks
+    ) -> list[tuple[MediaFile, MediaFile, int]]:
         if self.dry:
-            return
+            results = [
+                (toTransition, toTransition, index)
+                for toTransition, _, index, _, _ in conversion_tasks
+            ]
+        else:
+            if self.use_multiprocessing_for_conversion:
+                with multiprocessing.Pool() as pool:
+                    results = pool.starmap(self.converter_wrapper, conversion_tasks)
+            else:
+                results = [self.converter_wrapper(*task) for task in conversion_tasks]
+
+        return results
+
+    def get_conversion_tasks(
+        self, tasks
+    ) -> list[tuple[MediaFile, str, int, Callable, dict[str, str]]]:
+        conversion_tasks = []
+        for index, task in enumerate(tasks):
+            toTransition = self.toTreat[task.index]
+            newPath = self.getNewNameFor(task)
+            conversion_tasks.append(
+                (toTransition, newPath, index, self.converter, self.settings)
+            )
+
+        return conversion_tasks
+
+    @staticmethod
+    def converter_wrapper(
+        toTransition: MediaFile,
+        newPath: str,
+        task_index: int,
+        converter,
+        settings: dict[str, str],
+    ) -> tuple[MediaFile, MediaFile | None, int]:
 
         os.makedirs(os.path.dirname(newPath), exist_ok=True)
 
-        convertedFile = self.converter(toTransition, os.path.dirname(newPath))
+        try:
+            convertedFile = converter(toTransition, os.path.dirname(newPath), settings)
+        except Exception as e:
+            return toTransition, None, task_index
 
         for file in convertedFile.getAllFileNames():
             if not os.path.exists(file):
-                return None
+                return toTransition, None
 
-        return convertedFile
+        return toTransition, convertedFile, task_index
 
     def deleteMediaFile(self, file: MediaFile, extensions_to_maintain: List[str] = []):
         for ext in file.extensions:
@@ -443,14 +484,18 @@ class MediaTransitioner(VerbosePrinterClass):
         ]
 
     def getTransitionInfoString(self, toTransition: MediaFile, newName: str):
-        return f"{Path(toTransition.pathnoext).relative_to(Path(self.src).parent)}({','.join(toTransition.extensions)})    --->    {os.path.basename(self.dst)}\\...\\{newName}"
+        source_path = Path(toTransition.pathnoext).relative_to(Path(self.src).parent)
+        toTransition_is_in_subfolder = str(source_path.parent) != str(
+            Path(self.src).name
+        )
+        backslashes = "\\...\\" if toTransition_is_in_subfolder else "\\"
+        return f"{source_path}({','.join(toTransition.extensions)})    --->    {os.path.basename(self.dst)}{backslashes}{newName}"
 
     def performMetaTagRewriteOf(
         self, toTransition: MediaFile, convertedFile: MediaFile
     ):
-        self.printv(
-            f"Rewrite meta tags of {os.path.basename(convertedFile.pathnoext)} to {os.path.basename(toTransition.pathnoext)}"
-        )
+        if self.dry:
+            return
 
         xmptagstowrite = self.et.get_tags(str(toTransition), MowTags.all)[0]
         xmptagstowrite.pop("SourceFile")

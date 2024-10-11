@@ -37,8 +37,7 @@ from subprocess import check_output
 # -dng1.7.1 Set DNG backward version to 1.7.1
 # -jxl Use JPEG XL compression, if supported by image type. Implies -dng1.7
 # -jxl_distance Set JPEG XL distance metric (see libjxl documentation). Valid values are 0.0 to 6.0. 0.0 is lossless and 0.1 is very high-quality lossy Implies -jxl
-# -jxl_effort Set JPEG XL effort level (see libjxl documentation).
-# Valid values are 1 to 9, where 1 = fastest. Implies -jxl
+# -jxl_effort Set JPEG XL effort level (see libjxl documentation). Valid values are 1 to 9, where 1 = fastest. Implies -jxl
 # -losslessJXL Uses Lossless JPEG XL compression. Implies -jxl and -jxl_distance 0.0 and -jxl_effort 7
 # -lossyMosaicJXL Uses Lossy JPEG XL compression with Bayer images.
 # -mp Process multiple raw files in parallel. Default is sequential (one image at a time).
@@ -47,8 +46,8 @@ from subprocess import check_output
 
 
 def convertImage(
-    source: ImageFile, target_dir: str, dng_converter_path: str
-) -> ImageFile:
+    source: ImageFile, target_dir: str, settings: dict[str, str]
+) -> ImageFile | None:
     """
     The converter does have to not create missing directories. This is done by the Transitioner.
     """
@@ -71,7 +70,9 @@ def convertImage(
             new_rawfile_location = os.path.join(target_dir, os.path.basename(rawfile))
             source.remove_extension(os.path.splitext(rawfile)[1])
         else:
-            check_output([dng_converter_path, "-cr11.2", "-d", target_dir, rawfile])
+            check_output(
+                [settings["dng_converter_exe"], "-cr11.2", "-d", target_dir, rawfile]
+            )
 
             new_rawfile_location = os.path.join(
                 target_dir, os.path.splitext(os.path.basename(rawfile))[0] + ".dng"
@@ -82,13 +83,15 @@ def convertImage(
     if new_rawfile_location is not None:
         return ImageFile(new_rawfile_location)
 
-    raise Exception("Problem during image conversion.")
+    return None
 
 
 class ImageConverter(MediaConverter):
     def __init__(self, input: TransitionerInput):
         input.mediaFileFactory = ImageFile
-        input.converter = lambda src, dst: convertImage(
-            src, dst, input.settings["dng_converter_exe"]
+        input.converter = convertImage
+        input.rewriteMetaTagsOnConverted = (
+            False  # TODO check if dng contains all info needed
         )
+        input.use_multiprocessing_for_conversion = True
         super().__init__(input)
