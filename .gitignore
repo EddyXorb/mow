@@ -13,3 +13,4 @@ mow.log
 tests/test_aggregate*
 .venv
 *.html
+.coverage
