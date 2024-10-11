@@ -154,6 +154,8 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self.printv("Collect files..")
 
+        already_found_files = set()
+
         for root, dirs, files in os.walk(self.src, topdown=True):
             if not self.recursive and root != self.src:
                 return out
@@ -174,6 +176,10 @@ class MediaTransitioner(VerbosePrinterClass):
                 if not mfile.isValid():
                     continue
 
+                if mfile.pathnoext in already_found_files:
+                    continue
+
+                already_found_files.add(mfile.pathnoext)
                 out.append(mfile)
 
             if not self.filter is None and filtermatches > 0:
@@ -351,17 +357,19 @@ class MediaTransitioner(VerbosePrinterClass):
 
         convertedFile = self.converter(toTransition, os.path.dirname(newPath))
 
-        if not convertedFile.exists():
-            raise Exception(
-                f"Conversion of {toTransition} to {convertedFile} failed. Converted file does not exist."
-            )
+        for file in convertedFile.getAllFileNames():
+            if not os.path.exists(file):
+                raise Exception(
+                    f"Conversion of {toTransition} to {convertedFile} failed. Converted file {file} does not exist."
+                )
 
         self.printv(f"Converted {toTransition} to {convertedFile}")
 
         if self.rewriteMetaTagsOnConverted:
             self._performMetaTagRewriteOf(toTransition, convertedFile, et)
 
-        self.deleteMediaFile(toTransition)
+        if not toTransition.empty():
+            self.deleteMediaFile(toTransition)
 
     def deleteMediaFile(self, file: MediaFile, extensions_to_maintain: List[str] = []):
         for ext in file.extensions:
