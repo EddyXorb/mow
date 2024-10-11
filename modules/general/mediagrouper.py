@@ -182,7 +182,7 @@ class MediaGrouper(MediaTransitioner):
         return timestamps[0]
 
     def addMissingTimestamps(self):
-        renamed: List[Tuple(str, str)] = []
+        renamed: list[tuple[str, str]] = []
         for root, folders, _ in os.walk(self.src, topdown=False):
             for folder in folders:
                 if "@" in folder or re.search(r"\d\d-\d\d-\d\d", folder):
