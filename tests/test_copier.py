@@ -112,7 +112,7 @@ def test_nothing_done_if_LAST_at_end():
     assert len(os.listdir(dst)) == 0
 
 
-def test_missing_LAST_for_ORF_raw_does_not_imply_copying_of_that_raw_with_ORF():
+def test_missing_LAST_for_ORF_raw_implies_copying_of_that_raw_with_ORF():
     prepareTest(2, 3, False)
 
     assert exists(join(src, "test_02_LAST.jpg"))
@@ -120,10 +120,10 @@ def test_missing_LAST_for_ORF_raw_does_not_imply_copying_of_that_raw_with_ORF():
 
     MediaCopier(TransitionerInput(src=src, dst=dst))()
 
-    assert not exists(join(dst, "test_02.ORF"))
+    assert exists(join(dst, "test_02.ORF"))
 
 
-def test_missing_LAST_for_DNG_raw_does_not_imply_copying_of_that_raw_with_DNG():
+def test_missing_LAST_for_DNG_raw_does_imply_copying_of_that_raw_with_DNG():
     prepareTest(2, 3, False)
     shutil.move(join(src, "test_02.ORF"), join(src, "test_02.DNG"))
 
@@ -132,7 +132,7 @@ def test_missing_LAST_for_DNG_raw_does_not_imply_copying_of_that_raw_with_DNG():
 
     MediaCopier(TransitionerInput(src=src, dst=dst))()
 
-    assert not exists(join(dst, "test_02.DNG"))
+    assert exists(join(dst, "test_02.DNG"))
 
 
 def test_LAST_is_not_copied():
