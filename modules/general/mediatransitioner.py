@@ -413,7 +413,7 @@ class MediaTransitioner(VerbosePrinterClass):
         dst = os.path.basename(
             self.dst if destinationFolder is None else destinationFolder
         )
-        return f"{source_path}({','.join(toTransition.extensions)})    --->    {dst}{backslashes}{newName}"
+        return f"{source_path}    --->    {dst}{backslashes}{newName}"
 
     def optionallyRemoveEmptyFolders(self):
         if self.removeEmptySubfolders:
