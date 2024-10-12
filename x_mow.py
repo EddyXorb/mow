@@ -271,7 +271,7 @@ def should_execute_stage(stage: str, args: Namespace):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    print(args)
+    
     mow = Mow(
         ".mowsettings.yml",
         dry=not args.execute if hasattr(args, "execute") else True,

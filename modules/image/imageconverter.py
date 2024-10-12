@@ -164,3 +164,6 @@ class ImageConverter(MediaConverter):
         )
         input.use_multiprocessing_for_conversion = True
         super().__init__(input)
+
+        if "dng_converter_exe" not in input.settings:
+            raise Exception("dng_converter_exe not set in settings!")

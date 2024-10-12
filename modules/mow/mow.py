@@ -1,5 +1,6 @@
 import datetime
-from typing import Dict, Tuple
+import sys
+from typing import Callable, Dict, Tuple
 import yaml
 
 from os import path
@@ -11,7 +12,7 @@ from ..video.videofile import VideoFile
 from ..general.mediaconverter import PassthroughConverter
 from ..general.mediacopier import MediaCopier
 from ..general.mediatransitioner import TransitionerInput
-from ..general.tkinterhelper import getInputDir
+from ..general.tkinterhelper import getInputDir, getInputFile
 from ..general.mediarenamer import RenamerInput
 from ..image.imagerenamer import ImageRenamer
 from ..image.imageconverter import ImageConverter
@@ -83,20 +84,16 @@ class Mow:
         }
 
     def copy(self, askForNewSource: bool = False):
-        if askForNewSource or not "copy_source_dir" in self.settings:
-            self._readSourceDir()
+        self._read_settings_folder_path_if_missing(
+            key="copy_source_dir",
+            message="Specify source dir from where to copy!",
+            force=askForNewSource,
+        )
 
         src, dst = self._getSrcDstForStage("copy")
         self._printEmphasized(f"Stage copy")
 
         MediaCopier(TransitionerInput(src=src, dst=dst, **self.basicInputParameter))()
-
-    def _readSourceDir(self):
-        sourceDir = getInputDir("Specify source dir from where to copy!")
-        self.settings["copy_source_dir"] = sourceDir
-
-        with open(self.settingsfile, "w") as f:
-            yaml.safe_dump(self.settings, f)
 
     def rename(self, useCurrentFilename=False, replace=""):
         src, dst = self._getSrcDstForStage("rename")
@@ -134,6 +131,10 @@ class Mow:
                     + VideoFile.supportedFormats,
                 )()
             else:
+                self._read_settings_file_path_if_missing(
+                    "dng_converter_exe",
+                    "Specify path to dng converter executable!",
+                )
                 converter(
                     TransitionerInput(
                         src=src,
@@ -256,3 +257,26 @@ class Mow:
 
     def _printEmphasized(self, toprint: str):
         logging.info(f"{'#'*10} {toprint} {'#'*10}")
+
+    def _read_settings_folder_path_if_missing(
+        self, key: str, message: str, force=False
+    ):
+        self._read_settings_entity_if_missing(key, message, force, getInputDir)
+
+    def _read_settings_file_path_if_missing(self, key: str, message: str, force=False):
+        self._read_settings_entity_if_missing(key, message, force, getInputFile)
+
+    def _read_settings_entity_if_missing(
+        self, key: str, message: str, force, reader: Callable[[str], str]
+    ):
+        if not force and key in self.settings:
+            return
+
+        entity = reader(message)
+        if entity is None:
+            print(f"Could not read {key}! Abort.")
+            sys.exit()
+        self.settings[key] = entity
+
+        with open(self.settingsfile, "w") as f:
+            yaml.safe_dump(self.settings, f)
