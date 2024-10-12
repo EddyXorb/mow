@@ -23,6 +23,7 @@ from modules.general.verboseprinterclass import VerbosePrinterClass
 
 DELETE_FOLDER_NAME = "_deleted"
 
+
 @dataclass
 class TransitionTask:
     """
@@ -87,7 +88,9 @@ class TransitionerInput:
         # In other words, the converter needs to take care of all extensions of the source mediafile, even if it does not move/convert all of them,
         # they should at least be moved to the new location.
     )
-    use_multiprocessing_for_conversion: bool = False
+    nr_processes_for_conversion: int = (
+        1  # 0 = unrestricted, 1 = one process , 2 = two processes etc
+    )
     settings: dict[str, str] = field(default_factory=dict)
 
 
@@ -111,9 +114,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.dry = input.dry
         self.mediaFileFactory = input.mediaFileFactory
         self.converter = input.converter
-        self.use_multiprocessing_for_conversion = (
-            input.use_multiprocessing_for_conversion
-        )
+        self.nr_processes_for_conversion = input.nr_processes_for_conversion
         self.rewriteMetaTagsOnConverted = input.rewriteMetaTagsOnConverted
         self.maintainFolderStructure = input.maintainFolderStructure
         self.removeEmptySubfolders = input.removeEmptySubfolders

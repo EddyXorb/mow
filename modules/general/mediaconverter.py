@@ -93,8 +93,10 @@ class MediaConverter(MediaTransitioner):
                 for toTransition, _, index, _, _ in conversion_tasks
             ]
         else:
-            if self.use_multiprocessing_for_conversion:
-                with multiprocessing.Pool() as pool:
+            if self.nr_processes_for_conversion != 1:
+                with multiprocessing.Pool(
+                    processes=self.nr_processes_for_conversion
+                ) as pool:
                     results = pool.starmap(self.converter_wrapper, conversion_tasks)
             else:
                 results = [self.converter_wrapper(*task) for task in conversion_tasks]

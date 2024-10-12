@@ -6,3 +6,6 @@
 - bug: unknown bug (maybe due to a nextcloud bug or virtual files) causes deleted files to be present in comepletely unrelated directories. Example: ![alt text](2024-09-30_Bug.png) It is interesting, that the first folder contains a 'ß' whereas the correct folder uses 'ss'. This was changed by me due to issues in xmp-metadata.
 - bug: stage history writes sourcefile sometimes
 - feature: check if all stages were passed during aggregation using history of xmp:contributor
+- bug: HEAP CORRUPTION ERROR during conversion of 768 mediafiles. Happened 2024-10-13. Apparently no jpg was destroyed, but some dngs were corrupted. 
+  - Happened again. Both Times on root dir of convert with 768 files. 
+  - Second time 20 _preview.jpgs were created and 4 exiftool-temp files.
