@@ -128,9 +128,9 @@ class Mow:
                         dst=dst,
                         **self.basicInputParameter,
                     ),
-                    valid_extensions=ImageFile.supportedJpgFormats
-                    + ImageFile.supportedRawFormats
-                    + VideoFile.supportedFormats,
+                    valid_extensions=list(
+                        ImageFile.allSupportedFormats.union(VideoFile.supportedFormats)
+                    ),
                 )()
             else:
                 self._read_settings_file_path_if_missing(
