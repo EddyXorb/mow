@@ -1,8 +1,9 @@
-from collections import defaultdict
 import os
 from os.path import join
-from typing import Dict, List, DefaultDict
+from typing import Dict, List
 from math import sqrt
+
+from ..general.mediatransitioner import DELETE_FOLDER_NAME
 from ..general.medafilefactories import createAnyValidMediaFile
 
 
@@ -26,8 +27,10 @@ class MowStatusPrinter:
         for cnt, stage in enumerate(self.stages):
             files = allfiles[stage]
             if len(files) > 0:
-                print(f"{stage}: {len(files)} mediafiles ({(100.0 * len(files))/nrallfiles:.0f}%) {'.'*int(sqrt(len(files)))}")
-                
+                print(
+                    f"{stage}: {len(files)} mediafiles ({(100.0 * len(files))/nrallfiles:.0f}%) {'.'*int(sqrt(len(files)))}"
+                )
+
             weightedSum += cnt * len(files)
         print(f"\nNumber of all files: {nrallfiles}")
         print(
@@ -46,9 +49,11 @@ class MowStatusPrinter:
                 join(self.workingdir, self.stageToFolder[stage])
             ):
                 # ignore all files in deleteFolder
-                dirs[:] = [d for d in dirs if d != "_deleted"]
+                dirs[:] = [d for d in dirs if d != DELETE_FOLDER_NAME]
                 for file in files:
-                    mediafile = createAnyValidMediaFile(join(root, file))
+                    mediafile = createAnyValidMediaFile(
+                        join(root, file), fast_creation=True
+                    )
                     if mediafile.isValid():
                         out[stage].append(mediafile)
 

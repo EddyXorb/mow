@@ -5,3 +5,4 @@
 - bug: mp4-files don't get xmp:Date written and are missing longitude and latitude gps values
 - bug: unknown bug (maybe due to a nextcloud bug or virtual files) causes deleted files to be present in comepletely unrelated directories. Example: ![alt text](2024-09-30_Bug.png) It is interesting, that the first folder contains a 'ß' whereas the correct folder uses 'ss'. This was changed by me due to issues in xmp-metadata.
 - bug: stage history writes sourcefile sometimes
+- feature: check if all stages were passed during aggregation using history of xmp:contributor

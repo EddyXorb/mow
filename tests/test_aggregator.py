@@ -4,6 +4,8 @@ from os.path import join, exists, splitext, abspath
 import os
 from time import sleep
 
+
+from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME
 from ..modules.general.mediaaggregator import AggregatorInput
 from ..modules.image.imageaggregator import (
     ImageAggregator,
@@ -116,12 +118,12 @@ def assertTransitionTookNOTPlace(jpgname):
 
 
 def jpgWasDeleted(jpgname):
-    return exists(join(src, "_deleted", str(Path(jpgname).relative_to(src))))
+    return exists(join(src, DELETE_FOLDER_NAME, str(Path(jpgname).relative_to(src))))
 
 
 def rawWasDeleted(jpgname):
     return exists(
-        join(src, "_deleted", str(Path(jpgname.replace("jpg", "ORF")).relative_to(src)))
+        join(src, DELETE_FOLDER_NAME, str(Path(jpgname.replace("jpg", "ORF")).relative_to(src)))
     )
 
 

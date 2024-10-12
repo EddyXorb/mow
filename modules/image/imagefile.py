@@ -1,8 +1,6 @@
 from __future__ import annotations
 import os
-import os
-from shutil import copyfile, move
-from typing import List, Callable
+from pathlib import Path
 
 from ..general.mediafile import MediaFile
 import datetime as dt
@@ -11,26 +9,29 @@ from PIL import Image
 
 
 class ImageFile(MediaFile):
-    supportedJpgFormats = [".jpg", ".JPG", ".jpeg", ".JPEG"]
-    supportedRawFormats = [".ORF", ".NEF", ".dng", ".DNG"]
+    supportedJpgFormats = set({".jpg", ".JPG", ".jpeg", ".JPEG"})
+    supportedRawFormats = set({".ORF", ".NEF", ".dng", ".DNG"})
+    allSupportedFormats = set(supportedJpgFormats.union(supportedRawFormats))
 
-    def __init__(self, file):
+    def __init__(self, file, check_for_other_extensions=True):
         super().__init__(
             path=file,
-            validExtensions=self.supportedJpgFormats + self.supportedRawFormats,
+            validExtensions=self.allSupportedFormats,
         )
-        if not self.isValid():
+        if not self.isValid() or not check_for_other_extensions:
             return
 
-        for ext in ImageFile.supportedRawFormats + ImageFile.supportedJpgFormats:
-            if ext in self.extensions:
-                continue
+        path_no_ext = Path(self.pathnoext)
+        candidates = [
+            item
+            for item in path_no_ext.parent.iterdir()
+            if item.stem == path_no_ext.name and item.suffix in self.allSupportedFormats
+        ]
 
-            otherFileCandidate = os.path.basename(self.pathnoext) + ext
-            if otherFileCandidate in os.listdir(
-                os.path.dirname(self.pathnoext)
-            ):  # this is to avoid problems regarding case-insensitivity on windows. Otherwise .JPG and .jpg will both be in the list
-                self.extensions.append(ext)
+        for candidate in candidates:
+            candidate_new_extension = Path(candidate).suffix
+            if candidate_new_extension not in self.extensions:
+                self.extensions.append(candidate_new_extension)
 
     def getJpg(self) -> str:
         jpg_ending = set(self.supportedJpgFormats).intersection(set(self.extensions))

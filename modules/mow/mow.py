@@ -1,4 +1,6 @@
 import datetime
+import os
+from pathlib import Path
 import sys
 from typing import Callable, Dict, Tuple
 import yaml
@@ -216,6 +218,20 @@ class Mow:
         MowStatusPrinter(
             self.stages, self.stageToFolder, self.settings["working_dir"]
         ).printStatus()
+
+    def list_todos(self, stage: str):
+        items = os.listdir(
+            Path(self.settings["working_dir"]) / self.stageToFolder[stage]
+            if stage != "copy"
+            else self.settings["copy_source_dir"]
+        )
+        print(
+            "\n".join(items if len(items) < 100 else items[:100]),
+            flush=True,
+        )
+
+        if len(items) > 100:
+            print(f"... and {len(items) - 100} more items ...")
 
     def _getStageAfter(self, stage: str) -> str:
         if stage not in self.stageToFolder:

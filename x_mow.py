@@ -245,6 +245,14 @@ for currentparser in stageparsers:
         dest="filter",
         default="",
     )
+    currentparser.add_argument(
+        "-l",
+        "--list",
+        help="List items in current stage waiting for treatment. Will print only first 100.",
+        action="store_true",
+        dest="list",
+        default=False,
+    )
 
 
 def parse_timedelta(time_str) -> datetime.timedelta:
@@ -269,16 +277,27 @@ def should_execute_stage(stage: str, args: Namespace):
     return stage == args.command or args.command in command_aliases[stage]
 
 
+def get_canonical_command(command: str):
+    for key, value in command_aliases.items():
+        if command in value:
+            return key
+        if command == key:
+            return key
+    return command
+
+
 if __name__ == "__main__":
     args = parser.parse_args()
-    
+
     mow = Mow(
         ".mowsettings.yml",
         dry=not args.execute if hasattr(args, "execute") else True,
         filter=args.filter if hasattr(args, "filter") else "",
     )
 
-    if should_execute_stage("copy", args):
+    if hasattr(args,"list") and args.list:
+        mow.list_todos(stage=get_canonical_command(args.command))
+    elif should_execute_stage("copy", args):
         mow.copy()
     elif should_execute_stage("rename", args):
         mow.rename(
