@@ -46,7 +46,7 @@ class MowStatusPrinter:
                 join(self.workingdir, self.stageToFolder[stage])
             ):
                 # ignore all files in deleteFolder
-                dirs[:] = [d for d in dirs if d != "deleted"]
+                dirs[:] = [d for d in dirs if d != "_deleted"]
                 for file in files:
                     mediafile = createAnyValidMediaFile(join(root, file))
                     if mediafile.isValid():

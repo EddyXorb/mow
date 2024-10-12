@@ -1,4 +1,6 @@
 from pathlib import Path
+
+from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME
 from ..modules.general.medialocalizer import BaseLocalizerInput
 from ..modules.mow.mowtags import MowTags
 from ..modules.image.imagerenamer import *
@@ -45,7 +47,7 @@ def prepareImageConversionTest():
 
 
 def prepareVideoConversionTest():
-    shutil.rmtree(Path(convertdir) / "deleted", ignore_errors=True)
+    shutil.rmtree(Path(convertdir) / DELETE_FOLDER_NAME, ignore_errors=True)
     prepareTest(
         targetdir=join(workingdir, "4_group", "subfolder"),
         untouchedfile=join(testfolder, "test.MOV"),
@@ -195,7 +197,7 @@ def test_conversionOfVideoWorks():
     Mow(settingsfile=settingsfile, dry=False).convert()
 
     assert not exists(srcfile)
-    assert exists(join(workingdir, "3_convert", "deleted", "subfolder", "test.MOV"))
+    assert exists(join(workingdir, "3_convert", DELETE_FOLDER_NAME, "subfolder", "test.MOV"))
     assert exists(join(workingdir, "4_group", "subfolder", "test.mp4"))
 
 
@@ -208,7 +210,7 @@ def test_conversionOfPassthroughVideoWorks():
     Mow(settingsfile=settingsfile, dry=False).convert(enforcePassthrough=True)
 
     assert not exists(srcfile)
-    assert not exists(join(workingdir, "3_convert", "deleted", "subfolder", "test.MOV"))
+    assert not exists(join(workingdir, "3_convert", DELETE_FOLDER_NAME, "subfolder", "test.MOV"))
     assert exists(join(workingdir, "4_group", "subfolder", "test.MOV"))
 
 

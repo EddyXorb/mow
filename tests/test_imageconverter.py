@@ -9,6 +9,7 @@ import yaml
 from ..modules.general.mediatransitioner import TransitionerInput
 from ..modules.image.imageconverter import ImageConverter
 from ..modules.image.imagerenamer import *
+from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME
 import time
 
 testfolder = (Path(__file__).parent.parent / "tests").absolute().__str__()
@@ -77,7 +78,7 @@ def test_dng_conversion_works():
     assert not exists(srcfile)
     assert exists(join(dst, "subsubfolder", imagename))
     assert exists(join(dst, "subsubfolder", os.path.splitext(imagename)[0] + ".dng"))
-    assert exists(join(src, "deleted", "subsubfolder", "test.ORF"))
+    assert exists(join(src, DELETE_FOLDER_NAME, "subsubfolder", "test.ORF"))
 
 
 def test_dng_conversion_does_not_convert_dng_again():
@@ -98,7 +99,7 @@ def test_dng_conversion_does_not_convert_dng_again():
     assert not exists(srcfile)
     assert exists(join(dst, "subsubfolder", imagename))
     assert exists(join(dst, "subsubfolder", os.path.splitext(imagename)[0] + ".dng"))
-    assert not exists(join(src, "deleted", "subsubfolder", "test.dng"))
+    assert not exists(join(src, DELETE_FOLDER_NAME, "subsubfolder", "test.dng"))
 
 
 def test_dng_conversion_is_multithreaded():
@@ -114,7 +115,7 @@ def test_dng_conversion_is_multithreaded():
         assert not exists(join(src, "subsubfolder", f"test{i}.jpg"))
         assert exists(join(dst, "subsubfolder", f"test{i}.jpg"))
         assert exists(join(dst, "subsubfolder", f"test{i}.dng"))
-        assert exists(join(src, "deleted", "subsubfolder", f"test{i}.ORF"))
+        assert exists(join(src, DELETE_FOLDER_NAME, "subsubfolder", f"test{i}.ORF"))
 
     prepareTest(n)
 
@@ -126,7 +127,7 @@ def test_dng_conversion_is_multithreaded():
         assert not exists(join(src, "subsubfolder", f"test{i}.jpg"))
         assert exists(join(dst, "subsubfolder", f"test{i}.jpg"))
         assert exists(join(dst, "subsubfolder", f"test{i}.dng"))
-        assert exists(join(src, "deleted", "subsubfolder", f"test{i}.ORF"))
+        assert exists(join(src, DELETE_FOLDER_NAME, "subsubfolder", f"test{i}.ORF"))
 
     print(
         f"Singlethreaded: {duration_singlethreaded}, Multithreaded: {duration_multithreaded}"

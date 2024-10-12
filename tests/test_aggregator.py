@@ -116,12 +116,12 @@ def assertTransitionTookNOTPlace(jpgname):
 
 
 def jpgWasDeleted(jpgname):
-    return exists(join(src, "deleted", str(Path(jpgname).relative_to(src))))
+    return exists(join(src, "_deleted", str(Path(jpgname).relative_to(src))))
 
 
 def rawWasDeleted(jpgname):
     return exists(
-        join(src, "deleted", str(Path(jpgname.replace("jpg", "ORF")).relative_to(src)))
+        join(src, "_deleted", str(Path(jpgname.replace("jpg", "ORF")).relative_to(src)))
     )
 
 

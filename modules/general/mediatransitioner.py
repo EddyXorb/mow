@@ -21,6 +21,7 @@ from modules.mow.mowtags import MowTags
 from modules.general.mediafile import MediaFile
 from modules.general.verboseprinterclass import VerbosePrinterClass
 
+DELETE_FOLDER_NAME = "_deleted"
 
 @dataclass
 class TransitionTask:
@@ -125,7 +126,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.settings = input.settings
 
         self.toTreat: List[MediaFile] = []
-        self.deleteFolder = join(self.src, "deleted")
+        self.deleteFolder = join(self.src, DELETE_FOLDER_NAME)
 
         self._performedTransition = False
         self._toTransition: List[TransitionTask] = []

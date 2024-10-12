@@ -4,7 +4,7 @@ from exiftool import ExifToolHelper
 
 from ..modules.mow.mowtags import MowTags
 
-from ..modules.general.mediatransitioner import TransitionerInput
+from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME, TransitionerInput
 from ..modules.video.videorenamer import VideoRenamer
 from ..modules.image.imagerenamer import *
 from ..modules.video.videoconverter import VideoConverter
@@ -56,7 +56,7 @@ def test_conversionMovesOriginalsIntoDeletedAndCreatesConverted():
 
     assert not exists(srcfile)
     assert exists(join(targetDir, "test.mp4"))
-    assert exists(join(Path(src) / "deleted" / "subsubfolder" / "test.MOV"))
+    assert exists(join(Path(src) / DELETE_FOLDER_NAME / "subsubfolder" / "test.MOV"))
 
 
 def test_conversionPreservesXMPTags():
@@ -87,7 +87,7 @@ def test_conversionPreservesXMPTags():
 
     assert not exists(srcfile)
     assert exists(convertedFile)
-    assert exists(join(Path(src) / "deleted" / "subsubfolder" / "test.MOV"))
+    assert exists(join(Path(src) / DELETE_FOLDER_NAME / "subsubfolder" / "test.MOV"))
 
     with ExifToolHelper() as et:
         tags = et.get_tags(convertedFile, MowTags.all)[0]
