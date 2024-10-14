@@ -7,5 +7,7 @@
 - bug: stage history writes sourcefile sometimes
 - feature: check if all stages were passed during aggregation using history of xmp:contributor
 - bug: HEAP CORRUPTION ERROR during conversion of 768 mediafiles. Happened 2024-10-13. Apparently no jpg was destroyed, but some dngs were corrupted. 
-  - Happened again. Both Times on root dir of convert with 768 files. 
+  - Happened again. Both Times on root dir of convert with 768 files and unrestricted nr of processes in processpool.
   - Second time 20 _preview.jpgs were created and 4 exiftool-temp files.
+  - Reducing the nr of processes to 8 worked on the exact same files.
+- feature: make it possible to disable interpolation in localize
