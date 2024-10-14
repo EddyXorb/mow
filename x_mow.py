@@ -192,15 +192,6 @@ localizeparser.add_argument(
 )
 
 localizeparser.add_argument(
-    "-v",
-    "--verbose",
-    help="Verbose mode. Print found GPS coordinates as well as time corrections applied for every file.",
-    action="store_true",
-    dest="localize_verbose",
-    default=False,
-)
-
-localizeparser.add_argument(
     "-s",
     "--suppress-map-open",
     help="Do not open a map with the found GPS data after calling the localizer, which is the default.",
@@ -244,6 +235,7 @@ for currentparser in stageparsers:
         type=str,
         dest="filter",
         default="",
+        metavar="REGEX",
     )
     currentparser.add_argument(
         "-l",
@@ -252,6 +244,15 @@ for currentparser in stageparsers:
         action="store_true",
         dest="list",
         default=False,
+    )
+    currentparser.add_argument(
+        "-v",
+        "--verbosity",
+        type=int,
+        help="Set minimal verbosity level for logging. 0 = CRITICAL, 1 = ERROR, 2 = WARNING, 3 = INFO (default), 4 = DEBUG",
+        default=3,
+        metavar="LEVEL",
+        dest="verbosity",
     )
 
 
@@ -293,9 +294,10 @@ if __name__ == "__main__":
         ".mowsettings.yml",
         dry=not args.execute if hasattr(args, "execute") else True,
         filter=args.filter if hasattr(args, "filter") else "",
+        verbosity=args.verbosity if hasattr(args, "verbosity") else 3,
     )
 
-    if hasattr(args,"list") and args.list:
+    if hasattr(args, "list") and args.list:
         mow.list_todos(stage=get_canonical_command(args.command))
     elif should_execute_stage("copy", args):
         mow.copy()
@@ -322,7 +324,6 @@ if __name__ == "__main__":
         inp = BaseLocalizerInput(
             transition_even_if_no_gps_data=args.localize_ignore_missing_gps_data,
             mediafile_timezone=args.localize_timezone,
-            gps_verbose=args.localize_verbose,
         )
         if args.localize_time_offset_mediafile is not None:
             inp.time_offset_mediafile = parse_timedelta(

@@ -56,7 +56,6 @@ class BaseLocalizerInput:
     mediafile_timezone: str = "Europe/Berlin"
     force_gps_data: GpsData = None
     transition_even_if_no_gps_data: bool = False
-    gps_verbose: bool = False
     suppress_map_open: bool = False
 
 
@@ -94,11 +93,10 @@ class MediaLocalizer(MediaTransitioner):
         self.mediafile_timezone = input.mediafile_timezone
         self.force_gps_data = input.force_gps_data
         self.transition_even_if_no_gps_data = input.transition_even_if_no_gps_data
-        self.gps_verbose = input.gps_verbose
         self.suppress_map_open = input.suppress_map_open
 
         if self.mediafile_timezone not in available_timezones():
-            self.printv(
+            self.print_info(
                 f"Timezone {self.mediafile_timezone} is an invalid time zone! Do nothing."
             )
             sys.exit(1)
@@ -131,15 +129,13 @@ class MediaLocalizer(MediaTransitioner):
                                     skipReason=f"Could not localize because of missing GPS data.",
                                 )
                             )
-                            if self.gps_verbose:
-                                self.printv(
-                                    f"Could not find GPS data for file {Path(mediafile.pathnoext).relative_to(self.src)}, with time {mediafile_time} which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
-                                )
-                    else:
-                        if self.gps_verbose:
-                            self.printv(
-                                f"Found GPS data for {os.path.basename(mediafile.pathnoext)} : {gps_data}. File has time {mediafile_time}, which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
+                            self.print_debug(
+                                f"Could not find GPS data for file {Path(mediafile.pathnoext).relative_to(self.src)}, with time {mediafile_time} which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
                             )
+                    else:
+                        self.print_debug(
+                            f"Found GPS data for {os.path.basename(mediafile.pathnoext)} : {gps_data}. File has time {mediafile_time}, which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
+                        )
                         out.append(
                             TransitionTask(
                                 index, metaTags=gps_data.getGPSMetaTagsForWriting()
@@ -256,7 +252,7 @@ class MediaLocalizer(MediaTransitioner):
                 df["time"].dt.convert_time_zone(INTERNAL_BASE_TIMEZONE)
             ).sort("time")
         else:
-            self.printv("No GPS data found.")
+            self.print_info("No GPS data found.")
         return df
 
     def getGpsDataForTime(

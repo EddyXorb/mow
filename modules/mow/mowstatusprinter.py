@@ -3,17 +3,20 @@ from os.path import join
 from typing import Dict, List
 from math import sqrt
 
+from ..general.verboseprinterclass import VerbosePrinterClass
 from ..general.mediatransitioner import DELETE_FOLDER_NAME
 from ..general.medafilefactories import createAnyValidMediaFile
 
 
-class MowStatusPrinter:
+class MowStatusPrinter(VerbosePrinterClass):
+
     def __init__(
         self, stages: List[str], stageToFolder: Dict[str, str], workingdir: str
     ):
         """
         stages: stagename, stagefolder-path
         """
+        super().__init__(verbose=True)
         self.stages = stages
         self.stageToFolder = stageToFolder
         self.workingdir = workingdir
@@ -27,13 +30,13 @@ class MowStatusPrinter:
         for cnt, stage in enumerate(self.stages):
             files = allfiles[stage]
             if len(files) > 0:
-                print(
+                self.print_info(
                     f"{stage}: {len(files)} mediafiles ({(100.0 * len(files))/nrallfiles:.0f}%) {'.'*int(sqrt(len(files)))}"
                 )
 
             weightedSum += cnt * len(files)
-        print(f"\nNumber of all files: {nrallfiles}")
-        print(
+        self.print_info(f"Number of all files: {nrallfiles}")
+        self.print_info(
             f"Overall progress: {float(100*weightedSum)/(len(self.stages)*nrallfiles):.0f} %"
         )
 

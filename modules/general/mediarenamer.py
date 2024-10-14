@@ -59,10 +59,10 @@ class MediaRenamer(MediaTransitioner):
 
     def initReplace(self, input: str) -> str:
         if "," in input and len(input.split(",")) == 2:
-            self.printv(f"Found replace pattern {self.replace}!")
+            self.print_info(f"Found replace pattern {self.replace}!")
             return input
         elif input != "":
-            self.printv(f"Given replace pattern {self.replace} is invalid.")
+            self.print_info(f"Given replace pattern {self.replace} is invalid.")
         return None
 
     def prepareTransition(self):
@@ -83,7 +83,7 @@ class MediaRenamer(MediaTransitioner):
             newFullPath = join(os.path.dirname(str(file)), newFileName + ext)
             if not self.dry:
                 file.moveTo(newFullPath)
-            self.printv(
+            self.print_info(
                 f"Replaced {Path(str(file)).relative_to(self.src)}    --->    {newFileName}{ext}"
             )
 
@@ -114,7 +114,7 @@ class MediaRenamer(MediaTransitioner):
             task.metaTags = {"XMP:Date": creationDate, "XMP:Source": filename}
 
     def createNewNames(self):
-        self.printv("Create new names for files..")
+        self.print_info("Create new names for files..")
 
         for index, file in tqdm(enumerate(self.toTreat)):
             oldName = str(file)
@@ -134,7 +134,7 @@ class MediaRenamer(MediaTransitioner):
                 TransitionTask(index=index, newName=os.path.basename(newName))
             )
 
-        self.printv("Created new names for files.")
+        self.print_info("Created new names for files.")
 
     def getRenamedFileFrom(self, file: str) -> Tuple[str, str]:  # new name, errorreason
         if self.input.restoreOldNames:

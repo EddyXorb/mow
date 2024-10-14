@@ -47,7 +47,7 @@ class MediaAggregator(MediaTransitioner):
         """
         Returns index to tags of all files of mediafile
         """
-        self.printv("Collect file meta tags..")
+        self.print_info("Collect file meta tags..")
         out: Dict[int, List[Dict[str, str]]] = {}
 
         with ExifToolHelper() as et:

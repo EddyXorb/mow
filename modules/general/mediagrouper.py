@@ -107,25 +107,25 @@ class MediaGrouper(MediaTransitioner):
 
     def prepareTransition(self):
         if self.input.undoAutomatedGrouping:
-            self.printv("Start undo grouping..")
+            self.print_info("Start undo grouping..")
             self.undoGrouping()
             return
         if self.input.automaticGrouping:
-            self.printv("Start automated grouping..")
+            self.print_info("Start automated grouping..")
             self.groupUngrouped()
             return
         if self.input.addMissingTimestampsToSubfolders:
-            self.printv("Start adding missing timestamps..")
+            self.print_info("Start adding missing timestamps..")
             self.addMissingTimestamps()
             return
         if self.input.checkSequence:
-            self.printv(
+            self.print_info(
                 "Start checking if grouped files are in not overlapping folders.."
             )
             self.checkCorrectSequence()
             return
 
-        self.printv("Start transitioning from group stage..")
+        self.print_info("Start transitioning from group stage..")
         grouped, self.toTransition = self.getCorrectlyGroupedFiles()
 
         self.printStatisticsOf(grouped)
@@ -144,7 +144,7 @@ class MediaGrouper(MediaTransitioner):
             and isCorrectTimestamp(group[5:])
         ]
 
-        self.printv(f"Found {len(candidatesForUndo)} groups for undo.")
+        self.print_info(f"Found {len(candidatesForUndo)} groups for undo.")
 
         for group in candidatesForUndo:
             movedFiles = 0
@@ -163,7 +163,7 @@ class MediaGrouper(MediaTransitioner):
 
                 movedFiles += 1
 
-            self.printv(
+            self.print_info(
                 f"Moved {movedFiles : 4} files from {group} back to {self.src}."
             )
 
@@ -196,11 +196,11 @@ class MediaGrouper(MediaTransitioner):
                     root, f"{datetime.strftime(timestamp, timestampformat)} {folder}"
                 )
 
-                self.printv(
+                self.print_info(
                     f"Rename {Path(source).relative_to(self.src)}    --->    {Path(target).relative_to(self.src)}.."
                 )
                 if os.path.exists(target):
-                    self.printv(
+                    self.print_info(
                         f"Group with timestamp is already existent. Skip renaming of {source} to {target}."
                     )
                     continue
@@ -209,16 +209,16 @@ class MediaGrouper(MediaTransitioner):
 
                 renamed.append((source, target))
 
-        self.printv(
+        self.print_info(
             f"Renamed {len(renamed)} folders without timestamps to folders that have one."
         )
 
     def printStatisticsOf(self, grouped: DefaultDict[str, List[int]]):
-        self.printv(
+        self.print_info(
             f"Found {len(grouped.keys())} groups that were correct (YYYY-MM-DD@HHMMSS#, #=Groupname)."
         )
         for group, files in grouped.items():
-            self.printv(f"Group {group} contains {len(files)} files.")
+            self.print_info(f"Group {group} contains {len(files)} files.")
 
     def getUngroupedFiles(self) -> list[MediaFile]:
         return list(x for x in self.toTreat if dirname(str(x)) == self.src)
@@ -266,7 +266,7 @@ class MediaGrouper(MediaTransitioner):
         ungrouped.sort(key=lambda file: extractDatetimeFromFileName(str(file)))
         groupToFiles: DefaultDict[str, List[MediaFile]] = defaultdict(lambda: [])
 
-        self.printv("Start creating new group names..")
+        self.print_info("Start creating new group names..")
         currentGroup = self.getGroupBasedOnFirstFile(str(ungrouped[0]))
         lastTime = extractDatetimeFromFileName(str(ungrouped[0]))
         for file in tqdm(ungrouped):
@@ -278,13 +278,13 @@ class MediaGrouper(MediaTransitioner):
             groupToFiles[currentGroup].append(file)
             lastTime = extractDatetimeFromFileName(str(file))
 
-        self.printv(f"Created {len(groupToFiles)} new groups.")
-        self.printv("Move into newly created group folder..")
+        self.print_info(f"Created {len(groupToFiles)} new groups.")
+        self.print_info("Move into newly created group folder..")
         for key, val in groupToFiles.items():
             if not self.dry:
                 for file in val:
                     file.moveTo(join(self.src, key, basename(str(file))))
-            self.printv(
+            self.print_info(
                 f"Created new group {key} with {len(val):4} files "
                 + "." * int(sqrt(len(val)))
             )
@@ -313,7 +313,7 @@ class MediaGrouper(MediaTransitioner):
             for file in currFiles:
                 filetime = extractDatetimeFromFileName(file)
                 if filetime > nextGroupTimestamp:
-                    self.printv(
+                    self.print_info(
                         f"File '{file}' of group '{currGroup}' overlaps into one of the next groups! (e.g. into group '{nextGroup}')"
                     )
                     overlappingFiles.append(file)
@@ -321,13 +321,13 @@ class MediaGrouper(MediaTransitioner):
                     minFileTime = filetime
 
             if minFileTime != extractDatetimeFromFileName(currGroup):
-                self.printv(
+                self.print_info(
                     f"The group {currGroup} should have timestamp {minFileTime} based on her files."
                 )
                 wrongGroupTimestamps[currGroup] = minFileTime
 
-        self.printv(f"Found {len(overlappingFiles)} overlapping grouped files.")
-        self.printv(f"Found {len(wrongGroupTimestamps)} wrong group timestamps.")
+        self.print_info(f"Found {len(overlappingFiles)} overlapping grouped files.")
+        self.print_info(f"Found {len(wrongGroupTimestamps)} wrong group timestamps.")
 
     def setOptionalXMP(self, grouped: DefaultDict[str, List[int]]):
         if not self.writeMetaTags:

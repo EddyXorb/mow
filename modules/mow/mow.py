@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import sys
 from typing import Callable, Dict, Tuple
+import colorama
 import yaml
 
 from os import path
@@ -37,22 +38,37 @@ from ..general.mediaaggregator import AggregatorInput
 from .mowstatusprinter import MowStatusPrinter
 
 
+class MowFormatter(logging.Formatter):
+    fmt = "%(asctime)s [%(levelname)s]: %(message)s"
+
+    FORMATS = {
+        logging.DEBUG: colorama.Fore.GREEN,
+        logging.INFO: colorama.Fore.CYAN,
+        logging.WARNING: colorama.Fore.YELLOW,
+        logging.ERROR: colorama.Fore.RED,
+        logging.CRITICAL: colorama.Fore.LIGHTRED_EX,
+    }
+
+    def format(self, record):
+        return logging.Formatter(
+            self.FORMATS.get(record.levelno) + self.fmt + colorama.Fore.WHITE,
+            datefmt=timestampformat,
+        ).format(record)
+
+
 class Mow:
     """
     Stands for "M(edia) (fl)OW" - a design to structure your media workflow, be it photos, videos or audio data.
     """
 
-    def __init__(self, settingsfile: str, dry: bool = True, filter: str = None):
-        logging.basicConfig(
-            format="%(asctime)s [%(levelname)s]: %(message)s",
-            level=logging.INFO,
-            handlers=[
-                logging.FileHandler("mow.log", "a", "utf-8"),
-                logging.StreamHandler(),
-            ],
-            datefmt=timestampformat,
-        )
-        # logging.info(f"{'#'*30} Start new MOW session. {'#'*30}")
+    def __init__(
+        self,
+        settingsfile: str,
+        dry: bool = True,
+        filter: str = None,
+        verbosity: int = 3,
+    ):
+        self._setup_logger(verbosity)
 
         self.settingsfile = settingsfile
         self.settings = (
@@ -74,7 +90,7 @@ class Mow:
             folder.split("_")[1]: folder for folder in self.stageFolders
         }
         self.basicInputParameter = {
-            "verbose": True,
+            "verbosityLevel": verbosity,
             "recursive": True,
             "maintainFolderStructure": True,
             "removeEmptySubfolders": True,
@@ -225,13 +241,11 @@ class Mow:
             if stage != "copy"
             else self.settings["copy_source_dir"]
         )
-        print(
-            "\n".join(items if len(items) < 100 else items[:100]),
-            flush=True,
-        )
+        for item in items if len(items) < 100 else items[:100]:
+            logging.info(item)
 
         if len(items) > 100:
-            print(f"... and {len(items) - 100} more items ...")
+            logging.info(f"... and {len(items) - 100} more items ...")
 
     def _getStageAfter(self, stage: str) -> str:
         if stage not in self.stageToFolder:
@@ -290,9 +304,31 @@ class Mow:
 
         entity = reader(message)
         if entity is None:
-            print(f"Could not read {key}! Abort.")
+            logging.critical(f"Could not read {key}! Abort.")
             sys.exit()
         self.settings[key] = entity
 
         with open(self.settingsfile, "w") as f:
             yaml.safe_dump(self.settings, f)
+
+    def _setup_logger(self, verbosity):
+        verbosity = min(verbosity, 4)
+        verbosityToLevel = {
+            0: logging.CRITICAL,
+            1: logging.ERROR,
+            2: logging.WARNING,
+            3: logging.INFO,
+            4: logging.DEBUG,
+        }
+        fileHandler = logging.FileHandler("mow.log", "a", "utf-8")
+        fileHandler.setLevel(logging.DEBUG)
+        streamHandler = logging.StreamHandler()
+        streamHandler.setLevel(verbosityToLevel[verbosity])
+        streamHandler.setFormatter(MowFormatter())
+
+        logging.basicConfig(
+            format="%(asctime)s [%(levelname)s]: %(message)s",
+            handlers=[fileHandler, streamHandler],
+            datefmt=timestampformat,
+            level=logging.DEBUG,
+        )

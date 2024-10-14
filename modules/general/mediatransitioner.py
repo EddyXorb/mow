@@ -53,7 +53,6 @@ class TransitionerInput:
     move : move files otherwise copy them
     recursive : if true, dives into every subdir to look for files
     mediaFileFactory: factory to create Mediafiles
-    verbose: additional output
     dry: don't execute actual transition
     maintainFolderStructure: copy nested folders iff true
     removeEmptySubfolders: clean empty subfolders of source after transition
@@ -68,7 +67,7 @@ class TransitionerInput:
     dst: str
     move: bool = True
     recursive: bool = True
-    verbose: bool = False
+    verbosityLevel: int = 3
     dry: bool = False
     maintainFolderStructure: bool = (
         True  # TODO: make it usable by all transitioners through commandline
@@ -104,7 +103,8 @@ class MediaTransitioner(VerbosePrinterClass):
     # 1. Use a dataclass for the input parameters and copy them over to the class attributes in the __init__ method by iterating over the fields of the dataclass. Problem: linter won't recognize the attributes of the class as they are not defined in the class itself.
     # 2. Define only one attribute containing the input. Problem: derived classes may use derived classes of TransitionerInput and I am not sure if this is nice, if I overwrite the base class init method were the attribut .input is defined by the base class of TransitionerInput.
     def __init__(self, input: TransitionerInput):
-        super().__init__(input.verbose)
+        super().__init__(input.verbosityLevel > 0)
+        self.verbosityLevel = input.verbosityLevel
         self.src = os.path.abspath(input.src)
         self.dst = os.path.abspath(input.dst)
         self.current_stage = os.path.basename(self.src)
@@ -134,9 +134,9 @@ class MediaTransitioner(VerbosePrinterClass):
         self.et = ExifToolHelper()
 
     def __call__(self):
-        self.printv(f"Start transition from source {self.src} into {self.dst}")
+        self.print_info(f"Start transition from source {self.src} into {self.dst}")
         if self.dry:
-            self.printv(
+            self.print_info(
                 "Dry mode active. Will NOT do anything, just print what would be done."
             )
 
@@ -160,12 +160,12 @@ class MediaTransitioner(VerbosePrinterClass):
         if os.path.isdir(self.dst):
             return
         os.makedirs(self.dst, exist_ok=True)
-        self.printv(f"Created dir {self.dst}")
+        self.print_debug(f"Created dir {self.dst}")
 
     def collectMediaFilesToTreat(self) -> List[MediaFile]:
         out: List[MediaFile] = []
 
-        self.printv("Collect files..")
+        self.print_info("Collect files..")
 
         already_found_files = set()
 
@@ -196,9 +196,9 @@ class MediaTransitioner(VerbosePrinterClass):
                 out.append(mfile)
 
             if not self.filter is None and filtermatches > 0:
-                self.printv(f"Matched files in {root} {'.'*filtermatches}")
+                self.print_info(f"Matched files in {root} {'.'*filtermatches}")
 
-        self.printv(f"Collected {len(out)} files.")
+        self.print_info(f"Collected {len(out)} files.")
 
         return out
 
@@ -223,13 +223,13 @@ class MediaTransitioner(VerbosePrinterClass):
         return removed
 
     def performTransitionOf(self, tasks: List[TransitionTask]):
-        self.printv(f"Perform transition of {len(tasks)} mediafiles..")
+        self.print_info(f"Perform transition of {len(tasks)} mediafiles..")
 
         tasks = self.getNonSkippedOf(tasks)
         tasks = self.getNonOverwritingTasksOf(tasks)
         tasks = self.getSuccesfulChangedMetaTagTasksOf(tasks)
 
-        self.printv(f"Start transition of {len(tasks)} mediafiles..")
+        self.print_info(f"Start transition of {len(tasks)} mediafiles..")
         if self.converter is None:
             self.doRelocationOf(tasks)
         else:
@@ -271,17 +271,17 @@ class MediaTransitioner(VerbosePrinterClass):
         for tasks in messageToTask.values():
             cnt = 0
             for task in tasks:
-                self.printv(
+                self.print_warning(
                     f"Skipped {str(Path(self.toTreat[task.index].pathnoext).relative_to(self.src))}: {task.skipReason}"
                 )
                 cnt += 1
                 if cnt >= 5 and len(tasks) - 5 >= 5:
-                    self.printv(
+                    self.print_warning(
                         f'\n{"."*int(sqrt(len(tasks) - 5))}\nSkipped message "{task.skipReason}" for other {len(tasks) - 5} files.'
                     )
                     break
 
-        self.printv(f"Finished transition. Skipped files: {skipped}")
+        self.print_info(f"Finished transition. Skipped files: {skipped}")
 
         return skipped
 
@@ -289,9 +289,9 @@ class MediaTransitioner(VerbosePrinterClass):
         if not self.writeMetaTags:
             return tasks
 
-        self.printv("Set meta file tags..")
+        self.print_info("Set meta file tags..")
 
-        for task in tqdm(tasks):
+        for task in tqdm(tasks) if self.verbosityLevel >= 3 else tasks:
             try:
                 files = self.toTreat[task.index].getAllFileNames()
 
@@ -349,7 +349,7 @@ class MediaTransitioner(VerbosePrinterClass):
         toTransition = self.toTreat[task.index]
         newPath = self.getNewNameFor(task)
 
-        self.printv(
+        self.print_debug(
             self.getTransitionInfoString(
                 toTransition,
                 toTransition.getDescriptiveBasenames(),
@@ -382,7 +382,7 @@ class MediaTransitioner(VerbosePrinterClass):
             sourceLocation = join(file.pathnoext + ext)
 
             if not os.path.exists(sourceLocation):
-                self.printv(
+                self.print_critical(
                     f"File {sourceLocation} does not exist. This is a Bug. Skip deletion and Abort."
                 )
                 sys.exit()
@@ -392,7 +392,7 @@ class MediaTransitioner(VerbosePrinterClass):
                 basename(sourceLocation),
             )
 
-            self.printv(
+            self.print_debug(
                 f"'Delete' file {self.getTransitionInfoString(file, basename(sourceLocation), self.deleteFolder)}"
             )
 
@@ -420,7 +420,7 @@ class MediaTransitioner(VerbosePrinterClass):
     def optionallyRemoveEmptyFolders(self):
         if self.removeEmptySubfolders:
             removed = self.removeEmptySubfoldersOf(self.src)
-            self.printv(f"Removed {len(removed)} empty subfolders of {self.src}.")
+            self.print_info(f"Removed {len(removed)} empty subfolders of {self.src}.")
 
     def getSkippedTasks(self):
         if self._performedTransition:

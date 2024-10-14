@@ -40,7 +40,7 @@ class ImageSearcher(VerbosePrinterClass):
             for dir in excludedirs:
                 if dir in dirs:
                     dirs.remove(dir)
-                    self.printv(f"Excluded {dir} from search in searchdir.")
+                    self.print_info(f"Excluded {dir} from search in searchdir.")
 
             for file in files:
                 fullname = os.path.join(root, file)
@@ -48,7 +48,7 @@ class ImageSearcher(VerbosePrinterClass):
                 if imageFile.isValid():
                     out[file].append(imageFile)
 
-        self.printv(f"Created dict with {len(out)} entries.")
+        self.print_info(f"Created dict with {len(out)} entries.")
 
         return out
 
@@ -61,9 +61,9 @@ class ImageSearcher(VerbosePrinterClass):
                 if alternativeName is None or not alternativeName in self.filessearched:
                     self.missingfiles.append(imagefiles[0])
 
-        self.printv(
+        self.print_info(
             f"Finished image search and found {len(self.missingfiles)} missing files."
         )
-        self.printv(f"Missing files are:")
+        self.print_info(f"Missing files are:")
         for file in self.missingfiles:
-            self.printv(file.getJpg())
+            self.print_info(file.getJpg())

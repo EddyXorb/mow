@@ -27,7 +27,7 @@ class MediaRater(MediaTransitioner):
         self.overrulingfiletype = overrulingfiletype
 
     def getTasks(self) -> List[TransitionTask]:
-        self.printv("Check every file for rating..")
+        self.print_info("Check every file for rating..")
 
         out: List[TransitionTask] = []
 
@@ -71,7 +71,7 @@ class MediaRater(MediaTransitioner):
                             if key.endswith(self.overrulingfiletype)
                         }
                         if len(set(overruled_ratings.values())) == 1:
-                            self.printv(
+                            self.print_info(
                                 f"Overruling file type set to {self.overrulingfiletype}, which causes rating {list(overruled_ratings.values())[0]} for files {list(overruled_ratings.keys())}"
                             )
                             return TransitionTask(
@@ -81,7 +81,7 @@ class MediaRater(MediaTransitioner):
                                 },
                             )
                         else:
-                            self.printv(
+                            self.print_info(
                                 f"Overruling file type set, but different ratings found: {overruled_ratings}"
                             )
 

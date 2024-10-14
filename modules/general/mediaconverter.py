@@ -63,23 +63,25 @@ class MediaConverter(MediaTransitioner):
 
             convertedFiles.append((toTransition, convertedFile))
 
-            self.printv(
+            self.print_debug(
                 self.getTransitionInfoString(
                     toTransition=toTransition,
                     newName=(convertedFile.getDescriptiveBasenames()),
                 ),
             )
 
-        self.printv(
+        self.print_info(
             f"Finished conversion of {len(tasks)} mediafiles of which {len([file[1] for file in convertedFiles if file[1] is not None])} were successful."
         )
 
         if self.rewriteMetaTagsOnConverted:
-            self.printv("Rewrite meta file tags on converted..")
-            for toTransition, convertedFile in tqdm(convertedFiles):
+            self.print_info("Rewrite meta file tags on converted..")
+            for toTransition, convertedFile in (
+                tqdm(convertedFiles) if self.verbosityLevel >= 3 else convertedFiles
+            ):
                 self.performMetaTagRewriteOf(toTransition, convertedFile)
 
-        self.printv("Delete original files..")
+        self.print_info("Delete original files..")
         for toTransition, convertedFile in convertedFiles:
             if not toTransition.empty() and not self.dry:
                 self.deleteMediaFile(toTransition)

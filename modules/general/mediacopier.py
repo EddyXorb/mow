@@ -56,7 +56,7 @@ class MediaCopier(MediaTransitioner):
             newName = mFile.pathnoext
             assert newName.endswith(self.LAST_MARKER)
             newName = newName[: -len(self.LAST_MARKER)]
-            self.printv(f"Rename {mFile} to {newName}.")
+            self.print_info(f"Rename {mFile} to {newName}.")
             if not self.dry:
                 mFile.moveTo(newName)
 
@@ -64,6 +64,6 @@ class MediaCopier(MediaTransitioner):
             mFile = self.toTreat[-1]
             newName = mFile.pathnoext
             newName += self.LAST_MARKER
-            self.printv(f"Rename {mFile} to {newName}.")
+            self.print_info(f"Rename {mFile} to {newName}.")
             if not self.dry:
                 mFile.moveTo(newName)
