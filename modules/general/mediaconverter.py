@@ -96,6 +96,9 @@ class MediaConverter(MediaTransitioner):
             ]
         else:
             if self.nr_processes_for_conversion != 1:
+                self.print_info(
+                    f"Using {self.nr_processes_for_conversion} processes for conversion.."
+                )
                 with multiprocessing.Pool(
                     processes=self.nr_processes_for_conversion
                 ) as pool:

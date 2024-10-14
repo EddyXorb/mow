@@ -162,7 +162,7 @@ class ImageConverter(MediaConverter):
         input.rewriteMetaTagsOnConverted = (
             False  # TODO check if dng contains all info needed
         )
-        input.nr_processes_for_conversion = 8
+        input.nr_processes_for_conversion = max(1, int(os.cpu_count() * 0.7))
         super().__init__(input)
 
         if "dng_converter_exe" not in input.settings:
