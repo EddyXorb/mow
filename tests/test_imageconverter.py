@@ -1,4 +1,4 @@
-from datetime import time
+import time
 from pathlib import Path
 import shutil
 from os.path import join, exists
@@ -8,9 +8,7 @@ import yaml
 
 from ..modules.general.mediatransitioner import TransitionerInput
 from ..modules.image.imageconverter import ImageConverter
-from ..modules.image.imagerenamer import *
 from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME
-import time
 
 testfolder = (Path(__file__).parent.parent / "tests").absolute().__str__()
 tempsrcfolder = "filestotreat"
@@ -43,11 +41,11 @@ def prepareTest(n: int = 1):
     os.makedirs(os.path.dirname(srcfile))
     for i in range(0, n):
         shutil.copy(
-            join(testfolder, f"test.jpg"),
+            join(testfolder, "test.jpg"),
             os.path.join(os.path.dirname(srcfile), f"test{i if n > 1 else ''}.jpg"),
         )
         shutil.copy(
-            join(testfolder, f"test.ORF"),
+            join(testfolder, "test.ORF"),
             os.path.join(os.path.dirname(srcfile), f"test{i if n > 1 else ''}.ORF"),
         )
 

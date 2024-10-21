@@ -6,7 +6,7 @@ from pathlib import Path
 from shutil import move
 import sys
 import traceback
-from typing import Dict, List, Callable
+from typing import Dict, Callable
 from exiftool import ExifToolHelper
 from math import sqrt
 import re
@@ -123,11 +123,11 @@ class MediaTransitioner(VerbosePrinterClass):
         )
         self.settings = input.settings
 
-        self.toTreat: List[MediaFile] = []
+        self.toTreat: list[MediaFile] = []
         self.deleteFolder = join(self.src, DELETE_FOLDER_NAME)
 
         self._performedTransition = False
-        self._toTransition: List[TransitionTask] = []
+        self._toTransition: list[TransitionTask] = []
         self.et = ExifToolHelper()
 
     def __call__(self):
@@ -159,8 +159,8 @@ class MediaTransitioner(VerbosePrinterClass):
         os.makedirs(self.dst, exist_ok=True)
         self.print_debug(f"Created dir {self.dst}")
 
-    def collectMediaFilesToTreat(self) -> List[MediaFile]:
-        out: List[MediaFile] = []
+    def collectMediaFilesToTreat(self) -> list[MediaFile]:
+        out: list[MediaFile] = []
 
         self.print_info("Collect files..")
 
@@ -219,7 +219,7 @@ class MediaTransitioner(VerbosePrinterClass):
                 removed.append(path)
         return removed
 
-    def performTransitionOf(self, tasks: List[TransitionTask]):
+    def performTransitionOf(self, tasks: list[TransitionTask]):
         self.print_info(f"Perform transition of {len(tasks)} mediafiles..")
 
         tasks = self.getNonSkippedOf(tasks)
@@ -232,10 +232,10 @@ class MediaTransitioner(VerbosePrinterClass):
         else:
             self.doConversionOf(tasks)
 
-    def getNonSkippedOf(self, tasks: List[TransitionTask]):
+    def getNonSkippedOf(self, tasks: list[TransitionTask]):
         return [task for task in tasks if not task.skip]
 
-    def getNonOverwritingTasksOf(self, tasks: List[TransitionTask]):
+    def getNonOverwritingTasksOf(self, tasks: list[TransitionTask]):
         for task in tasks:
             newName = self.getNewNameFor(task)
             if os.path.exists(newName):
@@ -255,7 +255,7 @@ class MediaTransitioner(VerbosePrinterClass):
         newPath = join(self.getTargetDirectory(mediafile, self.dst), newName)
         return newPath
 
-    def printSkipped(self, tasks: List[TransitionTask]):
+    def printSkipped(self, tasks: list[TransitionTask]):
         skipped = 0
 
         messageToTask = defaultdict(list)
@@ -282,7 +282,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
         return skipped
 
-    def getSuccesfulChangedMetaTagTasksOf(self, tasks: List[TransitionTask]):
+    def getSuccesfulChangedMetaTagTasksOf(self, tasks: list[TransitionTask]):
         if not self.writeMetaTags:
             return tasks
 
@@ -338,7 +338,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
         task.metaTags[MowTags.stagehistory] = curr_stage_history[MowTags.stagehistory]
 
-    def doRelocationOf(self, tasks: List[TransitionTask]):
+    def doRelocationOf(self, tasks: list[TransitionTask]):
         for task in tasks:
             self.relocateSingleTask(task)
 
@@ -368,10 +368,10 @@ class MediaTransitioner(VerbosePrinterClass):
             task.skip = True
             task.skipReason = traceback.format_exc(e)
 
-    def doConversionOf(self, tasks: List[TransitionTask]):
+    def doConversionOf(self, tasks: list[TransitionTask]):
         raise NotImplementedError()
 
-    def deleteMediaFile(self, file: MediaFile, extensions_to_maintain: List[str] = []):
+    def deleteMediaFile(self, file: MediaFile, extensions_to_maintain: list[str] = []):
         for ext in file.extensions:
             if ext in extensions_to_maintain:
                 continue
@@ -435,5 +435,5 @@ class MediaTransitioner(VerbosePrinterClass):
                 "Cannot call getTransitionedTasks before transition was actually performed!"
             )
 
-    def getTasks(self) -> List[TransitionTask]:
+    def getTasks(self) -> list[TransitionTask]:
         raise NotImplementedError()

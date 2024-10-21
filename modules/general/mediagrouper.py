@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import DefaultDict, List, Tuple
+from typing import DefaultDict, Tuple
 
 
 import os
@@ -57,13 +57,13 @@ class MediaGrouper(MediaTransitioner):
         if len(candidate) <= 18:
             return CheckResult(
                 ok=False,
-                error=f"has no or too short description, should at least have length 2",
+                error="has no or too short description, should at least have length 2",
             )
 
         if "@" in candidate[11:]:
             return CheckResult(
                 ok=False,
-                error=f"contains '@' at index > 10",
+                error="contains '@' at index > 10",
             )
 
         return isCorrectTimestamp(candidate=candidate[0:17])
@@ -102,7 +102,7 @@ class MediaGrouper(MediaTransitioner):
         input.mediaFileFactory = createAnyValidMediaFile
         input.maintainFolderStructure = True
         super().__init__(input)
-        self.toTransition: List[TransitionTask] = []
+        self.toTransition: list[TransitionTask] = []
 
     def prepareTransition(self):
         if self.input.undoAutomatedGrouping:
@@ -130,7 +130,7 @@ class MediaGrouper(MediaTransitioner):
         self.printStatisticsOf(grouped)
         self.setOptionalXMP(grouped)
 
-    def getTasks(self) -> List[TransitionTask]:
+    def getTasks(self) -> list[TransitionTask]:
         self.prepareTransition()
         return self.toTransition
 
@@ -212,7 +212,7 @@ class MediaGrouper(MediaTransitioner):
             f"Renamed {len(renamed)} folders without timestamps to folders that have one."
         )
 
-    def printStatisticsOf(self, grouped: DefaultDict[str, List[int]]):
+    def printStatisticsOf(self, grouped: DefaultDict[str, list[int]]):
         self.print_info(
             f"Found {len(grouped.keys())} groups that were correct (YYYY-MM-DD@HHMMSS#, #=Groupname)."
         )
@@ -224,9 +224,9 @@ class MediaGrouper(MediaTransitioner):
 
     def getCorrectlyGroupedFiles(
         self,
-    ) -> Tuple[DefaultDict[str, List[int]], List[TransitionTask]]:
-        out: DefaultDict[str, List[int]] = defaultdict(lambda: [])
-        toTransitionOut: List[TransitionTask] = []
+    ) -> Tuple[DefaultDict[str, list[int]], list[TransitionTask]]:
+        out: DefaultDict[str, list[int]] = defaultdict(lambda: [])
+        toTransitionOut: list[TransitionTask] = []
         wrongSubfolders = set()
 
         for index, file in enumerate(self.toTreat):
@@ -263,7 +263,7 @@ class MediaGrouper(MediaTransitioner):
         if len(ungrouped) == 0:
             return
         ungrouped.sort(key=lambda file: extractDatetimeFromFileName(str(file)))
-        groupToFiles: DefaultDict[str, List[MediaFile]] = defaultdict(lambda: [])
+        groupToFiles: DefaultDict[str, list[MediaFile]] = defaultdict(lambda: [])
 
         self.print_info("Start creating new group names..")
         currentGroup = self.getGroupBasedOnFirstFile(str(ungrouped[0]))
@@ -291,8 +291,8 @@ class MediaGrouper(MediaTransitioner):
     def checkCorrectSequence(self):
         groupToFiles, _ = self.getCorrectlyGroupedFiles()
 
-        orderedFiles: List[
-            Tuple[str, List[str]]
+        orderedFiles: list[
+            Tuple[str, list[str]]
         ] = []  # Tuple[0] = groupname, Tuple[1] = filenames
 
         for key, values in groupToFiles.items():
@@ -328,7 +328,7 @@ class MediaGrouper(MediaTransitioner):
         self.print_info(f"Found {len(overlappingFiles)} overlapping grouped files.")
         self.print_info(f"Found {len(wrongGroupTimestamps)} wrong group timestamps.")
 
-    def setOptionalXMP(self, grouped: DefaultDict[str, List[int]]):
+    def setOptionalXMP(self, grouped: DefaultDict[str, list[int]]):
         if not self.writeMetaTags:
             return
 

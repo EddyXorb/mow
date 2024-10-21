@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 import sys
 import traceback
-from typing import List
 import polars as pl
 import gpxpy
 from zoneinfo import ZoneInfo
@@ -103,7 +102,7 @@ class MediaLocalizer(MediaTransitioner):
 
         self.positions = self.getAllPositionsDataframe()
 
-    def getTasks(self) -> List[TransitionTask]:
+    def getTasks(self) -> list[TransitionTask]:
         out = []
         for index, mediafile in enumerate(self.toTreat):
             try:
@@ -126,7 +125,7 @@ class MediaLocalizer(MediaTransitioner):
                                 TransitionTask(
                                     index,
                                     skip=True,
-                                    skipReason=f"Could not localize because of missing GPS data.",
+                                    skipReason="Could not localize because of missing GPS data.",
                                 )
                             )
                             self.print_debug(
@@ -218,7 +217,7 @@ class MediaLocalizer(MediaTransitioner):
         if not self.suppress_map_open:
             os.startfile(Path(self.src) / "map.html")
 
-    def getAllGpxFiles(self) -> List[str]:
+    def getAllGpxFiles(self) -> list[str]:
         all_files = os.listdir(self.src)
         return [
             os.path.abspath(os.path.join(self.src, f))

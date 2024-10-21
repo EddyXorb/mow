@@ -6,7 +6,7 @@ from ..modules.mow.mowtags import MowTags
 
 from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME, TransitionerInput
 from ..modules.video.videorenamer import VideoRenamer
-from ..modules.image.imagerenamer import *
+from ..modules.image.imagerenamer import RenamerInput
 from ..modules.video.videoconverter import VideoConverter
 
 import shutil
@@ -91,6 +91,6 @@ def test_conversionPreservesXMPTags():
         tags = et.get_tags(convertedFile, MowTags.all)[0]
 
     for tag in MowTags.all:
-        if not "XMP" in tag:
+        if "XMP" not in tag:
             continue
         assert tag in tags

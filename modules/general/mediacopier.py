@@ -1,5 +1,4 @@
 import datetime
-from typing import List
 import os
 from ..general.mediafile import MediaFile
 from ..general.mediatransitioner import TransitionTask
@@ -33,7 +32,7 @@ class MediaCopier(MediaTransitioner):
                 return index
         return -1
 
-    def getTasks(self) -> List[TransitionTask]:
+    def getTasks(self) -> list[TransitionTask]:
         self.toTreat = sorted(self.toTreat, key=self._getModificationDate)
         self.indexWithLAST = self.getIndexWithLast()
 

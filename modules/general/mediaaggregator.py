@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 from pathlib import Path
 from os.path import basename, splitext
@@ -36,23 +36,23 @@ class MediaAggregator(MediaTransitioner):
     def __init__(self, input: AggregatorInput):
         super().__init__(input)
         self.jpgSingleSourceOfTruth = input.jpgSingleSourceOfTruth
-        self.toTransition: List[TransitionTask] = []
+        self.toTransition: list[TransitionTask] = []
 
-    def getAllTagRelevantFilenamesFor(self, file: MediaFile) -> List[str]:
+    def getAllTagRelevantFilenamesFor(self, file: MediaFile) -> list[str]:
         return file.getAllFileNames()
 
-    def getTagsFromTasks(self) -> Dict[int, List[Dict[str, str]]]:
+    def getTagsFromTasks(self) -> Dict[int, list[Dict[str, str]]]:
         """
         Returns index to tags of all files of mediafile
         """
         self.print_info("Collect file meta tags..")
-        out: Dict[int, List[Dict[str, str]]] = {}
+        out: Dict[int, list[Dict[str, str]]] = {}
 
         with ExifToolHelper() as et:
             for task in track(self.toTransition):
                 files = self.getAllTagRelevantFilenamesFor(self.toTreat[task.index])
                 try:
-                    tagdictlist: List[Dict[str, str]] = et.get_tags(
+                    tagdictlist: list[Dict[str, str]] = et.get_tags(
                         files, tags=MowTags.all, params=["-L"]
                     )
                     out[task.index] = [
@@ -81,7 +81,7 @@ class MediaAggregator(MediaTransitioner):
         self.setMetaTagsToWrite(indexToTags)
         self.deleteBasedOnRating(indexToTags)
 
-    def getTasks(self) -> List[TransitionTask]:
+    def getTasks(self) -> list[TransitionTask]:
         self.prepareTransition()
         return self.toTransition
 
@@ -100,7 +100,7 @@ class MediaAggregator(MediaTransitioner):
             else:
                 self.toTransition.append(TransitionTask(index=index))
 
-    def checkGrouping(self, indexToTags: Dict[int, List[Dict[str, str]]]):
+    def checkGrouping(self, indexToTags: Dict[int, list[Dict[str, str]]]):
         for task in self.toTransition:
             if task.skip:
                 continue
@@ -126,7 +126,7 @@ class MediaAggregator(MediaTransitioner):
                 task.skipReason = result.error
 
     def isCorrectDescriptionTag(
-        self, groupnameToTest: str, tagDicts: List[Dict[str, str]]
+        self, groupnameToTest: str, tagDicts: list[Dict[str, str]]
     ):
         for tagDict in tagDicts:
             if MowTags.description not in tagDict:
@@ -140,7 +140,7 @@ class MediaAggregator(MediaTransitioner):
 
         return CheckResult(ok=True)
 
-    def setMetaTagsToWrite(self, indexToTags: Dict[int, List[Dict[str, str]]]):
+    def setMetaTagsToWrite(self, indexToTags: Dict[int, list[Dict[str, str]]]):
         for task in self.toTransition:
             if task.skip:
                 continue
@@ -153,7 +153,7 @@ class MediaAggregator(MediaTransitioner):
                 task.skipReason = result.error
 
     def setMetaTagsToWriteFor(
-        self, task: TransitionTask, tagsDictList: List[Dict[str, str]]
+        self, task: TransitionTask, tagsDictList: list[Dict[str, str]]
     ) -> CheckResult:
         for tag in MowTags.all:
             allValuesThisTag: Set[str] = set()
@@ -186,7 +186,7 @@ class MediaAggregator(MediaTransitioner):
 
         return CheckResult(ok=True)
 
-    def deleteBasedOnRating(self, indexToTags: Dict[int, List[Dict[str, str]]]):
+    def deleteBasedOnRating(self, indexToTags: Dict[int, list[Dict[str, str]]]):
         for task in self.toTransition:
             if task.skip:
                 continue

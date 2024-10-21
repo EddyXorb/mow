@@ -67,5 +67,5 @@ class ImageFile(MediaFile):
                     date = img_exif[exifvalueChangedDate]
 
             return dt.datetime.strptime(date, "%Y:%m:%d %H:%M:%S")
-        except:
+        except Exception:
             return None

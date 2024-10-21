@@ -1,6 +1,7 @@
 import shutil
 from os.path import join, exists
 import os
+from exiftool import ExifToolHelper
 
 from ..modules.general.mediagrouper import MediaGrouper, GrouperInput
 
@@ -11,7 +12,6 @@ dst = os.path.abspath("./tests/test_treated")
 imagename = "test3.JPG"
 srcfile = join(src, imagename)
 expectedConvertedImageFile = join(dst, "subsubfolder", imagename)
-from exiftool import ExifToolHelper
 
 
 def prepareTest(srcname="test.JPG"):
@@ -204,7 +204,7 @@ def test_connectsTwoFileIfNotTooDistant():
     assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@155959_test.JPG"))
 
 
-def test_connectsTwoFileIfNotTooDistant():
+def test_doesNotconnectTwoFileIfTooDistant():
     fullname = join(src, "2022-12-12@120000_test.JPG")
     prepareTest(srcname=fullname)
     shutil.copy(

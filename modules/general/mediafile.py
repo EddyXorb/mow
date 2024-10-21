@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, List
+from typing import Callable
 import os
 from shutil import copyfile, move
 import datetime as dt
@@ -68,7 +68,7 @@ class MediaFile:
     def readDateTime(self) -> dt.datetime:
         raise NotImplementedError()
 
-    def getAllFileNames(self) -> List[str]:
+    def getAllFileNames(self) -> list[str]:
         return [self.pathnoext + ext for ext in self.extensions]
 
     def getDescriptiveBasenames(self) -> str:

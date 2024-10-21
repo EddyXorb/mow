@@ -1,4 +1,3 @@
-from typing import List
 from rich.progress import track
 import os
 
@@ -21,10 +20,10 @@ class MediaRater(MediaTransitioner):
         super().__init__(input)
         self.overrulingfiletype = overrulingfiletype
 
-    def getTasks(self) -> List[TransitionTask]:
+    def getTasks(self) -> list[TransitionTask]:
         self.print_info("Check every file for rating..")
 
-        out: List[TransitionTask] = []
+        out: list[TransitionTask] = []
 
         with ExifToolHelper() as et:
             for index, file in track(enumerate(self.toTreat), total=len(self.toTreat)):

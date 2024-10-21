@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from ..modules.audio.audiorenamer import AudioRenamer
 from ..modules.general.mediarenamer import MediaRenamer, RenamerInput
@@ -41,7 +40,7 @@ def executeRenamingWith(
             replace=replace,
         )
 
-    renamers: List[MediaRenamer] = [
+    renamers: list[MediaRenamer] = [
         ImageRenamer(getRenamerInput()),
         AudioRenamer(getRenamerInput()),
     ]
@@ -134,7 +133,7 @@ def test_timeStampIsCorrect():
                 0
             ]  # we assume YYYY-MM-DD@HHMMSS_OLDNAME e.g. "2022-07-27@215555_test3"
             assert len(timestamp) == 17
-            dt = datetime.strptime(timestamp, "%Y-%m-%d@%H%M%S")
+            _ = datetime.strptime(timestamp, "%Y-%m-%d@%H%M%S")
 
 
 def test_writeXMPDateAndCreationWorks():

@@ -1,4 +1,3 @@
-from typing import List
 
 from ..general.mediatransitioner import TransitionTask
 from ..image.imagefile import ImageFile
@@ -13,7 +12,7 @@ class ImageAggregator(MediaAggregator):
         self.jpgSingleSourceOfTruth = input.jpgSingleSourceOfTruth
         super().__init__(input)
 
-    def getAllTagRelevantFilenamesFor(self, file: ImageFile) -> List[str]:
+    def getAllTagRelevantFilenamesFor(self, file: ImageFile) -> list[str]:
         return (
             [file.getJpg()] if self.jpgSingleSourceOfTruth else file.getAllFileNames()
         )

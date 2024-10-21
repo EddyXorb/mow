@@ -20,7 +20,7 @@ class File:
     tags: str
 
 cnt = 0
-taggedfiles: List[File] = []
+taggedfiles: list[File] = []
 with ExifToolHelper() as et:
     for root, dirs, files in os.walk(taggedfilesfolder):
         for f in files:

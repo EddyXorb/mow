@@ -56,7 +56,7 @@ def isCorrectTimestamp(candidate: str) -> CheckResult:
         return CheckResult(
             dummy is not None, "Could not parse timestamp, invalid format"
         )
-    except:
+    except Exception:
         return CheckResult(False, f"Candidate {candidate}'s timestamp is wrong")
 
 

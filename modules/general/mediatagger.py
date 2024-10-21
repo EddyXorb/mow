@@ -1,4 +1,3 @@
-from typing import List
 
 from ..general.medafilefactories import createAnyValidMediaFile
 from .mediatransitioner import MediaTransitioner, TransitionTask, TransitionerInput
@@ -9,5 +8,5 @@ class MediaTagger(MediaTransitioner):
         input.mediaFileFactory = createAnyValidMediaFile
         super().__init__(input)
 
-    def getTasks(self) -> List[TransitionTask]:
+    def getTasks(self) -> list[TransitionTask]:
         return [TransitionTask(index) for index, _ in enumerate(self.toTreat)]

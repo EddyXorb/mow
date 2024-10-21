@@ -120,7 +120,7 @@ def resize_preview_image_of_dng(dng_file_path: str):
     with ExifTool() as et:
         # 1. extract current preview image from dng
         et.execute(
-            f"-preview:jpgfromraw",
+            "-preview:jpgfromraw",
             "-b",
             "-W",
             temporary_preview_image_path,

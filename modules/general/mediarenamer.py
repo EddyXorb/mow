@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import os
 from os.path import join
-from typing import Callable, List, Tuple
+from typing import Callable, Tuple
 from pathlib import Path
 from datetime import datetime
 import re
@@ -53,7 +53,7 @@ class MediaRenamer(MediaTransitioner):
             raise Exception("Filerenamer was not given to MediaRenamer!")
 
         self.replace: str = input.replace
-        self.transitionTasks: List[TransitionTask] = []
+        self.transitionTasks: list[TransitionTask] = []
 
         self.replace = self.initReplace(input.replace)
 
@@ -87,7 +87,7 @@ class MediaRenamer(MediaTransitioner):
                 f"Replaced {Path(str(file)).relative_to(self.src)}    --->    {newFileName}{ext}"
             )
 
-    def getTasks(self) -> List[TransitionTask]:
+    def getTasks(self) -> list[TransitionTask]:
         self.prepareTransition()
         return self.transitionTasks
 

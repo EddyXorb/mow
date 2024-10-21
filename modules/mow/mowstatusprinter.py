@@ -11,7 +11,7 @@ from ..general.medafilefactories import createAnyValidMediaFile
 class MowStatusPrinter(VerbosePrinterClass):
 
     def __init__(
-        self, stages: List[str], stageToFolder: Dict[str, str], workingdir: str
+        self, stages: list[str], stageToFolder: Dict[str, str], workingdir: str
     ):
         """
         stages: stagename, stagefolder-path
@@ -40,11 +40,11 @@ class MowStatusPrinter(VerbosePrinterClass):
             f"Overall progress: {float(100*weightedSum)/(len(self.stages)*nrallfiles):.0f} %"
         )
 
-    def collectAllMediafiles(self) -> Dict[str, List[str]]:
+    def collectAllMediafiles(self) -> Dict[str, list[str]]:
         """
         Return: stage to list of all mediafiles found in this stage
         """
-        out: Dict[str, List[str]] = {}
+        out: Dict[str, list[str]] = {}
 
         for stage in self.stages:
             out[stage] = []

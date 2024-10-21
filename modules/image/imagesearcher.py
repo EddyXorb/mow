@@ -1,5 +1,5 @@
 import os
-from typing import DefaultDict, List
+from typing import DefaultDict
 from collections import defaultdict
 
 from ..general.verboseprinterclass import VerbosePrinterClass
@@ -16,23 +16,23 @@ class ImageSearcher(VerbosePrinterClass):
         self,
         sourcedir: str,
         searchdir: str,
-        excludesearchfolders: List[str],
+        excludesearchfolders: list[str],
     ):
         super().__init__(verbose=True)
         self.missingdir = sourcedir
         self.searchdir = searchdir
         self.excludesarchdirs = map(lambda x: os.path.abspath(x), excludesearchfolders)
-        self.filessearched: DefaultDict[str, List[ImageFile]] = self.createFolderDict(
+        self.filessearched: DefaultDict[str, list[ImageFile]] = self.createFolderDict(
             self.searchdir, self.excludesarchdirs
         )
-        self.filessuspectedtomiss: DefaultDict[str, List[ImageFile]] = (
+        self.filessuspectedtomiss: DefaultDict[str, list[ImageFile]] = (
             self.createFolderDict(self.missingdir)
         )
-        self.missingfiles: List[ImageFile] = []
+        self.missingfiles: list[ImageFile] = []
 
     def createFolderDict(
-        self, dir: str, excludedirs: List[str] = []
-    ) -> DefaultDict[ImageFile, List[ImageFile]]:
+        self, dir: str, excludedirs: list[str] = []
+    ) -> DefaultDict[ImageFile, list[ImageFile]]:
         out = defaultdict(list)
 
         for root, dirs, files in os.walk(dir, topdown=True):
@@ -53,16 +53,16 @@ class ImageSearcher(VerbosePrinterClass):
 
     def findMissingFiles(self):
         for name, imagefiles in self.filessuspectedtomiss.items():
-            if not name in self.filessearched:
+            if name not in self.filessearched:
                 alternativeName = ImageRenamer.getNewImageFileNameFor(
                     imagefiles[0].getJpg()
                 )
-                if alternativeName is None or not alternativeName in self.filessearched:
+                if alternativeName is None or alternativeName not in self.filessearched:
                     self.missingfiles.append(imagefiles[0])
 
         self.print_info(
             f"Finished image search and found {len(self.missingfiles)} missing files."
         )
-        self.print_info(f"Missing files are:")
+        self.print_info("Missing files are:")
         for file in self.missingfiles:
             self.print_info(file.getJpg())

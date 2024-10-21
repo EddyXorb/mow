@@ -2,7 +2,6 @@ from dataclasses import dataclass
 import shutil
 from os.path import join, exists, splitext, abspath
 import os
-from time import sleep
 
 
 from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME

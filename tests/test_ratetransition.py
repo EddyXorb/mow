@@ -34,7 +34,7 @@ def test_ratedImageIsMoved():
     assert exists(fullname)
 
     with ExifToolHelper() as et:
-        p = et.set_tags(
+        _ = et.set_tags(
             fullname, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
         )
 
@@ -71,7 +71,7 @@ def test_copiedRatingFromJPGToORF():
     assert exists(fullnameRaw)
 
     with ExifToolHelper() as et:
-        p = et.set_tags(
+        _ = et.set_tags(
             fullname, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
         )
 
@@ -103,7 +103,7 @@ def test_copiedRatingFromORFToJPG():
     assert exists(fullnameRaw)
 
     with ExifToolHelper() as et:
-        p = et.set_tags(
+        _ = et.set_tags(
             fullnameRaw, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
         )
 

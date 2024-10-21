@@ -29,7 +29,7 @@ class MediaConverter(MediaTransitioner):
 
         try:
             convertedFile = converter(toTransition, os.path.dirname(newPath), settings)
-        except Exception as e:
+        except Exception:
             return toTransition, None, task_index
 
         for file in convertedFile.getAllFileNames():

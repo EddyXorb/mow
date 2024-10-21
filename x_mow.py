@@ -24,13 +24,13 @@ command_aliases = {
 
 copyparser = subparsers.add_parser(
     "copy",
-    help=f"copying media files from external source (1 -> 2).",
+    help="copying media files from external source (1 -> 2).",
     aliases=command_aliases["copy"],
 )
 
 renameparser = subparsers.add_parser(
     "rename",
-    help=f"transition of renamed media files (2 -> 3).",
+    help="transition of renamed media files (2 -> 3).",
     aliases=command_aliases["rename"],
 )
 convertparser = subparsers.add_parser(
