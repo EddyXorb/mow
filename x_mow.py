@@ -287,7 +287,7 @@ def get_canonical_command(command: str):
     return command
 
 
-if __name__ == "__main__":
+def main():
     args = parser.parse_args()
 
     mow = Mow(
@@ -341,3 +341,7 @@ if __name__ == "__main__":
         mow.aggregate(jpgIsSingleSourceOfTruth=args.aggregate_jpgsinglesourceoftruth)
     elif should_execute_stage("status", args):
         mow.status()
+
+
+if __name__ == "__main__":
+    main()

@@ -95,7 +95,7 @@ class MediaRenamer(MediaTransitioner):
         if not self.writeMetaTags:
             return
 
-        for task in track(self.transitionTasks, description="Setting XMP tags.."):
+        for task in track(self.transitionTasks):
             if task.skip:
                 continue
 
@@ -118,7 +118,6 @@ class MediaRenamer(MediaTransitioner):
 
         for index, file in track(
             enumerate(self.toTreat),
-            description="Creating new names..",
             total=len(self.toTreat),
         ):
             oldName = str(file)
@@ -137,8 +136,6 @@ class MediaRenamer(MediaTransitioner):
             self.transitionTasks.append(
                 TransitionTask(index=index, newName=os.path.basename(newName))
             )
-
-        self.print_info("Created new names for files.")
 
     def getRenamedFileFrom(self, file: str) -> Tuple[str, str]:  # new name, errorreason
         if self.input.restoreOldNames:

@@ -11,3 +11,4 @@
   - Second time 20 _preview.jpgs were created and 4 exiftool-temp files.
   - Reducing the nr of processes to 8 worked on the exact same files.
 - feature: make it possible to disable interpolation in localize
+- put all source code in src-repo and define an entrypoint for mow
