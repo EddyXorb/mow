@@ -35,7 +35,7 @@ def test_fileisrenamed():
     prepareTest()
 
     renamer = VideoRenamer(
-        RenamerInput(src=src, dst=dst, move=True, verbose=True, writeMetaTags=True)
+        RenamerInput(src=src, dst=dst, move=True, writeMetaTags=True)
     )
     renamer()
     assert len(os.listdir(targetDir)) > 0
@@ -50,7 +50,6 @@ def test_conversionMovesOriginalsIntoDeletedAndCreatesConverted():
         TransitionerInput(
             src=src,
             dst=dst,
-            verbose=True,
         )
     )()
 
@@ -79,7 +78,6 @@ def test_conversionPreservesXMPTags():
         TransitionerInput(
             src=src,
             dst=dst,
-            verbose=True,
         )
     )()
 

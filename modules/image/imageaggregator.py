@@ -25,7 +25,7 @@ class ImageAggregator(MediaAggregator):
                 self.deleteMediaFile(mfile)
 
                 task.skip = True
-                task.skipReason = "deleted file based on rating."
+                task.skipReason = "deleted file based on ratist_correctImageIsTransitiong."
             case 2 | 3:
                 rawfile = mfile.getRaw()
                 if rawfile is None:

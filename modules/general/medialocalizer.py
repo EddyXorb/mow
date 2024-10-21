@@ -6,7 +6,8 @@ import traceback
 from typing import List
 import polars as pl
 import gpxpy
-from zoneinfo import ZoneInfo, available_timezones
+from zoneinfo import ZoneInfo
+import zoneinfo
 import datetime
 import folium
 
@@ -85,7 +86,6 @@ class LocalizerInput(BaseLocalizerInput, TransitionerInput):
 # TODO: add logic for inserting gps data to mediafiles based on given tracks
 class MediaLocalizer(MediaTransitioner):
     def __init__(self, input: LocalizerInput):
-
         input.mediaFileFactory = createAnyValidMediaFile
         super().__init__(input)
         self.gps_time_tolerance = input.gps_time_tolerance
@@ -95,7 +95,7 @@ class MediaLocalizer(MediaTransitioner):
         self.transition_even_if_no_gps_data = input.transition_even_if_no_gps_data
         self.suppress_map_open = input.suppress_map_open
 
-        if self.mediafile_timezone not in available_timezones():
+        if self.mediafile_timezone not in zoneinfo.available_timezones():
             self.print_info(
                 f"Timezone {self.mediafile_timezone} is an invalid time zone! Do nothing."
             )
@@ -259,7 +259,6 @@ class MediaLocalizer(MediaTransitioner):
         self,
         mediafile_time: datetime.datetime,
     ) -> GpsData:
-
         mediafile_time_in_gps_time = self.getNormalizedMediaFileTime(mediafile_time)
 
         before_position, after_position = self.getBeforeAfterGpsData(
@@ -280,7 +279,6 @@ class MediaLocalizer(MediaTransitioner):
     def getInterpolatedGpsData(
         self, mediafile_time_in_gps_time, before: GpsData, after: GpsData
     ) -> GpsData:
-
         if after.time == before.time:
             return before
 
@@ -311,7 +309,6 @@ class MediaLocalizer(MediaTransitioner):
     def getBeforeAfterGpsData(
         self, gps_time_tolerance, mediafile_time_in_gps_time
     ) -> tuple[pl.DataFrame, pl.DataFrame]:
-
         before = self.positions.filter(
             pl.col("time") < mediafile_time_in_gps_time,
             pl.col("time") >= mediafile_time_in_gps_time - gps_time_tolerance,

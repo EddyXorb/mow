@@ -38,7 +38,7 @@ def test_ratedImageIsMoved():
             fullname, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False))()
+        MediaRater(input=TransitionerInput(src=src, dst=dst, dry=False))()
 
         assert not exists(fullname)
         assert exists(join(dst, groupname, "test.JPG"))
@@ -51,7 +51,7 @@ def test_unratedImageIsNotMoved():
 
     assert exists(fullname)
 
-    MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False))()
+    MediaRater(input=TransitionerInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -75,16 +75,19 @@ def test_copiedRatingFromJPGToORF():
             fullname, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True))()
+        MediaRater(
+            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True)
+        )()
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
         assert exists(join(dst, groupname, "test.JPG"))
         assert exists(join(dst, groupname, "test.ORF"))
 
-        ratingRaw = et.get_tags(join(dst, groupname, "test.ORF"),["XMP:Rating"])[0]
+        ratingRaw = et.get_tags(join(dst, groupname, "test.ORF"), ["XMP:Rating"])[0]
         assert "XMP:Rating" in ratingRaw
         assert ratingRaw["XMP:Rating"] == 3
+
 
 def test_copiedRatingFromORFToJPG():
     groupname = "2022-12-12@121212_TEST"
@@ -104,16 +107,19 @@ def test_copiedRatingFromORFToJPG():
             fullnameRaw, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True))()
+        MediaRater(
+            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True)
+        )()
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
         assert exists(join(dst, groupname, "test.JPG"))
         assert exists(join(dst, groupname, "test.ORF"))
 
-        ratingJPG = et.get_tags(join(dst, groupname, "test.JPG"),["XMP:Rating"])[0]
+        ratingJPG = et.get_tags(join(dst, groupname, "test.JPG"), ["XMP:Rating"])[0]
         assert "XMP:Rating" in ratingJPG
         assert ratingJPG["XMP:Rating"] == 3
+
 
 def test_differentRatingBetweenJPGandRawpreventsTransition():
     groupname = "2022-12-12@121212_TEST"
@@ -136,7 +142,9 @@ def test_differentRatingBetweenJPGandRawpreventsTransition():
             fullname, {"XMP:rating": 2}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True))()
+        MediaRater(
+            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True)
+        )()
 
         assert exists(fullname)
         assert exists(fullnameRaw)
@@ -165,15 +173,25 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
             fullname, {"XMP:rating": 2}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True),overrulingfiletype="JPG")()
+        MediaRater(
+            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True),
+            overrulingfiletype="JPG",
+        )()
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
         assert exists(join(dst, groupname, "test.JPG"))
         assert exists(join(dst, groupname, "test.ORF"))
 
-        assert et.get_tags(join(dst, groupname, "test.ORF"),"XMP:Rating")[0]["XMP:Rating"] == 2
-        assert et.get_tags(join(dst, groupname, "test.JPG"),"XMP:Rating")[0]["XMP:Rating"] == 2
+        assert (
+            et.get_tags(join(dst, groupname, "test.ORF"), "XMP:Rating")[0]["XMP:Rating"]
+            == 2
+        )
+        assert (
+            et.get_tags(join(dst, groupname, "test.JPG"), "XMP:Rating")[0]["XMP:Rating"]
+            == 2
+        )
+
 
 def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFileendingIsSetButFileHasNoRating():
     groupname = "2022-12-12@121212_TEST"
@@ -196,15 +214,25 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
             fullname, {"XMP:rating": None}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True),overrulingfiletype="JPG")()
+        MediaRater(
+            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True),
+            overrulingfiletype="JPG",
+        )()
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
         assert exists(join(dst, groupname, "test.JPG"))
         assert exists(join(dst, groupname, "test.ORF"))
 
-        assert et.get_tags(join(dst, groupname, "test.ORF"),"XMP:Rating")[0]["XMP:Rating"] == 3
-        assert et.get_tags(join(dst, groupname, "test.JPG"),"XMP:Rating")[0]["XMP:Rating"] == 3
+        assert (
+            et.get_tags(join(dst, groupname, "test.ORF"), "XMP:Rating")[0]["XMP:Rating"]
+            == 3
+        )
+        assert (
+            et.get_tags(join(dst, groupname, "test.JPG"), "XMP:Rating")[0]["XMP:Rating"]
+            == 3
+        )
+
 
 def test_differentRatingBetweenJPGandRawPreventsTransitionIfOverrulingFileendingIsSetButFileendingNotExistent():
     groupname = "2022-12-12@121212_TEST"
@@ -227,7 +255,10 @@ def test_differentRatingBetweenJPGandRawPreventsTransitionIfOverrulingFileending
             fullname, {"XMP:rating": 2}, params=["-P", "-overwrite_original", "-v2"]
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, verbose=True, dry=False,writeMetaTags=True),overrulingfiletype="IMAMNOTHERE")()
+        MediaRater(
+            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True),
+            overrulingfiletype="IMAMNOTHERE",
+        )()
 
         assert exists(fullname)
         assert exists(fullnameRaw)

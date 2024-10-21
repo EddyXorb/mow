@@ -31,7 +31,7 @@ def test_correctlyNamedGroupIsRecognized():
 
     assert exists(fullname)
 
-    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert not exists(fullname)
     assert exists(join(dst, groupname, "test.JPG"))
@@ -44,7 +44,7 @@ def test_GroupWithoutDescriptionIsRejected():
 
     assert exists(fullname)
 
-    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -57,7 +57,7 @@ def test_GroupWithVeryShortDescriptionIsAccepted():
 
     assert exists(fullname)
 
-    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert not exists(fullname)
     assert exists(join(dst, groupname, "test.JPG"))
@@ -70,7 +70,7 @@ def test_correctlyNamedGroupIsRecognizedButDryDoesNotMove():
 
     assert exists(fullname)
 
-    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=True, verbose=True))()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=True))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -83,7 +83,7 @@ def test_WrongTimestampHoursAreRecognized():
 
     assert exists(fullname)
 
-    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -96,7 +96,7 @@ def test_TimestampStartingTooLateIsRecognized():
 
     assert exists(fullname)
 
-    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -109,7 +109,7 @@ def test_AtInGroupnameIsRecognizedAndWillBeRefused():
 
     assert exists(fullname)
 
-    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -122,7 +122,7 @@ def test_CorrectSubsubfolderIsRecognized():
 
     assert exists(fullname)
 
-    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert not exists(fullname)
     assert exists(join(dst, groupname, "test.JPG"))
@@ -135,7 +135,7 @@ def test_WrongSupergroupIsRecognized():
 
     assert exists(fullname)
 
-    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False, verbose=True))()
+    MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
     assert not exists(join(dst, groupname, "test.JPG"))
@@ -152,7 +152,6 @@ def test_createdGroupOfUnGrouped():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             automaticGrouping=True,
         )
     )()
@@ -171,7 +170,6 @@ def test_shouldNotMoveAutomaticallyGroupedFilesIntoDst():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             automaticGrouping=True,
         )
     )()
@@ -195,7 +193,6 @@ def test_connectsTwoFileIfNotTooDistant():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=True,
         )
@@ -222,7 +219,6 @@ def test_connectsTwoFileIfNotTooDistant():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=True,
         )
@@ -253,7 +249,6 @@ def test_intermediateFileProlongsGroup():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=True,
         )
@@ -277,7 +272,6 @@ def test_XMPisWritten():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             writeMetaTags=True,
         )
     )()
@@ -307,7 +301,6 @@ def test_XMPDescriptionContainsAllSuperfolders():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             writeMetaTags=True,
         )
     )()
@@ -342,7 +335,6 @@ def test_groupingMovesJpgAndRAWFiles():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=True,
         )
@@ -364,7 +356,6 @@ def test_undoGroupingWorks():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=True,
             undoAutomatedGrouping=True,
@@ -385,7 +376,6 @@ def test_undoGroupingDoesNotTouchGroupsWithoutTODOPrefix():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=True,
             undoAutomatedGrouping=True,
@@ -406,7 +396,6 @@ def test_undoGroupingDoesNotTouchTODO_GroupsWithDescription():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=True,
             undoAutomatedGrouping=True,
@@ -428,7 +417,6 @@ def test_addMissingTimestampWorks():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=False,
             undoAutomatedGrouping=False,
@@ -451,7 +439,6 @@ def test_addMissingTimestampWorksRecursively():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=False,
             undoAutomatedGrouping=False,
@@ -489,7 +476,6 @@ def test_addMissingTimestampTakesLowestDatetime():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=False,
             undoAutomatedGrouping=False,
@@ -514,7 +500,6 @@ def test_addMissingTimestampWillNotRenameIfDateIsPresent():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=False,
             undoAutomatedGrouping=False,
@@ -539,7 +524,6 @@ def test_addMissingTimestampWillNotRenameIfDateIsSomewhereInTheMiddle():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=False,
             undoAutomatedGrouping=False,
@@ -564,7 +548,6 @@ def test_addMissingTimestampWillNotRenameIfShortDateIsPresent():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=False,
             undoAutomatedGrouping=False,
@@ -589,7 +572,6 @@ def test_addMissingTimestampWillNotRenameIfAtIsPresent():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=False,
             undoAutomatedGrouping=False,
@@ -614,7 +596,6 @@ def test_addMissingTimestampWillWorkIfSomeNumberIsPresent():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=False,
             undoAutomatedGrouping=False,
@@ -637,7 +618,6 @@ def test_addMissingTimestampWillWorkIfSomeNumberAndNotDateDashesArePresent():
             src=src,
             dst=dst,
             dry=False,
-            verbose=True,
             separationDistanceInHours=4,
             automaticGrouping=False,
             undoAutomatedGrouping=False,

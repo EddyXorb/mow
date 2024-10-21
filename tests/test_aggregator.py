@@ -123,7 +123,11 @@ def jpgWasDeleted(jpgname):
 
 def rawWasDeleted(jpgname):
     return exists(
-        join(src, DELETE_FOLDER_NAME, str(Path(jpgname.replace("jpg", "ORF")).relative_to(src)))
+        join(
+            src,
+            DELETE_FOLDER_NAME,
+            str(Path(jpgname.replace("jpg", "ORF")).relative_to(src)),
+        )
     )
 
 
@@ -138,7 +142,7 @@ def test_correctImageIsTransitioned():
     prepareTest(srcname=fullname)
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert transitionTookPlace(fullname)
 
@@ -150,7 +154,7 @@ def test_wrongTimestampOfFileIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -162,7 +166,7 @@ def test_wrongTimestampOfGroupIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -174,7 +178,7 @@ def test_wrongDescriptionTagIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -186,7 +190,7 @@ def test_tooshortGroupnameIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -205,7 +209,7 @@ def test_differentXMPTagsBetweenJPGandRawAreRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -225,9 +229,7 @@ def test_jpgSingleSourceOfTruthWorks():
     assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(
-        input=AggregatorInput(
-            src=src, dst=dst, dry=False, verbose=True, jpgSingleSourceOfTruth=True
-        )
+        input=AggregatorInput(src=src, dst=dst, dry=False, jpgSingleSourceOfTruth=True)
     )()
 
     assert transitionTookPlace(fullname)
@@ -244,9 +246,7 @@ def test_missingXMPTagSourceInRawIsCopiedFromJpg():
     assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(
-        input=AggregatorInput(
-            src=src, dst=dst, dry=False, verbose=True, writeMetaTags=True
-        )
+        input=AggregatorInput(src=src, dst=dst, dry=False, writeMetaTags=True)
     )()
 
     assert bothFilesAreNOTinSRC(fullname)
@@ -269,7 +269,7 @@ def test_missingXMPTagSourceInJpgIsCopiedFromRaw():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -293,7 +293,7 @@ def test_missingXMPTagDescriptionIsCopiedFromRaw():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -319,7 +319,7 @@ def test_completelyMissingXMPTagDescriptionIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -335,7 +335,7 @@ def test_completelyMissingXMPTagDateIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -351,7 +351,7 @@ def test_missingXMPTagDateIsCopiedFromRaw():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -375,7 +375,7 @@ def test_completelyMissingXMPTagRatingIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -391,7 +391,7 @@ def test_missingXMPTagRatingIsCopiedFromRaw():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -417,7 +417,7 @@ def test_optionalXMPTagLabelIsCopiedFromJpg():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -440,7 +440,7 @@ def test_optionalXMPTagSubjectIsCopiedFromJpg():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -468,7 +468,7 @@ def test_optionalXMPTagHierarchicalSubjectIsCopiedFromJpg():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -503,7 +503,7 @@ def test_multipleHSubjectsAreNoProblem():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -540,7 +540,7 @@ def test_multipleHierarchicalSubjectsAreNoProblem():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -571,7 +571,7 @@ def test_rating1ImageIsMovedIntoDeleteFolder():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreNOTInDST(fullname)
@@ -591,9 +591,7 @@ def test_rating1Rawrating5jpgAndJPGSingleSourceOfTruthDoesNotDelete():
     assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(
-        input=AggregatorInput(
-            src=src, dst=dst, dry=False, verbose=True, jpgSingleSourceOfTruth=True
-        )
+        input=AggregatorInput(src=src, dst=dst, dry=False, jpgSingleSourceOfTruth=True)
     )()
 
     assert transitionTookPlace(fullname)
@@ -614,7 +612,7 @@ def test_rating2ImagesRawIsMovedIntoDeleteFolderJpgTransitioned():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
 
@@ -639,7 +637,7 @@ def test_rating3ImagesRawIsMovedIntoDeleteFolderJpgTransitioned():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert bothFilesAreNOTinSRC(fullname)
 
@@ -664,7 +662,7 @@ def test_rating4BothImagefilesAreTransitioned():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert transitionTookPlace(fullname)
     assert not jpgWasDeleted(fullname) and not rawWasDeleted(fullname)
@@ -689,7 +687,7 @@ def test_rating5BothImagefilesAreTransitioned():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False, verbose=True))()
+    ImageAggregator(input=AggregatorInput(src=src, dst=dst, dry=False))()
 
     assert transitionTookPlace(fullname)
     assert not jpgWasDeleted(fullname) and not rawWasDeleted(fullname)

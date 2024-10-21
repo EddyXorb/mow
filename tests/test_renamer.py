@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import List
 
 from ..modules.audio.audiorenamer import AudioRenamer
-from ..modules.image.imagerenamer import *
+from ..modules.general.mediarenamer import MediaRenamer, RenamerInput
+from ..modules.image.imagerenamer import ImageRenamer
 import shutil
 from os.path import join, exists
 import os
@@ -27,14 +28,13 @@ def executeRenamingWith(
     maintainFolderStructure=True,
     useCurrentFilename=False,
     replace="",
-) -> List[MediaRenamer]:
+) -> list[MediaRenamer]:
     def getRenamerInput():
         return RenamerInput(
             src=src,
             dst=dst,
             writeMetaTags=writeMetaTags,
             move=move,
-            verbose=True,
             maintainFolderStructure=maintainFolderStructure,
             recursive=recursive,
             useCurrentFilename=useCurrentFilename,
