@@ -1,8 +1,7 @@
 import multiprocessing
 import os
 from typing import Callable
-
-from tqdm import tqdm
+from rich.progress import track
 
 from ..mow.mowtags import MowTags
 from ..general.mediafile import MediaFile
@@ -26,7 +25,6 @@ class MediaConverter(MediaTransitioner):
         converter,
         settings: dict[str, str],
     ) -> tuple[MediaFile, MediaFile | None, int]:
-
         os.makedirs(os.path.dirname(newPath), exist_ok=True)
 
         try:
@@ -77,7 +75,7 @@ class MediaConverter(MediaTransitioner):
         if self.rewriteMetaTagsOnConverted:
             self.print_info("Rewrite meta file tags on converted..")
             for toTransition, convertedFile in (
-                tqdm(convertedFiles) if self.verbosityLevel >= 3 else convertedFiles
+                track(convertedFiles) if self.verbosityLevel >= 3 else convertedFiles
             ):
                 self.performMetaTagRewriteOf(toTransition, convertedFile)
 

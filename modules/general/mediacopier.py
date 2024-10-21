@@ -1,7 +1,5 @@
 import datetime
-import shutil
 from typing import List
-from pathlib import Path
 import os
 from ..general.mediafile import MediaFile
 from ..general.mediatransitioner import TransitionTask

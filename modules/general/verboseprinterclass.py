@@ -9,23 +9,24 @@ class VerbosePrinterClass:
 
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
+        self.logger = logging.getLogger("MOW")
 
     def print_debug(self, *args):
         if self.verbose:
-            logging.debug(*args)
+            self.logger.debug(*args)
 
     def print_info(self, *args):
         if self.verbose:
-            logging.info(*args)
+            self.logger.info(*args)
 
     def print_warning(self, *args):
         if self.verbose:
-            logging.warning(*args)
+            self.logger.warning(*args)
 
     def print_error(self, *args):
         if self.verbose:
-            logging.error(*args)
+            self.logger.error(*args)
 
     def print_critical(self, *args):
         if self.verbose:
-            logging.critical(*args)
+            self.logger.critical(*args)

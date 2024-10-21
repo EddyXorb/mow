@@ -1,12 +1,7 @@
-from collections import defaultdict
-from dataclasses import dataclass
-from typing import DefaultDict, List, Tuple
-from os.path import basename, dirname
-from pathlib import Path
-from tqdm import tqdm
+from typing import List
+from rich.progress import track
 import os
 
-from ..general.checkresult import CheckResult
 from ..general.mediafile import MediaFile
 
 from .mediatransitioner import MediaTransitioner, TransitionerInput, TransitionTask
@@ -32,7 +27,7 @@ class MediaRater(MediaTransitioner):
         out: List[TransitionTask] = []
 
         with ExifToolHelper() as et:
-            for index, file in tqdm(enumerate(self.toTreat), total=len(self.toTreat)):
+            for index, file in track(enumerate(self.toTreat), total=len(self.toTreat)):
                 out.append(self.getTransitionTask(et, index, file))
         return out
 

@@ -1,14 +1,14 @@
-import datetime
-import os
 from pathlib import Path
 import sys
 from typing import Callable, Dict, Tuple
-import colorama
 import yaml
+import colorama
 
 from os import path
 from os.path import join
 import logging
+from rich.logging import RichHandler
+
 
 from ..image.imagefile import ImageFile
 from ..video.videofile import VideoFile
@@ -36,6 +36,7 @@ from ..general.mediatagger import MediaTagger
 from ..general.mediaaggregator import AggregatorInput
 
 from .mowstatusprinter import MowStatusPrinter
+from .foldertreeprinter import FolderTreePrinter
 
 
 class MowFormatter(logging.Formatter):
@@ -71,9 +72,7 @@ class Mow:
         self._setup_logger(verbosity)
 
         self.settingsfile = settingsfile
-        self.settings = (
-            self._readsettings()
-        )  # settings are stored in yaml-file at root dir of the script and tags are snake_case
+        self.settings = self._readsettings()  # settings are stored in yaml-file at root dir of the script and tags are snake_case
         self.stageFolders = [
             "1_copy",
             "2_rename",
@@ -109,7 +108,7 @@ class Mow:
         )
 
         src, dst = self._getSrcDstForStage("copy")
-        self._printEmphasized(f"Stage copy")
+        self._printEmphasized("Stage copy")
 
         MediaCopier(TransitionerInput(src=src, dst=dst, **self.basicInputParameter))()
 
@@ -236,16 +235,16 @@ class Mow:
         ).printStatus()
 
     def list_todos(self, stage: str):
-        items = os.listdir(
+        folder = (
             Path(self.settings["working_dir"]) / self.stageToFolder[stage]
             if stage != "copy"
             else self.settings["copy_source_dir"]
         )
-        for item in items if len(items) < 100 else items[:30]:
-            logging.info(item)
-
-        if len(items) > 100:
-            logging.info(f"... and {len(items) - 30} more items ...")
+        if not folder.exists():
+            raise Exception(f"Folder {folder} does not exist!")
+        FolderTreePrinter().print_tree_of(
+            folder, description=stage, max_files=300, max_same_filetype_per_folder=30
+        )
 
     def _getStageAfter(self, stage: str) -> str:
         if stage not in self.stageToFolder:
@@ -264,7 +263,7 @@ class Mow:
                 out = yaml.safe_load(f)
             if out is None:
                 out = {}
-            if not "working_dir" in out:
+            if "working_dir" not in out:
                 out["working_dir"] = getInputDir("Specify working directory!")
 
         with open(self.settingsfile, "w") as f:
@@ -286,7 +285,7 @@ class Mow:
         )
 
     def _printEmphasized(self, toprint: str):
-        logging.info(f"{'#'*10} {toprint} {'#'*10}")
+        self.logger.info(f"{'#'*10} {toprint} {'#'*10}")
 
     def _read_settings_folder_path_if_missing(
         self, key: str, message: str, force=False
@@ -304,7 +303,7 @@ class Mow:
 
         entity = reader(message)
         if entity is None:
-            logging.critical(f"Could not read {key}! Abort.")
+            self.logger.critical(f"Could not read {key}! Abort.")
             sys.exit()
         self.settings[key] = entity
 
@@ -320,15 +319,20 @@ class Mow:
             3: logging.INFO,
             4: logging.DEBUG,
         }
-        fileHandler = logging.FileHandler("mow.log", "a", "utf-8")
-        fileHandler.setLevel(logging.DEBUG)
-        streamHandler = logging.StreamHandler()
-        streamHandler.setLevel(verbosityToLevel[verbosity])
-        streamHandler.setFormatter(MowFormatter())
-
-        logging.basicConfig(
-            format="%(asctime)s [%(levelname)s]: %(message)s",
-            handlers=[fileHandler, streamHandler],
-            datefmt=timestampformat,
-            level=logging.DEBUG,
+        default_formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s]: %(message)s", datefmt=timestampformat
         )
+        fileHandler = logging.FileHandler("mow.log", "a", "utf-8")
+        fileHandler.setFormatter(default_formatter)
+        handler = RichHandler(
+            log_time_format=timestampformat,
+            show_path=False,
+            keywords=ImageFile.allSupportedFormats.union(VideoFile.supportedFormats),
+        )
+
+        logger = logging.getLogger("MOW")
+        logger.addHandler(fileHandler)
+        logger.addHandler(handler)
+        logger.setLevel(verbosityToLevel[verbosity])
+
+        self.logger = logger

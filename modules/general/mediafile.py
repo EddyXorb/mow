@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Callable, List
 import os
 from shutil import copyfile, move
-from os.path import *
 import datetime as dt
 
 

@@ -1,11 +1,11 @@
 import hashlib
 import io
-from tqdm import tqdm
 import os
 import tkinter as tk
 from tkinter import filedialog
 import csv
 import argparse
+from rich.progress import track
 
 parser = argparse.ArgumentParser("Hasher")
 parser.add_argument(
@@ -22,7 +22,7 @@ def calcMD5sum(src: str, stepsize=io.DEFAULT_BUFFER_SIZE) -> str:
     expectedsteps = int(filesizeMB / (stepsize / 1024.0 * 1024.0))
     md5 = hashlib.md5()
     with io.open(src, mode="rb") as fd:
-        for chunk in tqdm(
+        for chunk in track(
             iter(lambda: fd.read(stepsize), b""),
             unit=str(stepsize),
             total=expectedsteps,

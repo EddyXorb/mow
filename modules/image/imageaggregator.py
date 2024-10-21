@@ -4,8 +4,6 @@ from ..general.mediatransitioner import TransitionTask
 from ..image.imagefile import ImageFile
 from ..general.mediaaggregator import AggregatorInput, MediaAggregator
 
-from shutil import move
-from os.path import basename, join, dirname
 import os
 
 

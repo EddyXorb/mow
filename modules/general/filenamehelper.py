@@ -65,7 +65,7 @@ def extractDatetimeFromFileName(file: str, verbose=True) -> dt.datetime:
         return dt.datetime.strptime(basename(file)[0:17], timestampformat)
     except Exception as e:
         if verbose:
-            logging.warning(
+            logging.getLogger("MOW").warning(
                 f"Could not get time from timestamp of file {file} because of {e}"
             )
         return None

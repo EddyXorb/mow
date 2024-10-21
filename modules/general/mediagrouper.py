@@ -6,7 +6,7 @@ import os
 from os.path import basename, dirname, join
 from pathlib import Path
 from datetime import datetime
-from tqdm import tqdm
+from rich.progress import track
 from collections import defaultdict
 from math import sqrt
 import re
@@ -20,7 +20,6 @@ from ..general.filenamehelper import (
     isCorrectTimestamp,
     timestampformat,
 )
-from ..general.checkresult import CheckResult
 
 
 @dataclass(kw_only=True)
@@ -269,7 +268,7 @@ class MediaGrouper(MediaTransitioner):
         self.print_info("Start creating new group names..")
         currentGroup = self.getGroupBasedOnFirstFile(str(ungrouped[0]))
         lastTime = extractDatetimeFromFileName(str(ungrouped[0]))
-        for file in tqdm(ungrouped):
+        for file in track(ungrouped):
             if (
                 (extractDatetimeFromFileName(str(file)) - lastTime).total_seconds()
                 / 3600.0
@@ -292,9 +291,9 @@ class MediaGrouper(MediaTransitioner):
     def checkCorrectSequence(self):
         groupToFiles, _ = self.getCorrectlyGroupedFiles()
 
-        orderedFiles: List[Tuple[str, List[str]]] = (
-            []
-        )  # Tuple[0] = groupname, Tuple[1] = filenames
+        orderedFiles: List[
+            Tuple[str, List[str]]
+        ] = []  # Tuple[0] = groupname, Tuple[1] = filenames
 
         for key, values in groupToFiles.items():
             orderedFiles.append(

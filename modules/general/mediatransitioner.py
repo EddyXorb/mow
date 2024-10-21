@@ -4,16 +4,13 @@ import os
 from os.path import join, basename
 from pathlib import Path
 from shutil import move
-import shutil
 import sys
-from time import sleep
 import traceback
 from typing import Dict, List, Callable
 from exiftool import ExifToolHelper
 from math import sqrt
-from tqdm import tqdm
 import re
-import multiprocessing
+from rich.progress import track
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
@@ -179,7 +176,7 @@ class MediaTransitioner(VerbosePrinterClass):
             for file in files:
                 path = Path(join(root, file))
 
-                if not self.filter is None:
+                if self.filter is not None:
                     if self.filter.search(str(path)) is None:
                         continue
                     else:
@@ -195,7 +192,7 @@ class MediaTransitioner(VerbosePrinterClass):
                 already_found_files.add(mfile.pathnoext)
                 out.append(mfile)
 
-            if not self.filter is None and filtermatches > 0:
+            if self.filter is not None and filtermatches > 0:
                 self.print_info(f"Matched files in {root} {'.'*filtermatches}")
 
         self.print_info(f"Collected {len(out)} files.")
@@ -291,7 +288,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self.print_info("Set meta file tags..")
 
-        for task in tqdm(tasks) if self.verbosityLevel >= 3 else tasks:
+        for task in track(tasks) if self.verbosityLevel >= 3 else tasks:
             try:
                 files = self.toTreat[task.index].getAllFileNames()
 
@@ -318,7 +315,7 @@ class MediaTransitioner(VerbosePrinterClass):
                 )
                 if len(str(self.toTreat[task.index])) > 260:
                     task.skipReason += (
-                        f"Filename is too long. Exiftool supports only 260 characters."
+                        "Filename is too long. Exiftool supports only 260 characters."
                     )
 
         return self.getNonSkippedOf(tasks)

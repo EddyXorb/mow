@@ -4,11 +4,9 @@ from typing import Dict, List, Set
 from pathlib import Path
 from os.path import basename, splitext
 from exiftool import ExifToolHelper
-from tqdm import tqdm
-
+from rich.progress import track
 
 from ..mow.mowtags import MowTags
-
 from .mediatransitioner import MediaTransitioner, TransitionTask, TransitionerInput
 from .mediagrouper import MediaGrouper
 from .filenamehelper import isCorrectTimestamp
@@ -51,7 +49,7 @@ class MediaAggregator(MediaTransitioner):
         out: Dict[int, List[Dict[str, str]]] = {}
 
         with ExifToolHelper() as et:
-            for task in tqdm(self.toTransition):
+            for task in track(self.toTransition):
                 files = self.getAllTagRelevantFilenamesFor(self.toTreat[task.index])
                 try:
                     tagdictlist: List[Dict[str, str]] = et.get_tags(
@@ -62,7 +60,7 @@ class MediaAggregator(MediaTransitioner):
                             key: value.encode("1252").decode(
                                 "utf-8"
                             )  # to avoid problems with umlauten
-                            if type(value) == str
+                            if type(value) is str
                             else value
                             for key, value in tagdict.items()
                         }
@@ -131,7 +129,7 @@ class MediaAggregator(MediaTransitioner):
         self, groupnameToTest: str, tagDicts: List[Dict[str, str]]
     ):
         for tagDict in tagDicts:
-            if not MowTags.description in tagDict:
+            if MowTags.description not in tagDict:
                 continue
 
             if str(Path(tagDict[MowTags.description])) != str(Path(groupnameToTest)):

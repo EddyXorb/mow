@@ -132,7 +132,7 @@ def resize_preview_image_of_dng(dng_file_path: str):
         ).save(temporary_preview_image_path, quality=DNG_PREVIEW_IMAGE_QUALITY)
         # 3. remove all existing preview images from dng
         et.execute(
-            f"-preview:previewimage=", "-P", "-overwrite_original", dng_file_path
+            "-preview:previewimage=", "-P", "-overwrite_original", dng_file_path
         )
         # 4. set resized preview image in dng
         et.execute(

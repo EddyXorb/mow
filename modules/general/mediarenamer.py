@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import os
 from os.path import join
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, List, Tuple
 from pathlib import Path
 from datetime import datetime
 import re
@@ -9,7 +9,7 @@ import re
 from .mediatransitioner import MediaTransitioner, TransitionerInput, TransitionTask
 
 from .filenamehelper import getMediaCreationDateFrom, timestampformat
-from tqdm import tqdm
+from rich.progress import track
 
 
 @dataclass(kw_only=True)
@@ -95,7 +95,7 @@ class MediaRenamer(MediaTransitioner):
         if not self.writeMetaTags:
             return
 
-        for task in tqdm(self.transitionTasks):
+        for task in track(self.transitionTasks, description="Setting XMP tags.."):
             if task.skip:
                 continue
 
@@ -116,7 +116,11 @@ class MediaRenamer(MediaTransitioner):
     def createNewNames(self):
         self.print_info("Create new names for files..")
 
-        for index, file in tqdm(enumerate(self.toTreat)):
+        for index, file in track(
+            enumerate(self.toTreat),
+            description="Creating new names..",
+            total=len(self.toTreat),
+        ):
             oldName = str(file)
             newName, errorreason = self.getRenamedFileFrom(oldName)
 
@@ -147,7 +151,7 @@ class MediaRenamer(MediaTransitioner):
             return splitted[1], None
 
         if not self.input.useCurrentFilename and self.fileWasAlreadyRenamed(file):
-            return None, f"File appears to be already renamed."
+            return None, "File appears to be already renamed."
 
         if self.input.useCurrentFilename:
             return os.path.basename(file), None

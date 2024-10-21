@@ -25,15 +25,14 @@ class ImageSearcher(VerbosePrinterClass):
         self.filessearched: DefaultDict[str, List[ImageFile]] = self.createFolderDict(
             self.searchdir, self.excludesarchdirs
         )
-        self.filessuspectedtomiss: DefaultDict[
-            str, List[ImageFile]
-        ] = self.createFolderDict(self.missingdir)
+        self.filessuspectedtomiss: DefaultDict[str, List[ImageFile]] = (
+            self.createFolderDict(self.missingdir)
+        )
         self.missingfiles: List[ImageFile] = []
 
     def createFolderDict(
         self, dir: str, excludedirs: List[str] = []
     ) -> DefaultDict[ImageFile, List[ImageFile]]:
-
         out = defaultdict(list)
 
         for root, dirs, files in os.walk(dir, topdown=True):
