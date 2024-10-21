@@ -241,11 +241,11 @@ class Mow:
             if stage != "copy"
             else self.settings["copy_source_dir"]
         )
-        for item in items if len(items) < 100 else items[:100]:
+        for item in items if len(items) < 100 else items[:30]:
             logging.info(item)
 
         if len(items) > 100:
-            logging.info(f"... and {len(items) - 100} more items ...")
+            logging.info(f"... and {len(items) - 30} more items ...")
 
     def _getStageAfter(self, stage: str) -> str:
         if stage not in self.stageToFolder:

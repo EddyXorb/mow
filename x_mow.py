@@ -86,7 +86,7 @@ renameparser.add_argument(
 renameparser.add_argument(
     "-r",
     "--replace",
-    help="Expects a comma-separated string such as '^\d*.*,TEST' where the part before the comma is a regex that every file will be searched after and the second part is how matches should be replaced. If given, will just rename mediafiles in place without transitioning them to next stage.",
+    help="Expects a comma-separated string such as '^\\d*.*,TEST' where the part before the comma is a regex that every file will be searched after and the second part is how matches should be replaced. If given, will just rename mediafiles in place without transitioning them to next stage.",
     type=str,
     dest="rename_replace",
 )
