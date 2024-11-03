@@ -339,7 +339,7 @@ class MediaTransitioner(VerbosePrinterClass):
         task.metaTags[MowTags.stagehistory] = curr_stage_history[MowTags.stagehistory]
 
     def doRelocationOf(self, tasks: list[TransitionTask]):
-        for task in tasks:
+        for task in track(tasks):
             self.relocateSingleTask(task)
 
     def relocateSingleTask(self, task: TransitionTask):
