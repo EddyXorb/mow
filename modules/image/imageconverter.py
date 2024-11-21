@@ -71,7 +71,6 @@ def convertImage(
         if settings["jpg_quality"] in range(1, 100):
             with open(jpgfile, "rb") as f:
                 im: Image.Image = Image.open(fp=f)
-                print("here")
                 im.save(
                     Path(target_dir) / os.path.basename(jpgfile),
                     quality=int(settings["jpg_quality"]),
