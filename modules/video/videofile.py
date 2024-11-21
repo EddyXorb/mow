@@ -24,6 +24,9 @@ class VideoFile(MediaFile):
             for key, value in result.items():
                 if key == "SourceFile":
                     continue
-                return dt.datetime.strptime(value[0:19], "%Y:%m:%d %H:%M:%S")
+                try:
+                    return dt.datetime.strptime(value[0:19], "%Y:%m:%d %H:%M:%S")
+                except:  # noqa: E722
+                    pass
 
         raise Exception(f"Did not find creation date of video file {file}!")
