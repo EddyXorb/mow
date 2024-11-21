@@ -348,8 +348,12 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self.print_debug(
             self.getTransitionInfoString(
-                toTransition,
-                toTransition.getDescriptiveBasenames(),
+                toTransition=toTransition,
+                newName=(
+                    toTransition.getDescriptiveBasenames()
+                    if task.newName is None
+                    else task.newName
+                ),
             )
         )
 
