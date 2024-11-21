@@ -4,6 +4,7 @@ from rich.text import Text
 from rich import print
 from rich.filesize import decimal
 from rich.markup import escape
+import sys
 
 
 class FolderTreePrinter:
@@ -38,8 +39,13 @@ class FolderTreePrinter:
 
 
         """
+
         tree = self._walk_directory(
-            folder, Tree(description), max_same_filetype_per_folder=1, max_files=300
+            folder,
+            Tree(description),
+            max_same_filetype_per_folder=1,
+            max_files=300,
+            avoid_special_symbols=sys.stdout.encoding != "utf-8",
         )
         print(tree)
 
@@ -50,6 +56,7 @@ class FolderTreePrinter:
         max_files: int = 9999,
         max_same_filetype_per_folder=30,
         iterations: list[int] = [0],
+        avoid_special_symbols: bool = False,
     ) -> Tree:
         """
         Recursively build a Tree with directory contents.
@@ -81,6 +88,9 @@ class FolderTreePrinter:
         files_treated_count = 0
         files_count = 0
         filetypes = set()
+        foldersymbol = ""
+        if not avoid_special_symbols:
+            foldersymbol = ":open_file_folder:"
 
         for single_path in paths:
             # Remove hidden files
@@ -89,7 +99,7 @@ class FolderTreePrinter:
             if single_path.is_dir():
                 style = "dim" if single_path.name.startswith("__") else ""
                 branch = tree.add(
-                    f"[bold magenta]:open_file_folder: [link file://{single_path}]{escape(single_path.name)}",
+                    f"[bold magenta]{foldersymbol} [link file://{single_path}]{escape(single_path.name)}",
                     style=style,
                     guide_style=style,
                 )
@@ -99,6 +109,7 @@ class FolderTreePrinter:
                     max_same_filetype_per_folder=max_same_filetype_per_folder,
                     max_files=max_files,
                     iterations=iterations,
+                    avoid_special_symbols=avoid_special_symbols,
                 )
             else:  # is file
                 files_count += 1
@@ -122,7 +133,10 @@ class FolderTreePrinter:
                 text_filename.stylize(f"link file://{single_path}")
                 file_size = single_path.stat().st_size
                 text_filename.append(f" ({decimal(file_size)})", "blue")
-                icon = "🐍 " if single_path.suffix == ".py" else "📄 "
+                if avoid_special_symbols:
+                    icon = ""
+                else:
+                    icon = "🐍 " if single_path.suffix == ".py" else "📄 "
                 tree.add(Text(icon) + text_filename)
 
         if files_treated_count > max_same_filetype_per_folder:
