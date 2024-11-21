@@ -153,7 +153,9 @@ class MediaAggregator(MediaTransitioner):
                     tagMissingForExtension.append(splitext(tagsDict["SourceFile"])[1])
 
             if len(allValuesThisTag) == 1 and (
-                atLeastOneMissing or self.jpgSingleSourceOfTruth
+                (atLeastOneMissing
+                or hasattr(self, "jpgSingleSourceOfTruth"))
+                and self.jpgSingleSourceOfTruth
             ):
                 task.metaTags[tag] = actualTagValue
             elif len(allValuesThisTag) == 0 and tag in MowTags.expected:
