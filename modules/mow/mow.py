@@ -33,8 +33,6 @@ from ..general.medialocalizer import (
     MediaLocalizer,
 )
 from ..general.mediatagger import MediaTagger
-from ..general.mediaaggregator import AggregatorInput
-
 from .mowstatusprinter import MowStatusPrinter
 from .foldertreeprinter import FolderTreePrinter
 
@@ -72,7 +70,9 @@ class Mow:
         self._setup_logger(verbosity)
 
         self.settingsfile = settingsfile
-        self.settings = self._readsettings()  # settings are stored in yaml-file at root dir of the script and tags are snake_case
+        self.settings = (
+            self._readsettings()
+        )  # settings are stored in yaml-file at root dir of the script and tags are snake_case
         self.stageFolders = [
             "1_copy",
             "2_rename",
@@ -127,38 +127,24 @@ class Mow:
                 )
             )()
 
-    def convert(self, enforcePassthrough: bool = False):
-        src, dst = self._getSrcDstForStage("convert")
-        converters = (
-            [ImageConverter, VideoConverter]
-            if not enforcePassthrough
-            else [PassthroughConverter]
-        )
-        for converter in converters:
-            self._printEmphasized(f"Stage Convert: {converter.__name__}")
-            if converter == PassthroughConverter:
-                converter(
-                    TransitionerInput(
-                        src=src,
-                        dst=dst,
-                        **self.basicInputParameter,
-                    ),
-                    valid_extensions=list(
-                        ImageFile.allSupportedFormats.union(VideoFile.supportedFormats)
-                    ),
-                )()
-            else:
-                self._read_settings_file_path_if_missing(
-                    "dng_converter_exe",
-                    "Specify path to dng converter executable!",
-                )
-                converter(
-                    TransitionerInput(
-                        src=src,
-                        dst=dst,
-                        **self.basicInputParameter,
-                    )
-                )()
+    def convert(self, enforcePassthrough: bool = False, jpg_quality=100):
+        transitionerInput = self._getBasicTransitionerInputFor("convert")
+        if enforcePassthrough:
+            self._printEmphasized("Stage Convert: Passthrough")
+            PassthroughConverter(
+                transitionerInput,
+                valid_extensions=list(
+                    ImageFile.allSupportedFormats.union(VideoFile.supportedFormats)
+                ),
+            )()
+        else:
+            self._read_settings_file_path_if_missing(
+                "dng_converter_exe", "Specify path to dng converter executable!"
+            )
+            self._printEmphasized("Stage Convert: Images")
+            ImageConverter(transitionerInput, jpg_quality=jpg_quality)()
+            self._printEmphasized("Stage Convert: Videos")
+            VideoConverter(transitionerInput)()
 
     def group(
         self,
@@ -184,50 +170,32 @@ class Mow:
         )()
 
     def rate(self, overrulingfiletype: str = None):
-        src, dst = self._getSrcDstForStage("rate")
         self._printEmphasized("Stage Rate")
         MediaRater(
-            input=TransitionerInput(
-                src=src,
-                dst=dst,
-                **self.basicInputParameter,
-            ),
+            input=self._getBasicTransitionerInputFor("rate"),
             overrulingfiletype=overrulingfiletype,
         )()
 
     def tag(self):
-        src, dst = self._getSrcDstForStage("tag")
         self._printEmphasized("Stage Tag")
-        MediaTagger(
-            TransitionerInput(
-                src=src,
-                dst=dst,
-                **self.basicInputParameter,
-            )
-        )()
+        MediaTagger(self._getBasicTransitionerInputFor("tag"))()
 
     def localize(self, localizerInput: BaseLocalizerInput):
-        src, dst = self._getSrcDstForStage("localize")
         self._printEmphasized("Stage Localize")
         MediaLocalizer(
             LocalizerInput(
-                localizerInput,
-                TransitionerInput(src=src, dst=dst, **self.basicInputParameter),
+                localizerInput, self._getBasicTransitionerInputFor("localize")
             )
         )()
 
     def aggregate(self, jpgIsSingleSourceOfTruth: bool):
-        src, dst = self._getSrcDstForStage("aggregate")
+        transitionerInput = self._getBasicTransitionerInputFor("aggregate")
         self._printEmphasized("Stage Aggregate")
-        for aggregator in [ImageAggregator, VideoAggregator]:
-            aggregator(
-                AggregatorInput(
-                    src=src,
-                    dst=dst,
-                    jpgSingleSourceOfTruth=jpgIsSingleSourceOfTruth,
-                    **self.basicInputParameter,
-                )
-            )()
+        ImageAggregator(
+            transitionerInput,
+            jpgSingleSourceOfTruth=jpgIsSingleSourceOfTruth,
+        )()
+        VideoAggregator(transitionerInput)()
 
     def status(self):
         MowStatusPrinter(
@@ -336,3 +304,11 @@ class Mow:
         logger.setLevel(verbosityToLevel[verbosity])
 
         self.logger = logger
+
+    def _getBasicTransitionerInputFor(self, stage: str) -> TransitionerInput:
+        src, dst = self._getSrcDstForStage(stage)
+        return TransitionerInput(
+            src=src,
+            dst=dst,
+            **self.basicInputParameter,
+        )

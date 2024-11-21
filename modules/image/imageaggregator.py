@@ -1,15 +1,17 @@
-
-from ..general.mediatransitioner import TransitionTask
+from ..general.mediatransitioner import TransitionTask, TransitionerInput
 from ..image.imagefile import ImageFile
-from ..general.mediaaggregator import AggregatorInput, MediaAggregator
+from ..general.mediaaggregator import MediaAggregator
 
 import os
 
 
 class ImageAggregator(MediaAggregator):
-    def __init__(self, input: AggregatorInput):
+    def __init__(self, input: TransitionerInput, jpgSingleSourceOfTruth: bool = False):
+        """
+        jpgSingleSourceOfTruth: if true, will look only at jpg when processing images to determine if tags are correct
+        """
         input.mediaFileFactory = ImageFile
-        self.jpgSingleSourceOfTruth = input.jpgSingleSourceOfTruth
+        self.jpgSingleSourceOfTruth = jpgSingleSourceOfTruth
         super().__init__(input)
 
     def getAllTagRelevantFilenamesFor(self, file: ImageFile) -> list[str]:
@@ -24,7 +26,9 @@ class ImageAggregator(MediaAggregator):
                 self.deleteMediaFile(mfile)
 
                 task.skip = True
-                task.skipReason = "deleted file based on ratist_correctImageIsTransitiong."
+                task.skipReason = (
+                    "deleted file based on ratist_correctImageIsTransitiong."
+                )
             case 2 | 3:
                 rawfile = mfile.getRaw()
                 if rawfile is None:

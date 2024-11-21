@@ -56,7 +56,7 @@ class TransitionerInput:
     writeMetaTags: writes meta tags to Files
     filter: regex for filtering files that should only be treated (searching the complete subpath with all subfolders of the current stage)
     rewriteMetaTagsOnConverted: a transition can include a conversion, which should rewrite the meta tags of the converted file (copying the meta tags of the original file). If converter is None, this option is ignored.
-    converter: function to convert files, if None, no conversion is done. Signature: (file to convert, target directory) -> converted file (possibly with different extensions AND name, if transition Task has diffent "newName" specified)
+    converter: function to convert files, if None, no conversion is done. Signature: (file to convert, target directory, settings) -> converted file (possibly with different extensions AND name, if transition Task has diffent "newName" specified)
     settings: contains settings given in the .mowsettings-file, such as copy_source_dir, working_dir, etc.
     """
 

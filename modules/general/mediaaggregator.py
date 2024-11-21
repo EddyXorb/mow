@@ -14,28 +14,9 @@ from ..general.checkresult import CheckResult
 from ..general.mediafile import MediaFile
 
 
-@dataclass(kw_only=True)
-class AggregatorInput(TransitionerInput):
-    """
-    src : directory which will be search for files
-    dst : directory where renamed files should be placed
-    recursive : if true, dives into every subdir to look for image files
-    move : if true, moves files, else copies them
-    restoreOldNames : inverts the renaming logic to simply remove the timestamp prefix.
-    maintainFolderStructure: if recursive is true will rename subfolders into subfolders, otherwise all files are put into root repo of dest
-    dry: don't actually rename files
-    writeMetaTags: sets XMP:Source to original filename and XMP:date to creationDate
-    replace: a string such as '"^[0-9].*$",""', where the part before the comma is a regex that every file will be search after and the second part is how matches should be replaced. If given will just rename mediafiles without transitioning them to next stage.
-    jpgSingleSourceOfTruth: if true, will look only at jpg when processing images to determine if tags are correct
-    """
-
-    jpgSingleSourceOfTruth: bool = False
-
-
 class MediaAggregator(MediaTransitioner):
-    def __init__(self, input: AggregatorInput):
+    def __init__(self, input: TransitionerInput):
         super().__init__(input)
-        self.jpgSingleSourceOfTruth = input.jpgSingleSourceOfTruth
         self.toTransition: list[TransitionTask] = []
 
     def getAllTagRelevantFilenamesFor(self, file: MediaFile) -> list[str]:
@@ -57,11 +38,13 @@ class MediaAggregator(MediaTransitioner):
                     )
                     out[task.index] = [
                         {
-                            key: value.encode("1252").decode(
-                                "utf-8"
-                            )  # to avoid problems with umlauten
-                            if type(value) is str
-                            else value
+                            key: (
+                                value.encode("1252").decode(
+                                    "utf-8"
+                                )  # to avoid problems with umlauten
+                                if type(value) is str
+                                else value
+                            )
                             for key, value in tagdict.items()
                         }
                         for tagdict in tagdictlist

@@ -99,6 +99,17 @@ convertparser.add_argument(
     action="store_true",
 )
 
+convertparser.add_argument(
+    "-j",
+    "--jpg-quality",
+    help="Quality of jpg files, range in [1,100]. Default is 100. If 100, no compression is applied to jpg-files.",
+    type=int,
+    default=100,
+    choices=range(1, 101),
+    dest="convert_jpg_quality",
+    metavar="QUALITY",
+)
+
 groupparser.add_argument(
     "-a",
     "--automate",
@@ -307,7 +318,10 @@ def main():
             replace=args.rename_replace if args.rename_replace is not None else "",
         )
     elif should_execute_stage("convert", args):
-        mow.convert(enforcePassthrough=args.convert_passthrough)
+        mow.convert(
+            enforcePassthrough=args.convert_passthrough,
+            jpg_quality=args.convert_jpg_quality,
+        )
     elif should_execute_stage("group", args):
         mow.group(
             automate=args.group_automate,

@@ -20,7 +20,9 @@ targetDir = join(dst, "subsubfolder")
 expectedConvertedImageFile = join(targetDir, imagename)
 
 
-def executeConversionWith(maintainFolderStructure=True, filterstring=""):
+def executeConversionWith(
+    maintainFolderStructure=True, filterstring="", jpg_quality=100
+):
     with open(Path(__file__).parent.parent / ".mow_test_settings.yml") as f:
         settings = yaml.safe_load(f)
 
@@ -31,7 +33,8 @@ def executeConversionWith(maintainFolderStructure=True, filterstring=""):
             maintainFolderStructure=maintainFolderStructure,
             settings=settings,
             filter=filterstring,
-        )
+        ),
+        jpg_quality=jpg_quality,
     )()
 
 
@@ -132,3 +135,35 @@ def test_dng_conversion_is_multithreaded():
     )
 
     assert duration_singlethreaded / n > duration_multithreaded / 2
+
+
+def test_jpg_quality_10_reduces_filessize_notably():
+    prepareTest()
+
+    filesize_before = os.path.getsize(srcfile)
+
+    executeConversionWith(jpg_quality=10)
+
+    filesize_after = os.path.getsize(expectedConvertedImageFile)
+
+    assert filesize_after < filesize_before / 2
+
+
+def test_jpg_quality_100_lets_jpg_unchanged():
+    prepareTest()
+
+    filesize_before = os.path.getsize(srcfile)
+
+    executeConversionWith(jpg_quality=100)
+
+    filesize_after = os.path.getsize(expectedConvertedImageFile)
+
+    assert abs(filesize_after - filesize_before) < 1000 # bytes
+
+def test_jpg_quality_10_moves_jpg_into_deleted_folder():
+    prepareTest()
+
+    executeConversionWith(jpg_quality=10)
+
+    assert not exists(srcfile)
+    assert exists(join(src, DELETE_FOLDER_NAME, "subsubfolder", imagename))

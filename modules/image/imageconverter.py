@@ -6,6 +6,7 @@ from .imagefile import ImageFile
 from subprocess import check_output
 from exiftool import ExifTool
 from PIL import Image, ImageOps
+from pathlib import Path
 
 # The Adobe DNG Converter supports the following command line options:
 # -c Output lossless compressed DNG files (default).
@@ -48,13 +49,14 @@ from PIL import Image, ImageOps
 
 DESIRED_RAW_PREVIEW_SIZE = (3200, 2400)
 DNG_PREVIEW_IMAGE_QUALITY = 25
+import logging
 
 
 def convertImage(
     source: ImageFile, target_dir: str, settings: dict[str, str]
 ) -> ImageFile | None:
     """
-    The converter does have to not create missing directories. This is done by the Transitioner.
+    The converter does not have to create missing directories. This is done by the Transitioner.
     If there is a raw file, will convert this to dng with optimized preview image
     (smaller in size, but bigger in resolution).
     """
@@ -63,26 +65,42 @@ def convertImage(
 
     jpgfile = source.getJpg()
 
-    if jpgfile is not None:
-        shutil.move(jpgfile, target_dir)
+    if jpgfile:
+        if "jpg_quality" not in settings:
+            settings["jpg_quality"] = 100
+        if settings["jpg_quality"] in range(1, 100):
+            with open(jpgfile, "rb") as f:
+                im: Image.Image = Image.open(fp=f)
+                print("here")
+                im.save(
+                    Path(target_dir) / os.path.basename(jpgfile),
+                    quality=int(settings["jpg_quality"]),
+                )
+        else:
+            shutil.move(jpgfile, target_dir)
+            extension_to_remove = os.path.splitext(jpgfile)[1]
+            source.remove_extension(
+                extension_to_remove
+            )  # this is done to avoid moving the jpg into the _deleted folder as in this case it's a passthrough operation
+
         new_jpgfile_location = os.path.join(target_dir, os.path.basename(jpgfile))
-        extension_to_remove = os.path.splitext(jpgfile)[1]
-        source.remove_extension(extension_to_remove)
 
     rawfile = source.getRaw()
 
-    if rawfile is not None:
+    if rawfile:
         if rawfile.endswith(".dng") or rawfile.endswith(".DNG"):
             shutil.move(rawfile, target_dir)
             new_dngfile_location = os.path.join(target_dir, os.path.basename(rawfile))
-            source.remove_extension(os.path.splitext(rawfile)[1])
+            source.remove_extension(
+                os.path.splitext(rawfile)[1]
+            )  # this is done to avoid moving the .dng into the _deleted folder as in this case it's a passthrough operation
         else:
             new_dngfile_location = convert_to_dng(target_dir, settings, rawfile)
             resize_preview_image_of_dng(new_dngfile_location)
 
-    if new_jpgfile_location is not None:
+    if new_jpgfile_location:
         return ImageFile(new_jpgfile_location)
-    if new_dngfile_location is not None:
+    if new_dngfile_location:
         return ImageFile(new_dngfile_location)
 
     return None
@@ -131,9 +149,7 @@ def resize_preview_image_of_dng(dng_file_path: str):
             Image.open(temporary_preview_image_path), size=DESIRED_RAW_PREVIEW_SIZE
         ).save(temporary_preview_image_path, quality=DNG_PREVIEW_IMAGE_QUALITY)
         # 3. remove all existing preview images from dng
-        et.execute(
-            "-preview:previewimage=", "-P", "-overwrite_original", dng_file_path
-        )
+        et.execute("-preview:previewimage=", "-P", "-overwrite_original", dng_file_path)
         # 4. set resized preview image in dng
         et.execute(
             f"-preview:jpgfromraw<={temporary_preview_image_path}",
@@ -148,6 +164,13 @@ def resize_preview_image_of_dng(dng_file_path: str):
         os.remove(temporary_preview_image_path)
 
 
+def create_converter(jpg_quality: int):
+    def converter(source: ImageFile, target_dir: str, settings: dict[str, str]):
+        return convertImage(source, target_dir, settings, jpg_quality)
+
+    return converter
+
+
 class ImageConverter(MediaConverter):
     """
     Pasthrough for jpg, conversion to dng for raw files.
@@ -156,13 +179,16 @@ class ImageConverter(MediaConverter):
         The dng file has in its xmp metadata another profile as  suggestion named "Camera Natural" which is chosen by default. This profile is not as good as "Adobe Standard".
     """
 
-    def __init__(self, input: TransitionerInput):
+    def __init__(self, input: TransitionerInput, jpg_quality: int = 100):
         input.mediaFileFactory = ImageFile
         input.converter = convertImage
         input.rewriteMetaTagsOnConverted = (
             False  # TODO check if dng contains all info needed
         )
         input.nr_processes_for_conversion = max(1, int(os.cpu_count() * 0.7))
+        input.settings["jpg_quality"] = (
+            jpg_quality  # this hack enables usage of multiprocessing as pickling won't work with locals (which would be needed for a closure)
+        )
         super().__init__(input)
 
         if "dng_converter_exe" not in input.settings:
