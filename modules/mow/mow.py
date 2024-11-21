@@ -169,11 +169,12 @@ class Mow:
             )
         )()
 
-    def rate(self, overrulingfiletype: str = None):
+    def rate(self, overrulingfiletype: str = None,enforced_rating=None):
         self._printEmphasized("Stage Rate")
         MediaRater(
             input=self._getBasicTransitionerInputFor("rate"),
             overrulingfiletype=overrulingfiletype,
+            enforced_rating=enforced_rating
         )()
 
     def tag(self):

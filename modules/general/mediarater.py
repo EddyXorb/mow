@@ -14,11 +14,17 @@ from exiftool import ExifToolHelper
 
 
 class MediaRater(MediaTransitioner):
-    def __init__(self, input: TransitionerInput, overrulingfiletype: str = None):
+    def __init__(
+        self,
+        input: TransitionerInput,
+        overrulingfiletype: str = None,
+        enforced_rating: int = None,
+    ):
         input.mediaFileFactory = createAnyValidMediaFile
         input.writeMetaTags = True
         super().__init__(input)
         self.overrulingfiletype = overrulingfiletype
+        self.enforced_rating = enforced_rating
 
     def getTasks(self) -> list[TransitionTask]:
         self.print_info("Check every file for rating..")
@@ -34,6 +40,11 @@ class MediaRater(MediaTransitioner):
         self, et: ExifToolHelper, index: int, file: MediaFile
     ) -> TransitionTask:
         try:
+            if self.enforced_rating and self.enforced_rating in range(1, 6):
+                return TransitionTask(
+                    index, metaTags={"XMP:Rating": self.enforced_rating}
+                )
+
             if isinstance(
                 file, VideoFile
             ):  # TODO: remove this special case for videos: always rating 2

@@ -160,6 +160,15 @@ rateparser.add_argument(
     default=None,
 )
 
+rateparser.add_argument(
+    "-e",
+    "--enforce",
+    help="Enforce rating for all files.",
+    type=int,
+    dest="rate_enforced_rating",
+    metavar="RATING",
+)
+
 localizeparser.add_argument(
     "-i",
     "--ignore_missing_gps_data",
@@ -331,7 +340,10 @@ def main():
             checkSequence=args.group_check_seq,
         )
     elif should_execute_stage("rate", args):
-        mow.rate(overrulingfiletype=args.rate_overrule)
+        mow.rate(
+            overrulingfiletype=args.rate_overrule,
+            enforced_rating=args.rate_enforced_rating,
+        )
     elif should_execute_stage("tag", args):
         mow.tag()
     elif should_execute_stage("localize", args):

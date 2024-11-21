@@ -264,3 +264,23 @@ def test_differentRatingBetweenJPGandRawPreventsTransitionIfOverrulingFileending
         assert exists(fullnameRaw)
         assert not exists(join(dst, groupname, "test.JPG"))
         assert not exists(join(dst, groupname, "test.ORF"))
+
+
+def test_enforced_rating_works():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    MediaRater(
+        input=TransitionerInput(src=src, dst=dst, dry=False),enforced_rating=5
+    )()
+
+    assert not exists(fullname)
+    assert exists(join(dst, groupname, "test.JPG"))
+
+    with ExifToolHelper() as et:
+        rating = et.get_tags(join(dst, groupname, "test.JPG"), ["XMP:Rating"])[0]
+        assert "XMP:Rating" in rating
+        assert rating["XMP:Rating"] == 5
