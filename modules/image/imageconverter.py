@@ -71,9 +71,16 @@ def convertImage(
         if settings["jpg_quality"] in range(1, 100):
             with open(jpgfile, "rb") as f:
                 im: Image.Image = Image.open(fp=f)
+                metadata = {}
+                if im.info.get("exif"):
+                    metadata["exif"] = im.info.get("exif")
+                if im.info.get("xmp"):
+                    metadata["xmp"] = im.info.get("xmp")
                 im.save(
                     Path(target_dir) / os.path.basename(jpgfile),
                     quality=int(settings["jpg_quality"]),
+                    optimize=True,
+                    **metadata,
                 )
         else:
             shutil.move(jpgfile, target_dir)

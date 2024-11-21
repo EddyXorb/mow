@@ -2,6 +2,7 @@ import time
 from pathlib import Path
 import shutil
 from os.path import join, exists
+from exiftool import ExifToolHelper
 import os
 
 import yaml
@@ -9,6 +10,7 @@ import yaml
 from ..modules.general.mediatransitioner import TransitionerInput
 from ..modules.image.imageconverter import ImageConverter
 from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME
+from ..modules.mow.mowtags import MowTags
 
 testfolder = (Path(__file__).parent.parent / "tests").absolute().__str__()
 tempsrcfolder = "filestotreat"
@@ -158,7 +160,8 @@ def test_jpg_quality_100_lets_jpg_unchanged():
 
     filesize_after = os.path.getsize(expectedConvertedImageFile)
 
-    assert abs(filesize_after - filesize_before) < 1000 # bytes
+    assert abs(filesize_after - filesize_before) < 1000  # bytes
+
 
 def test_jpg_quality_10_moves_jpg_into_deleted_folder():
     prepareTest()
@@ -167,3 +170,24 @@ def test_jpg_quality_10_moves_jpg_into_deleted_folder():
 
     assert not exists(srcfile)
     assert exists(join(src, DELETE_FOLDER_NAME, "subsubfolder", imagename))
+
+
+def test_jpg_conversion_preserves_xmp_and_jpg_metadata():
+    prepareTest()
+
+    with ExifToolHelper() as et:
+        et.set_tags(
+            srcfile,
+            {MowTags.rating: 3, "EXIF:Model": "Test"},
+            params=["-P", "-overwrite_original", "-v2"],
+        )
+
+    executeConversionWith(jpg_quality=10)
+
+    with ExifToolHelper() as et:
+        rating = et.get_tags(expectedConvertedImageFile, [MowTags.rating])[0]
+        assert MowTags.rating in rating
+        assert rating[MowTags.rating] == 3
+        tags = et.get_tags(expectedConvertedImageFile, [])[0]
+        print(tags)
+        assert tags["EXIF:Model"] == "Test"
