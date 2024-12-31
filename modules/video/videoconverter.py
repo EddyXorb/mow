@@ -29,4 +29,5 @@ class VideoConverter(MediaConverter):
         input.mediaFileFactory = VideoFile
         input.converter = convertVideo
         input.rewriteMetaTagsOnConverted = True
+        input.nr_processes_for_conversion = 1
         super().__init__(input)
