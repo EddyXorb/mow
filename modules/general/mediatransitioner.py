@@ -292,10 +292,9 @@ class MediaTransitioner(VerbosePrinterClass):
             try:
                 files = self.toTreat[task.index].getAllFileNames()
 
-                self.add_transition_to_files_stage_history(task, files)
-
                 if len(task.metaTags) == 0 or self.dry:
                     continue
+                self.add_transition_to_files_stage_history(task, files)
 
                 self.et.set_tags(
                     files,
