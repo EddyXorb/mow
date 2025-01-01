@@ -16,8 +16,8 @@ class VideoFile(MediaFile):
             result = et.get_tags(
                 file,
                 [
-                    "QuickTime:MediaCreateDate",
                     "QuickTime:CreateDate",
+                    #"QuickTime:MediaCreateDate",
                     "File:FileModifyDate",
                 ],
             )[0]

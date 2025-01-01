@@ -230,7 +230,7 @@ class MediaLocalizer(MediaTransitioner):
         file_to_gpx_data = {}
 
         for gpx_filepath in gpx_files:
-            with open(gpx_filepath, "r") as gpx_file:
+            with open(gpx_filepath, "r",encoding="utf-8") as gpx_file:
                 file_to_gpx_data[gpx_filepath] = gpxpy.parse(gpx_file)
 
         rawPositions = {"time": [], "lat": [], "lon": [], "elevation": [], "file": []}
