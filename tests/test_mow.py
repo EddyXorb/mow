@@ -2,11 +2,11 @@ from pathlib import Path
 
 from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME
 from ..modules.general.medialocalizer import BaseLocalizerInput
-from ..modules.mow.mowtags import MowTags
+from ..modules.mow.mowtags import MowTag
 from ..modules.image.imagerenamer import *
 from ..modules.mow.mow import Mow
 import shutil
-from os.path import *
+from os.path import join, dirname, abspath, exists
 import os
 from exiftool import ExifToolHelper
 
@@ -130,10 +130,12 @@ def test_stage_history_was_added():
 
     with ExifToolHelper() as et:
         tags = et.get_tags(
-            target_file_renaming, ["XMP:Contributor"], params=["-struct"]
+            str(Path(target_file_renaming).with_suffix(".xmp")),
+            ["XMP:Contributor"],
+            params=["-struct"],
         )[0]
-        assert MowTags.stagehistory in tags
-        assert os.path.basename(renamedir) in tags[MowTags.stagehistory]
+        assert MowTag.stagehistory.value in tags
+        assert os.path.basename(renamedir) in tags[MowTag.stagehistory.value]
 
     Mow(settingsfile=settingsfile, dry=False).convert()
 
@@ -145,11 +147,13 @@ def test_stage_history_was_added():
 
     with ExifToolHelper() as et:
         tags = et.get_tags(
-            target_file_conversion, ["XMP:Contributor"], params=["-struct"]
+            str(Path(target_file_conversion).with_suffix(".xmp")),
+            ["XMP:Contributor"],
+            params=["-struct"],
         )[0]
         print(tags)
-        assert MowTags.stagehistory in tags
-        assert os.path.basename(convertdir) in tags[MowTags.stagehistory]
+        assert MowTag.stagehistory.value in tags
+        assert os.path.basename(convertdir) in tags[MowTag.stagehistory.value]
 
 
 def test_groupingMovesDirectoriesIntoRateFolder():
@@ -197,7 +201,9 @@ def test_conversionOfVideoWorks():
     Mow(settingsfile=settingsfile, dry=False).convert()
 
     assert not exists(srcfile)
-    assert exists(join(workingdir, "3_convert", DELETE_FOLDER_NAME, "subfolder", "test.MOV"))
+    assert exists(
+        join(workingdir, "3_convert", DELETE_FOLDER_NAME, "subfolder", "test.MOV")
+    )
     assert exists(join(workingdir, "4_group", "subfolder", "test.mp4"))
 
 
@@ -210,7 +216,9 @@ def test_conversionOfPassthroughVideoWorks():
     Mow(settingsfile=settingsfile, dry=False).convert(enforcePassthrough=True)
 
     assert not exists(srcfile)
-    assert not exists(join(workingdir, "3_convert", DELETE_FOLDER_NAME, "subfolder", "test.MOV"))
+    assert not exists(
+        join(workingdir, "3_convert", DELETE_FOLDER_NAME, "subfolder", "test.MOV")
+    )
     assert exists(join(workingdir, "4_group", "subfolder", "test.MOV"))
 
 

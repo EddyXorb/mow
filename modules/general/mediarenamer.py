@@ -6,6 +6,8 @@ from pathlib import Path
 from datetime import datetime
 import re
 
+from modules.mow.mowtags import MowTag
+
 from .mediatransitioner import MediaTransitioner, TransitionerInput, TransitionTask
 
 from .filenamehelper import getMediaCreationDateFrom, timestampformat
@@ -111,7 +113,7 @@ class MediaRenamer(MediaTransitioner):
                     "%Y:%m:%d %H:%M:%S"
                 )
 
-            task.metaTags = {"XMP:Date": creationDate, "XMP:Source": filename}
+            task.metaTags = {MowTag.date: creationDate, MowTag.source: filename}
 
     def createNewNames(self):
         self.print_info("Create new names for files..")

@@ -2,6 +2,8 @@ import shutil
 from os.path import join, exists
 import os
 
+from modules.mow.mowtags import MowTag
+
 from ..modules.general.mediarater import MediaRater
 from ..modules.general.mediatransitioner import TransitionerInput
 from exiftool import ExifToolHelper
@@ -35,7 +37,9 @@ def test_ratedImageIsMoved():
 
     with ExifToolHelper() as et:
         _ = et.set_tags(
-            fullname, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
+            fullname,
+            {MowTag.rating.value: 3},
+            params=["-P", "-overwrite_original", "-v2"],
         )
 
         MediaRater(input=TransitionerInput(src=src, dst=dst, dry=False))()
@@ -72,11 +76,19 @@ def test_copiedRatingFromJPGToORF():
 
     with ExifToolHelper() as et:
         _ = et.set_tags(
-            fullname, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
+            fullname,
+            {MowTag.rating.value: 3},
+            params=["-P", "-overwrite_original", "-v2"],
         )
 
         MediaRater(
-            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True)
+            input=TransitionerInput(
+                src=src,
+                dst=dst,
+                dry=False,
+                writeMetaTags=True,
+                writeMetaTagsToSidecar=False,
+            )
         )()
 
         assert not exists(fullname)
@@ -84,9 +96,11 @@ def test_copiedRatingFromJPGToORF():
         assert exists(join(dst, groupname, "test.JPG"))
         assert exists(join(dst, groupname, "test.ORF"))
 
-        ratingRaw = et.get_tags(join(dst, groupname, "test.ORF"), ["XMP:Rating"])[0]
-        assert "XMP:Rating" in ratingRaw
-        assert ratingRaw["XMP:Rating"] == 3
+        ratingRaw = et.get_tags(
+            join(dst, groupname, "test.ORF"), [MowTag.rating.value]
+        )[0]
+        assert MowTag.rating.value in ratingRaw
+        assert ratingRaw[MowTag.rating.value] == 3
 
 
 def test_copiedRatingFromORFToJPG():
@@ -104,11 +118,19 @@ def test_copiedRatingFromORFToJPG():
 
     with ExifToolHelper() as et:
         _ = et.set_tags(
-            fullnameRaw, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
+            fullnameRaw,
+            {MowTag.rating.value: 3},
+            params=["-P", "-overwrite_original", "-v2"],
         )
 
         MediaRater(
-            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True)
+            input=TransitionerInput(
+                src=src,
+                dst=dst,
+                dry=False,
+                writeMetaTags=True,
+                writeMetaTagsToSidecar=False,
+            )
         )()
 
         assert not exists(fullname)
@@ -116,9 +138,11 @@ def test_copiedRatingFromORFToJPG():
         assert exists(join(dst, groupname, "test.JPG"))
         assert exists(join(dst, groupname, "test.ORF"))
 
-        ratingJPG = et.get_tags(join(dst, groupname, "test.JPG"), ["XMP:Rating"])[0]
-        assert "XMP:Rating" in ratingJPG
-        assert ratingJPG["XMP:Rating"] == 3
+        ratingJPG = et.get_tags(
+            join(dst, groupname, "test.JPG"), [MowTag.rating.value]
+        )[0]
+        assert MowTag.rating.value in ratingJPG
+        assert ratingJPG[MowTag.rating.value] == 3
 
 
 def test_differentRatingBetweenJPGandRawpreventsTransition():
@@ -136,14 +160,24 @@ def test_differentRatingBetweenJPGandRawpreventsTransition():
 
     with ExifToolHelper() as et:
         et.set_tags(
-            fullnameRaw, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
+            fullnameRaw,
+            {MowTag.rating.value: 3},
+            params=["-P", "-overwrite_original", "-v2"],
         )
         et.set_tags(
-            fullname, {"XMP:rating": 2}, params=["-P", "-overwrite_original", "-v2"]
+            fullname,
+            {MowTag.rating.value: 2},
+            params=["-P", "-overwrite_original", "-v2"],
         )
 
         MediaRater(
-            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True)
+            input=TransitionerInput(
+                src=src,
+                dst=dst,
+                dry=False,
+                writeMetaTags=True,
+                writeMetaTagsToSidecar=False,
+            )
         )()
 
         assert exists(fullname)
@@ -167,14 +201,24 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
 
     with ExifToolHelper() as et:
         et.set_tags(
-            fullnameRaw, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
+            fullnameRaw,
+            {MowTag.rating.value: 3},
+            params=["-P", "-overwrite_original", "-v2"],
         )
         et.set_tags(
-            fullname, {"XMP:rating": 2}, params=["-P", "-overwrite_original", "-v2"]
+            fullname,
+            {MowTag.rating.value: 2},
+            params=["-P", "-overwrite_original", "-v2"],
         )
 
         MediaRater(
-            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True),
+            input=TransitionerInput(
+                src=src,
+                dst=dst,
+                dry=False,
+                writeMetaTags=True,
+                writeMetaTagsToSidecar=False,
+            ),
             overrulingfiletype="JPG",
         )()
 
@@ -184,11 +228,15 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
         assert exists(join(dst, groupname, "test.ORF"))
 
         assert (
-            et.get_tags(join(dst, groupname, "test.ORF"), "XMP:Rating")[0]["XMP:Rating"]
+            et.get_tags(join(dst, groupname, "test.ORF"), MowTag.rating.value)[0][
+                MowTag.rating.value
+            ]
             == 2
         )
         assert (
-            et.get_tags(join(dst, groupname, "test.JPG"), "XMP:Rating")[0]["XMP:Rating"]
+            et.get_tags(join(dst, groupname, "test.JPG"), MowTag.rating.value)[0][
+                MowTag.rating.value
+            ]
             == 2
         )
 
@@ -208,14 +256,24 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
 
     with ExifToolHelper() as et:
         et.set_tags(
-            fullnameRaw, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
+            fullnameRaw,
+            {MowTag.rating.value: 3},
+            params=["-P", "-overwrite_original", "-v2"],
         )
         et.set_tags(
-            fullname, {"XMP:rating": None}, params=["-P", "-overwrite_original", "-v2"]
+            fullname,
+            {MowTag.rating.value: None},
+            params=["-P", "-overwrite_original", "-v2"],
         )
 
         MediaRater(
-            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True),
+            input=TransitionerInput(
+                src=src,
+                dst=dst,
+                dry=False,
+                writeMetaTags=True,
+                writeMetaTagsToSidecar=False,
+            ),
             overrulingfiletype="JPG",
         )()
 
@@ -225,11 +283,15 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
         assert exists(join(dst, groupname, "test.ORF"))
 
         assert (
-            et.get_tags(join(dst, groupname, "test.ORF"), "XMP:Rating")[0]["XMP:Rating"]
+            et.get_tags(join(dst, groupname, "test.ORF"), MowTag.rating.value)[0][
+                MowTag.rating.value
+            ]
             == 3
         )
         assert (
-            et.get_tags(join(dst, groupname, "test.JPG"), "XMP:Rating")[0]["XMP:Rating"]
+            et.get_tags(join(dst, groupname, "test.JPG"), MowTag.rating.value)[0][
+                MowTag.rating.value
+            ]
             == 3
         )
 
@@ -249,14 +311,24 @@ def test_differentRatingBetweenJPGandRawPreventsTransitionIfOverrulingFileending
 
     with ExifToolHelper() as et:
         et.set_tags(
-            fullnameRaw, {"XMP:rating": 3}, params=["-P", "-overwrite_original", "-v2"]
+            fullnameRaw,
+            {MowTag.rating.value: 3},
+            params=["-P", "-overwrite_original", "-v2"],
         )
         et.set_tags(
-            fullname, {"XMP:rating": 2}, params=["-P", "-overwrite_original", "-v2"]
+            fullname,
+            {MowTag.rating.value: 2},
+            params=["-P", "-overwrite_original", "-v2"],
         )
 
         MediaRater(
-            input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True),
+            input=TransitionerInput(
+                src=src,
+                dst=dst,
+                dry=False,
+                writeMetaTags=True,
+                writeMetaTagsToSidecar=False,
+            ),
             overrulingfiletype="IMAMNOTHERE",
         )()
 
@@ -274,13 +346,19 @@ def test_enforced_rating_works():
     assert exists(fullname)
 
     MediaRater(
-        input=TransitionerInput(src=src, dst=dst, dry=False),enforced_rating=5
+        input=TransitionerInput(
+            src=src,
+            dst=dst,
+            dry=False,
+            writeMetaTagsToSidecar=False,
+        ),
+        enforced_rating=5,
     )()
 
     assert not exists(fullname)
     assert exists(join(dst, groupname, "test.JPG"))
 
     with ExifToolHelper() as et:
-        rating = et.get_tags(join(dst, groupname, "test.JPG"), ["XMP:Rating"])[0]
-        assert "XMP:Rating" in rating
-        assert rating["XMP:Rating"] == 5
+        rating = et.get_tags(join(dst, groupname, "test.JPG"), [MowTag.rating.value])[0]
+        assert MowTag.rating.value in rating
+        assert rating[MowTag.rating.value] == 5

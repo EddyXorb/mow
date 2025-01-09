@@ -12,7 +12,7 @@ import folium
 
 from ..general.mediafile import MediaFile
 from ..general.filenamehelper import extractDatetimeFromFileName
-from ..mow.mowtags import MowTags
+from ..mow.mowtags import MowTag,  tags_gps_all
 from ..general.medafilefactories import createAnyValidMediaFile
 from .mediatransitioner import MediaTransitioner, TransitionTask, TransitionerInput
 
@@ -28,14 +28,13 @@ class GpsData:
 
     def getGPSMetaTagsForWriting(self):
         return {
-            MowTags.gps_latitude: self.lat,
-            MowTags.gps_longitude: self.lon,
-            MowTags.gps_elevation_write_only: self.elev,
-            MowTags.gps_elevationRef_write_only: 0 if self.elev >= 0 else 1,
+            MowTag.gps_latitude: self.lat,
+            MowTag.gps_longitude: self.lon,
+            MowTag.gps_elevation: self.elev,
         }
 
     def getGPSMetaTagsForReading(self):
-        return MowTags.gps_all
+        return tags_gps_all
 
     def fromString(self, s: str):
         parts = s.split(",")
@@ -160,16 +159,16 @@ class MediaLocalizer(MediaTransitioner):
             if task.skip:
                 continue
             if (
-                MowTags.gps_longitude not in task.metaTags
-                or MowTags.gps_latitude not in task.metaTags
+                MowTag.gps_longitude not in task.metaTags
+                or MowTag.gps_latitude not in task.metaTags
             ):
                 continue
             fileWithPosition.append(
                 (
                     self.toTreat[task.index],
                     (
-                        task.metaTags[MowTags.gps_latitude],
-                        task.metaTags[MowTags.gps_longitude],
+                        task.metaTags[MowTag.gps_latitude],
+                        task.metaTags[MowTag.gps_longitude],
                     ),
                 )
             )
@@ -230,7 +229,7 @@ class MediaLocalizer(MediaTransitioner):
         file_to_gpx_data = {}
 
         for gpx_filepath in gpx_files:
-            with open(gpx_filepath, "r",encoding="utf-8") as gpx_file:
+            with open(gpx_filepath, "r", encoding="utf-8") as gpx_file:
                 file_to_gpx_data[gpx_filepath] = gpxpy.parse(gpx_file)
 
         rawPositions = {"time": [], "lat": [], "lon": [], "elevation": [], "file": []}

@@ -1,5 +1,8 @@
+from pathlib import Path
 from rich.progress import track
 import os
+
+from modules.mow.mowtags import MowTag
 
 from ..general.mediafile import MediaFile
 
@@ -11,6 +14,7 @@ from ..video.videofile import (
 )  # replace this. The rater should be agnostic to concrete filetype
 
 from exiftool import ExifToolHelper
+import traceback
 
 
 class MediaRater(MediaTransitioner):
@@ -42,20 +46,20 @@ class MediaRater(MediaTransitioner):
         try:
             if self.enforced_rating and self.enforced_rating in range(1, 6):
                 return TransitionTask(
-                    index, metaTags={"XMP:Rating": self.enforced_rating}
+                    index, metaTags={MowTag.rating: self.enforced_rating}
                 )
 
             if isinstance(
                 file, VideoFile
             ):  # TODO: remove this special case for videos: always rating 2
-                return TransitionTask(index, metaTags={"XMP:Rating": 2})
+                return TransitionTask(index, metaTags={MowTag.rating: 2})
 
             filenames = file.getAllFileNames()
-            tags = et.get_tags(filenames, "XMP:Rating")
+            tags = [self.fm.read_tags(file, tags=[MowTag.rating]) for file in filenames]
             ratings = {
-                file: filetags["XMP:Rating"]
+                file: filetags[MowTag.rating]
                 for file, filetags in zip(filenames, tags)
-                if "XMP:Rating" in filetags
+                if MowTag.rating in filetags
             }
 
             all_ratings = list(set(ratings.values()))
@@ -65,7 +69,7 @@ class MediaRater(MediaTransitioner):
                 case 1:
                     if len(tags) > 1:
                         return TransitionTask(
-                            index, metaTags={"XMP:Rating": all_ratings[0]}
+                            index, metaTags={MowTag.rating: all_ratings[0]}
                         )
                     return TransitionTask(index)
                 case _:
@@ -73,7 +77,7 @@ class MediaRater(MediaTransitioner):
                         overruled_ratings = {
                             os.path.basename(key): value
                             for key, value in ratings.items()
-                            if key.endswith(self.overrulingfiletype)
+                            if key.suffix.replace(".","") == self.overrulingfiletype
                         }
                         if len(set(overruled_ratings.values())) == 1:
                             self.print_info(
@@ -82,7 +86,7 @@ class MediaRater(MediaTransitioner):
                             return TransitionTask(
                                 index,
                                 metaTags={
-                                    "XMP:Rating": list(overruled_ratings.values())[0]
+                                    MowTag.rating: list(overruled_ratings.values())[0]
                                 },
                             )
                         else:
@@ -98,6 +102,8 @@ class MediaRater(MediaTransitioner):
                         index, f"Different ratings found: {output_ratings}"
                     )
         except Exception as e:
+            stacktrace = traceback.format_exc()
             return TransitionTask.getFailed(
-                index, f"Problem during reading rating from meta tags: {e}"
+                index,
+                f"Problem during reading rating from meta tags: {e}, stacktrace: {stacktrace}",
             )

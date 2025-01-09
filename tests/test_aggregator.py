@@ -3,7 +3,7 @@ import shutil
 from os.path import join, exists, splitext, abspath
 import os
 
-
+from ..modules.mow.mowtags import MowTag, tags_all
 from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME, TransitionerInput
 from ..modules.image.imageaggregator import (
     ImageAggregator,
@@ -140,7 +140,11 @@ def test_correctImageIsTransitioned():
     prepareTest(srcname=fullname)
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert transitionTookPlace(fullname)
 
@@ -152,7 +156,11 @@ def test_wrongTimestampOfFileIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -164,7 +172,11 @@ def test_wrongTimestampOfGroupIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -176,7 +188,11 @@ def test_wrongDescriptionTagIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -188,7 +204,11 @@ def test_tooshortGroupnameIsRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -207,7 +227,11 @@ def test_differentXMPTagsBetweenJPGandRawAreRecognized():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -227,7 +251,9 @@ def test_jpgSingleSourceOfTruthWorks():
     assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False),
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        ),
         jpgSingleSourceOfTruth=True,
     )()
 
@@ -245,7 +271,13 @@ def test_missingXMPTagSourceInRawIsCopiedFromJpg():
     assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False, writeMetaTags=True)
+        input=TransitionerInput(
+            src=src,
+            dst=dst,
+            dry=False,
+            writeMetaTags=True,
+            writeMetaTagsToSidecar=False,
+        )
     )()
 
     assert bothFilesAreNOTinSRC(fullname)
@@ -254,8 +286,10 @@ def test_missingXMPTagSourceInRawIsCopiedFromJpg():
     expectedTargetJpg = join(dst, str(Path(fullname).relative_to(src)))
 
     with ExifToolHelper() as et:
-        tag = et.get_tags(expectedTargetJpg.replace(".jpg", ".ORF"), "XMP:Source")[0]
-        assert tag["XMP:Source"] == "test_aggregate.jpg"
+        tag = et.get_tags(
+            expectedTargetJpg.replace(".jpg", ".ORF"), MowTag.source.value
+        )[0]
+        assert tag[MowTag.source.value] == "test_aggregate.jpg"
 
 
 def test_missingXMPTagSourceInJpgIsCopiedFromRaw():
@@ -268,7 +302,11 @@ def test_missingXMPTagSourceInJpgIsCopiedFromRaw():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -292,7 +330,11 @@ def test_missingXMPTagDescriptionIsCopiedFromRaw():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -313,12 +355,19 @@ def test_completelyMissingXMPTagDescriptionIsRecognized():
     # delete tag
     with ExifTool() as et:
         et.execute(
-            "-xmp:Description=", "-P", "-overwrite_original", *ifile.getAllFileNames()
+            "-xmp:Description=",
+            "-P",
+            "-overwrite_original",
+            *[str(file) for file in ifile.getAllFileNames()],
         )
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -330,11 +379,20 @@ def test_completelyMissingXMPTagDateIsRecognized():
     ifile = ImageFile(fullname)
 
     with ExifTool() as et:
-        et.execute("-xmp:Date=", "-P", "-overwrite_original", *ifile.getAllFileNames())
+        et.execute(
+            "-xmp:Date=",
+            "-P",
+            "-overwrite_original",
+            *[str(file) for file in ifile.getAllFileNames()],
+        )
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -350,7 +408,11 @@ def test_missingXMPTagDateIsCopiedFromRaw():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -369,12 +431,19 @@ def test_completelyMissingXMPTagRatingIsRecognized():
 
     with ExifTool() as et:
         et.execute(
-            "-xmp:Rating=", "-P", "-overwrite_original", *ifile.getAllFileNames()
+            "-xmp:Rating=",
+            "-P",
+            "-overwrite_original",
+            *[str(file) for file in ifile.getAllFileNames()],
         )
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assertTransitionTookNOTPlace(fullname)
 
@@ -390,7 +459,11 @@ def test_missingXMPTagRatingIsCopiedFromRaw():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -416,7 +489,11 @@ def test_optionalXMPTagLabelIsCopiedFromJpg():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -439,7 +516,11 @@ def test_optionalXMPTagSubjectIsCopiedFromJpg():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -467,7 +548,11 @@ def test_optionalXMPTagHierarchicalSubjectIsCopiedFromJpg():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -502,7 +587,11 @@ def test_multipleHSubjectsAreNoProblem():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -539,7 +628,11 @@ def test_multipleHierarchicalSubjectsAreNoProblem():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreInDST(fullname)
@@ -565,12 +658,19 @@ def test_rating1ImageIsMovedIntoDeleteFolder():
 
     with ExifTool() as et:
         et.execute(
-            "-xmp:Rating=1", "-P", "-overwrite_original", *ifile.getAllFileNames()
+            "-xmp:Rating=1",
+            "-P",
+            "-overwrite_original",
+            *[str(file) for file in ifile.getAllFileNames()],
         )
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
     assert bothFilesAreNOTInDST(fullname)
@@ -590,7 +690,9 @@ def test_rating1Rawrating5jpgAndJPGSingleSourceOfTruthDoesNotDelete():
     assert bothFilesAreInSRC(fullname)
 
     ImageAggregator(
-        input=TransitionerInput(src=src, dst=dst, dry=False),
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        ),
         jpgSingleSourceOfTruth=True,
     )()
 
@@ -607,12 +709,19 @@ def test_rating2ImagesRawIsMovedIntoDeleteFolderJpgTransitioned():
 
     with ExifTool() as et:
         et.execute(
-            "-xmp:Rating=2", "-P", "-overwrite_original", *ifile.getAllFileNames()
+            "-xmp:Rating=2",
+            "-P",
+            "-overwrite_original",
+            *[str(file) for file in ifile.getAllFileNames()],
         )
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
 
@@ -632,12 +741,19 @@ def test_rating3ImagesRawIsMovedIntoDeleteFolderJpgTransitioned():
 
     with ExifTool() as et:
         et.execute(
-            "-xmp:Rating=3", "-P", "-overwrite_original", *ifile.getAllFileNames()
+            "-xmp:Rating=3",
+            "-P",
+            "-overwrite_original",
+            *[str(file) for file in ifile.getAllFileNames()],
         )
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert bothFilesAreNOTinSRC(fullname)
 
@@ -657,12 +773,19 @@ def test_rating4BothImagefilesAreTransitioned():
 
     with ExifTool() as et:
         et.execute(
-            "-xmp:Rating=4", "-P", "-overwrite_original", *ifile.getAllFileNames()
+            "-xmp:Rating=4",
+            "-P",
+            "-overwrite_original",
+            *[str(file) for file in ifile.getAllFileNames()],
         )
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert transitionTookPlace(fullname)
     assert not jpgWasDeleted(fullname) and not rawWasDeleted(fullname)
@@ -679,7 +802,7 @@ def test_rating5BothImagefilesAreTransitioned():
         "-P",
         "-overwrite_original",
         "-v2",
-        *ifile.getAllFileNames(),
+        *[str(file) for file in ifile.getAllFileNames()],
     ]
     logging.info(args)
     with ExifTool() as et:
@@ -687,7 +810,11 @@ def test_rating5BothImagefilesAreTransitioned():
 
     assert bothFilesAreInSRC(fullname)
 
-    ImageAggregator(input=TransitionerInput(src=src, dst=dst, dry=False))()
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
 
     assert transitionTookPlace(fullname)
     assert not jpgWasDeleted(fullname) and not rawWasDeleted(fullname)

@@ -6,7 +6,7 @@ from exiftool import ExifToolHelper
 
 
 from ..modules.general.mediatransitioner import TransitionerInput
-from ..modules.mow.mowtags import MowTags
+from ..modules.mow.mowtags import MowTag, tags_gps_all, MowTagFileManipulator
 from ..modules.general.medialocalizer import (
     BaseLocalizerInput,
     GpsData,
@@ -65,6 +65,7 @@ def perform_transition(
                 maintainFolderStructure=True,
                 src=src,
                 dst=dst,
+                writeMetaTagsToSidecar=False,
             ),
         )
     )()
@@ -78,14 +79,11 @@ def test_force_gps_works():
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
 
-    with ExifToolHelper() as et:
-        tags = et.get_tags(transitionedFile, MowTags.gps_all, params=["-n"])[
-            0
-        ]  # -n formats the gps output as decimal numbers
-        print(tags)
-        assert tags[MowTags.gps_latitude] == 1.0
-        assert tags[MowTags.gps_longitude] == -2.0
-        assert tags[MowTags.gps_elevation_read_only] == 3.0
+    tags = MowTagFileManipulator().read_tags(transitionedFile, tags_gps_all)
+    print(tags)
+    assert tags[MowTag.gps_latitude] == 1.0
+    assert tags[MowTag.gps_longitude] == -2.0
+    assert tags[MowTag.gps_elevation] == 3.0
 
 
 # The gpx data in test-gpx looks like this:
@@ -123,13 +121,13 @@ def test_correct_gps_data_leads_to_transition_and_interpolation():
     assert exists(transitionedFile)
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(transitionedFile, MowTags.gps_all)[
+        tags = et.get_tags(transitionedFile, [tag.value for tag in tags_gps_all])[
             0
         ]  # -n formats the gps output as decimal numbers
         print(tags)
-        assert tags[MowTags.gps_latitude] == 15
-        assert tags[MowTags.gps_longitude] == 0
-        assert tags[MowTags.gps_elevation_read_only] == 1500
+        assert tags[MowTag.gps_latitude.value] == 15
+        assert tags[MowTag.gps_longitude.value] == 0
+        assert tags[MowTag.gps_elevation.value] == 1500
 
 
 def test_timezone_change_leads_to_no_gps_found():
@@ -194,13 +192,13 @@ def test_image_made_before_first_gps_entry_works():
     assert exists(transitionedFile)
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(transitionedFile, MowTags.gps_all)[
+        tags = et.get_tags(transitionedFile, [tag.value for tag in tags_gps_all])[
             0
         ]  # -n formats the gps output as decimal numbers
         print(tags)
-        assert tags[MowTags.gps_latitude] == 10
-        assert tags[MowTags.gps_longitude] == -10
-        assert tags[MowTags.gps_elevation_read_only] == 1000
+        assert tags[MowTag.gps_latitude.value] == 10
+        assert tags[MowTag.gps_longitude.value] == -10
+        assert tags[MowTag.gps_elevation.value] == 1000
 
 
 def test_image_made_before_first_gps_entry_but_too_small_tolerance_does_not_transition():
@@ -227,13 +225,13 @@ def test_image_made_after_last_gps_entry_works():
     assert exists(transitionedFile)
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(transitionedFile, MowTags.gps_all)[
+        tags = et.get_tags(transitionedFile, [tag.value for tag in tags_gps_all])[
             0
         ]  # -n formats the gps output as decimal numbers
         print(tags)
-        assert tags[MowTags.gps_latitude] == 20
-        assert tags[MowTags.gps_longitude] == 10
-        assert tags[MowTags.gps_elevation_read_only] == 2000
+        assert tags[MowTag.gps_latitude.value] == 20
+        assert tags[MowTag.gps_longitude.value] == 10
+        assert tags[MowTag.gps_elevation.value] == 2000
 
 
 def test_image_made_after_last_gps_entry_but_too_small_tolerance_does_not_transition():

@@ -2,7 +2,7 @@ from pathlib import Path
 from exiftool import ExifToolHelper
 
 
-from ..modules.mow.mowtags import MowTags
+from ..modules.mow.mowtags import MowTag, tags_all
 
 from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME, TransitionerInput
 from ..modules.video.videorenamer import VideoRenamer
@@ -35,7 +35,7 @@ def test_fileisrenamed():
     prepareTest()
 
     renamer = VideoRenamer(
-        RenamerInput(src=src, dst=dst, move=True, writeMetaTags=True)
+        RenamerInput(src=src, dst=dst, move=True, writeMetaTags=True,writeMetaTagsToSidecar=False)
     )
     renamer()
     assert len(os.listdir(targetDir)) > 0
@@ -65,7 +65,7 @@ def test_conversionPreservesXMPTags():
 
     tagsDict = {
         tag: "DUMMY_VALUE"
-        for tag in MowTags.all
+        for tag in [tag.value for tag in tags_all]
         if "Rating" not in tag and "Date" not in tag
     }
     tagsDict["XMP:Rating"] = 2
@@ -88,9 +88,9 @@ def test_conversionPreservesXMPTags():
     assert exists(join(Path(src) / DELETE_FOLDER_NAME / "subsubfolder" / "test.MOV"))
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(convertedFile, MowTags.all)[0]
+        tags = et.get_tags(convertedFile, [tag.value for tag in tags_all])[0]
 
-    for tag in MowTags.all:
+    for tag in [tag.value for tag in tags_all]:
         if "XMP" not in tag:
             continue
         assert tag in tags

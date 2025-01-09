@@ -14,7 +14,7 @@ from rich.progress import track
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from modules.mow.mowtags import MowTags
+from modules.mow.mowtags import MowTag, MowTagFileManipulator
 from modules.general.mediafile import MediaFile
 from modules.general.verboseprinterclass import VerbosePrinterClass
 
@@ -36,7 +36,7 @@ class TransitionTask:
     newName: str = None
     skip: bool = False
     skipReason: str = None
-    metaTags: Dict[str, str] = field(default_factory=dict)
+    metaTags: dict[MowTag, str] = field(default_factory=dict)
 
     def getFailed(index: int, reason: str) -> "TransitionTask":
         return TransitionTask(index=index, skip=True, skipReason=reason)
@@ -54,6 +54,7 @@ class TransitionerInput:
     maintainFolderStructure: copy nested folders iff true
     removeEmptySubfolders: clean empty subfolders of source after transition
     writeMetaTags: writes meta tags to Files
+    writeMetaTagsToSidecar: writes meta tags to sidecar files otherwise to original files and merges existing sidecars into files
     filter: regex for filtering files that should only be treated (searching the complete subpath with all subfolders of the current stage)
     rewriteMetaTagsOnConverted: a transition can include a conversion, which should rewrite the meta tags of the converted file (copying the meta tags of the original file). If converter is None, this option is ignored.
     converter: function to convert files, if None, no conversion is done. Signature: (file to convert, target directory, settings) -> converted file (possibly with different extensions AND name, if transition Task has diffent "newName" specified)
@@ -71,6 +72,7 @@ class TransitionerInput:
     )
     removeEmptySubfolders: bool = False
     writeMetaTags: bool = True
+    writeMetaTagsToSidecar: bool = True
     filter: str = ""
     mediaFileFactory: Callable[[str], MediaFile] = field(
         default_factory=lambda: None
@@ -116,6 +118,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.maintainFolderStructure = input.maintainFolderStructure
         self.removeEmptySubfolders = input.removeEmptySubfolders
         self.writeMetaTags = input.writeMetaTags
+        self.writeMetaTagsToSidecar = input.writeMetaTagsToSidecar
         self.filter: re.Pattern = (
             re.compile(input.filter)
             if input.filter is not None and input.filter != ""
@@ -128,7 +131,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self._performedTransition = False
         self._toTransition: list[TransitionTask] = []
-        self.et = ExifToolHelper()
+        self.fm = MowTagFileManipulator()
 
     def __call__(self):
         self.print_info(f"Start transition from source {self.src} into {self.dst}")
@@ -148,7 +151,7 @@ class MediaTransitioner(VerbosePrinterClass):
         self.optionallyRemoveEmptyFolders()
         self.finalExecution()
 
-        self.et.terminate()  # in order to avoid usage of destructor for that
+        self.fm.et.terminate()  # in order to avoid usage of destructor for that
 
     def finalExecution(self):
         pass
@@ -220,7 +223,7 @@ class MediaTransitioner(VerbosePrinterClass):
         return removed
 
     def performTransitionOf(self, tasks: list[TransitionTask]):
-        self.print_info(f"Perform transition of {len(tasks)} mediafiles..")
+        self.print_info(f"Perform transition of {len(tasks)} mediafiles.. ")
 
         tasks = self.getNonSkippedOf(tasks)
         tasks = self.getNonOverwritingTasksOf(tasks)
@@ -290,28 +293,28 @@ class MediaTransitioner(VerbosePrinterClass):
 
         for task in track(tasks) if self.verbosityLevel >= 3 else tasks:
             try:
-                files = self.toTreat[task.index].getAllFileNames()
+                mFile = self.toTreat[task.index]
+                files = mFile.getAllFileNames()
 
-                if len(task.metaTags) == 0 or self.dry:
+                if self.dry:
                     continue
-                self.add_transition_to_files_stage_history(task, files)
 
-                self.et.set_tags(
-                    files,
-                    task.metaTags,
-                    params=[
-                        "-P",
-                        "-overwrite_original",
-                        "-L",
-                        "-m",
-                    ],  # , "-v2"], # -L : use latin encoding for umlaute -m: Ignore minor warnings and errors
-                )
+                if self.writeMetaTagsToSidecar and not mFile.has_sidecar():
+                    self.fm.create_sidecar_from_file(mFile)
+                elif not self.writeMetaTagsToSidecar and mFile.has_sidecar():
+                    self.fm.merge_sidecar_into_mediafile(mFile)
+
+                self.add_transition_to_files_stage_history(task, mFile)
+
+                if self.writeMetaTagsToSidecar:
+                    self.fm.write_to_sidecar(mFile, task.metaTags)
+                else:
+                    for file in files:
+                        self.fm.write_tags(file, task.metaTags)
 
             except Exception as e:
                 task.skip = True
-                task.skipReason = (
-                    f"Problem setting meta tag data {task.metaTags} with exiftool: {e}"
-                )
+                task.skipReason = f"Problem setting meta tag data {task.metaTags} with exiftool: {e}.\nTraceback: {traceback.format_exc()}"
                 if len(str(self.toTreat[task.index])) > 260:
                     task.skipReason += (
                         "Filename is too long. Exiftool supports only 260 characters."
@@ -319,23 +322,22 @@ class MediaTransitioner(VerbosePrinterClass):
 
         return self.getNonSkippedOf(tasks)
 
-    def add_transition_to_files_stage_history(self, task, files):
-        curr_stage_history = self.et.get_tags(
-            files[0],
-            MowTags.stagehistory,
-            params=[
-                "-m",
-                "-L",
-                "-struct",
-            ],  # -struct is needed, otherwise lists are flattened by exiftool
-        )[0]
-
-        if MowTags.stagehistory in curr_stage_history:
-            curr_stage_history[MowTags.stagehistory].append(self.current_stage)
+    def add_transition_to_files_stage_history(
+        self, task: TransitionTask, mFile: MediaFile
+    ):
+        tags = (
+            self.fm.read_from_sidecar(mFile, tags=[MowTag.stagehistory])
+            if self.writeMetaTagsToSidecar
+            else self.fm.read_tags(
+                mFile.getAllFileNames()[0], tags=[MowTag.stagehistory]
+            )
+        )
+        if MowTag.stagehistory in tags:
+            tags[MowTag.stagehistory].append(self.current_stage)
         else:
-            curr_stage_history[MowTags.stagehistory] = [self.current_stage]
+            tags[MowTag.stagehistory] = [self.current_stage]
 
-        task.metaTags[MowTags.stagehistory] = curr_stage_history[MowTags.stagehistory]
+        task.metaTags[MowTag.stagehistory] = tags[MowTag.stagehistory]
 
     def doRelocationOf(self, tasks: list[TransitionTask]):
         for task in track(tasks):

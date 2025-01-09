@@ -22,6 +22,7 @@ NR_MEDIAFILES = 2
 
 def executeRenamingWith(
     writeMetaTags=False,
+    writeMetaTagsToSidecar=False,
     move=True,
     recursive=True,
     maintainFolderStructure=True,
@@ -38,6 +39,7 @@ def executeRenamingWith(
             recursive=recursive,
             useCurrentFilename=useCurrentFilename,
             replace=replace,
+            writeMetaTagsToSidecar=writeMetaTagsToSidecar,
         )
 
     renamers: list[MediaRenamer] = [

@@ -11,6 +11,8 @@ from collections import defaultdict
 from math import sqrt
 import re
 
+from modules.mow.mowtags import MowTag
+
 from ..general.mediafile import MediaFile
 from ..general.checkresult import CheckResult
 from .medafilefactories import createAnyValidMediaFile
@@ -291,9 +293,9 @@ class MediaGrouper(MediaTransitioner):
     def checkCorrectSequence(self):
         groupToFiles, _ = self.getCorrectlyGroupedFiles()
 
-        orderedFiles: list[
-            Tuple[str, list[str]]
-        ] = []  # Tuple[0] = groupname, Tuple[1] = filenames
+        orderedFiles: list[Tuple[str, list[str]]] = (
+            []
+        )  # Tuple[0] = groupname, Tuple[1] = filenames
 
         for key, values in groupToFiles.items():
             orderedFiles.append(
@@ -337,4 +339,4 @@ class MediaGrouper(MediaTransitioner):
             inverted.update({index: group for index in indices})
         for task in [task for task in self.toTransition if not task.skip]:
             groupname = inverted[task.index]
-            task.metaTags = {"XMP:Description": groupname}
+            task.metaTags = {MowTag.description: groupname}

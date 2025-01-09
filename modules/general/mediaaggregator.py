@@ -6,7 +6,7 @@ from os.path import basename, splitext
 from exiftool import ExifToolHelper
 from rich.progress import track
 
-from ..mow.mowtags import MowTags
+from ..mow.mowtags import MowTag, MowTagFileManipulator, tags_all, tags_expected
 from .mediatransitioner import MediaTransitioner, TransitionTask, TransitionerInput
 from .mediagrouper import MediaGrouper
 from .filenamehelper import isCorrectTimestamp
@@ -19,40 +19,42 @@ class MediaAggregator(MediaTransitioner):
         super().__init__(input)
         self.toTransition: list[TransitionTask] = []
 
-    def getAllTagRelevantFilenamesFor(self, file: MediaFile) -> list[str]:
+    def getAllTagRelevantFilenamesFor(self, file: MediaFile) -> list[Path]:
         return file.getAllFileNames()
 
-    def getTagsFromTasks(self) -> Dict[int, list[Dict[str, str]]]:
+    def getTagsFromTasks(self) -> dict[int, list[dict[MowTag, str]]]:
         """
         Returns index to tags of all files of mediafile
         """
         self.print_info("Collect file meta tags..")
         out: Dict[int, list[Dict[str, str]]] = {}
 
-        with ExifToolHelper() as et:
-            for task in track(self.toTransition):
-                files = self.getAllTagRelevantFilenamesFor(self.toTreat[task.index])
-                try:
-                    tagdictlist: list[Dict[str, str]] = et.get_tags(
-                        files, tags=MowTags.all, params=["-L"]
-                    )
-                    out[task.index] = [
-                        {
-                            key: (
-                                value.encode("1252").decode(
-                                    "utf-8"
-                                )  # to avoid problems with umlauten
-                                if type(value) is str
-                                else value
-                            )
-                            for key, value in tagdict.items()
-                        }
-                        for tagdict in tagdictlist
-                    ]
-                except Exception as e:
-                    out[task.index] = []
-                    task.skip = True
-                    task.skipReason = f"Could not parse meta tags: {e}"
+        fm = MowTagFileManipulator()
+
+        for task in track(self.toTransition):
+            files = self.getAllTagRelevantFilenamesFor(self.toTreat[task.index])
+            try:
+                tagdictlist: list[dict[MowTag, str]] = [
+                    fm.read_tags(file, tags=tags_all) for file in files
+                ]
+
+                out[task.index] = [
+                    {
+                        key: (
+                            value.encode("1252").decode(
+                                "utf-8"
+                            )  # to avoid problems with umlauten
+                            if type(value) is str
+                            else value
+                        )
+                        for key, value in tagdict.items()
+                    }
+                    for tagdict in tagdictlist
+                ]
+            except Exception as e:
+                out[task.index] = []
+                task.skip = True
+                task.skipReason = f"Could not parse meta tags: {e}"
 
         return out
 
@@ -83,7 +85,7 @@ class MediaAggregator(MediaTransitioner):
             else:
                 self.toTransition.append(TransitionTask(index=index))
 
-    def checkGrouping(self, indexToTags: Dict[int, list[Dict[str, str]]]):
+    def checkGrouping(self, indexToTags: dict[int, list[dict[MowTag, str]]]):
         for task in self.toTransition:
             if task.skip:
                 continue
@@ -109,21 +111,21 @@ class MediaAggregator(MediaTransitioner):
                 task.skipReason = result.error
 
     def isCorrectDescriptionTag(
-        self, groupnameToTest: str, tagDicts: list[Dict[str, str]]
+        self, groupnameToTest: str, tagDicts: list[dict[MowTag, str]]
     ):
         for tagDict in tagDicts:
-            if MowTags.description not in tagDict:
+            if MowTag.description not in tagDict:
                 continue
 
-            if str(Path(tagDict[MowTags.description])) != str(Path(groupnameToTest)):
+            if str(Path(tagDict[MowTag.description])) != str(Path(groupnameToTest)):
                 return CheckResult(
                     False,
-                    error=f"meta Tag {MowTags.description}:'{str(Path(tagDict[MowTags.description])) if MowTags.description in tagDict else ''}' is not reflecting grouping of '{str(Path(groupnameToTest))}'",
+                    error=f"meta Tag {MowTag.description}:'{str(Path(tagDict[MowTag.description])) if MowTag.description in tagDict else ''}' is not reflecting grouping of '{str(Path(groupnameToTest))}'",
                 )
 
         return CheckResult(ok=True)
 
-    def setMetaTagsToWrite(self, indexToTags: Dict[int, list[Dict[str, str]]]):
+    def setMetaTagsToWrite(self, indexToTags: dict[int, list[dict[MowTag, str]]]):
         for task in self.toTransition:
             if task.skip:
                 continue
@@ -136,9 +138,9 @@ class MediaAggregator(MediaTransitioner):
                 task.skipReason = result.error
 
     def setMetaTagsToWriteFor(
-        self, task: TransitionTask, tagsDictList: list[Dict[str, str]]
+        self, task: TransitionTask, tagsDictList: list[dict[MowTag, str]]
     ) -> CheckResult:
-        for tag in MowTags.all:
+        for tag in tags_all:
             allValuesThisTag: Set[str] = set()
             atLeastOneMissing = False
             tagMissingForExtension = []
@@ -150,36 +152,43 @@ class MediaAggregator(MediaTransitioner):
                     allValuesThisTag.add(str(tagsDict[tag]))
                 else:
                     atLeastOneMissing = True
-                    tagMissingForExtension.append(splitext(tagsDict["SourceFile"])[1])
+                    tagMissingForExtension.append(
+                        splitext(tagsDict[MowTag.sourcefile])[1]
+                    )
 
             if len(allValuesThisTag) == 1 and (
-                (atLeastOneMissing
-                or hasattr(self, "jpgSingleSourceOfTruth"))
-                and self.jpgSingleSourceOfTruth
+                (
+                    atLeastOneMissing
+                    or hasattr(self, "jpgSingleSourceOfTruth")
+                    and self.jpgSingleSourceOfTruth
+                )
             ):
                 task.metaTags[tag] = actualTagValue
-            elif len(allValuesThisTag) == 0 and tag in MowTags.expected:
+
+            elif len(allValuesThisTag) == 0 and tag in tags_expected:
                 return CheckResult(
                     False,
-                    f"meta tag {tag} is missing for extension(s): {','.join(tagMissingForExtension)}",
+                    f"meta tag {tag.name} is missing for extension(s): {','.join(tagMissingForExtension)}",
                 )
-            elif len(allValuesThisTag) > 1:
+            elif len(allValuesThisTag) > 1 and tag != MowTag.sourcefile:
                 return CheckResult(
                     False,
-                    f"meta tag {tag} differs between two files that belong to the same medium",
+                    f"meta tag {tag.name} differs between two files that belong to the same medium",
                 )
 
         return CheckResult(ok=True)
 
-    def deleteBasedOnRating(self, indexToTags: Dict[int, list[Dict[str, str]]]):
+    def deleteBasedOnRating(self, indexToTags: dict[int, list[dict[MowTag, str]]]):
         for task in self.toTransition:
             if task.skip:
                 continue
 
-            if "XMP:Rating" in task.metaTags:
-                rating = task.metaTags["XMP:Rating"]
-            else:
-                rating = int(indexToTags[task.index][0]["XMP:Rating"])
+            rating = (
+                task.metaTags[MowTag.rating]
+                if MowTag.rating in task.metaTags
+                else int(indexToTags[task.index][0][MowTag.rating])
+            )
+
             if not (1 <= int(rating) <= 5):
                 task.skip = True
                 task.skipReason = f"rating is {rating}, which is not within 1-5 range"

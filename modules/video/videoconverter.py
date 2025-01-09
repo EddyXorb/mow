@@ -30,4 +30,5 @@ class VideoConverter(MediaConverter):
         input.converter = convertVideo
         input.rewriteMetaTagsOnConverted = True
         input.nr_processes_for_conversion = 1
+        input.writeMetaTagsToSidecar = False
         super().__init__(input)

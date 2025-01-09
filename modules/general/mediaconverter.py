@@ -1,9 +1,10 @@
 import multiprocessing
 import os
+import shutil
 from typing import Callable
 from rich.progress import track
 
-from ..mow.mowtags import MowTags
+from ..mow.mowtags import tags_all, MowTag
 from ..general.mediafile import MediaFile
 from ..general.mediatransitioner import (
     MediaTransitioner,
@@ -25,10 +26,20 @@ class MediaConverter(MediaTransitioner):
         converter,
         settings: dict[str, str],
     ) -> tuple[MediaFile, MediaFile | None, int]:
+
         os.makedirs(os.path.dirname(newPath), exist_ok=True)
+
+        sidecar_present = toTransition.has_sidecar()
+
+        if sidecar_present:
+            shutil.move(toTransition.get_sidecar(), os.path.dirname(newPath))
+            toTransition.extensions.remove(".xmp")
 
         try:
             convertedFile = converter(toTransition, os.path.dirname(newPath), settings)
+            if sidecar_present and not convertedFile.has_sidecar():
+                convertedFile.extensions.append(".xmp")
+
         except Exception:
             return toTransition, None, task_index
 
@@ -124,14 +135,15 @@ class MediaConverter(MediaTransitioner):
     ):
         if self.dry:
             return
-
-        xmptagstowrite = self.et.get_tags(str(toTransition), MowTags.all)[0]
-        xmptagstowrite.pop("SourceFile")
-        self.et.set_tags(
-            convertedFile.getAllFileNames(),
-            xmptagstowrite,
-            params=["-P", "-overwrite_original", "-L", "-m"],
-        )
+        if self.writeMetaTagsToSidecar:
+            xmptagstowrite = self.fm.read_from_sidecar(str(toTransition), tags_all)
+            xmptagstowrite.pop(MowTag.sourcefile)
+            self.fm.write_tags(str(convertedFile), xmptagstowrite)
+        else:
+            xmptagstowrite = self.fm.read_tags(str(toTransition.getAllFileNames()[0]), tags_all)
+            xmptagstowrite.pop(MowTag.sourcefile)
+            for file in convertedFile.getAllFileNames():
+                self.fm.write_tags(str(file), xmptagstowrite)
 
 
 class PassthroughConverter(MediaConverter):
@@ -143,4 +155,5 @@ class PassthroughConverter(MediaConverter):
         input.mediaFileFactory = lambda path: MediaFile(
             path, validExtensions=valid_extensions
         )
+        input.writeMetaTagsToSidecar = False
         super().__init__(input)

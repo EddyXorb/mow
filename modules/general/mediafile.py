@@ -3,12 +3,13 @@ from typing import Callable
 import os
 from shutil import copyfile, move
 import datetime as dt
+from pathlib import Path
 
 
 class MediaFile:
     """
     Mediadata that can be represented by multiple files having different extensions but containing roughly the same media
-    e.g. a jpeg-image and it's RAW-representation.
+    e.g. a jpeg-image and it's RAW-representation. Will always check for sidecar files.
     """
 
     def __init__(self, path, validExtensions):
@@ -26,6 +27,9 @@ class MediaFile:
         if self.extensions[0] not in validExtensions:
             self.valid = False
             return
+
+        if os.path.exists(self.get_sidecar()):
+            self.extensions.append(".xmp")
 
     def __str__(self):
         if len(self.extensions) == 0:
@@ -68,8 +72,8 @@ class MediaFile:
     def readDateTime(self) -> dt.datetime:
         raise NotImplementedError()
 
-    def getAllFileNames(self) -> list[str]:
-        return [self.pathnoext + ext for ext in self.extensions]
+    def getAllFileNames(self) -> list[Path]:
+        return [Path(self.pathnoext + ext) for ext in self.extensions]
 
     def getDescriptiveBasenames(self) -> str:
         """
@@ -94,9 +98,9 @@ class MediaFile:
 
     def empty(self):
         return len(self.extensions) == 0
-    
+
     def has_sidecar(self):
         return ".xmp" in self.extensions
-    
+
     def get_sidecar(self):
         return self.pathnoext + ".xmp"

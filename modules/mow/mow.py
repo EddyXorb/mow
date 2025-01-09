@@ -169,12 +169,12 @@ class Mow:
             )
         )()
 
-    def rate(self, overrulingfiletype: str = None,enforced_rating=None):
+    def rate(self, overrulingfiletype: str = None, enforced_rating=None):
         self._printEmphasized("Stage Rate")
         MediaRater(
             input=self._getBasicTransitionerInputFor("rate"),
             overrulingfiletype=overrulingfiletype,
-            enforced_rating=enforced_rating
+            enforced_rating=enforced_rating,
         )()
 
     def tag(self):
@@ -191,7 +191,10 @@ class Mow:
 
     def aggregate(self, jpgIsSingleSourceOfTruth: bool):
         transitionerInput = self._getBasicTransitionerInputFor("aggregate")
+        transitionerInput.writeMetaTagsToSidecar = False
+
         self._printEmphasized("Stage Aggregate")
+
         ImageAggregator(
             transitionerInput,
             jpgSingleSourceOfTruth=jpgIsSingleSourceOfTruth,

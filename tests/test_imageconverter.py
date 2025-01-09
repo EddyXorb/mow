@@ -10,7 +10,7 @@ import yaml
 from ..modules.general.mediatransitioner import TransitionerInput
 from ..modules.image.imageconverter import ImageConverter
 from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME
-from ..modules.mow.mowtags import MowTags
+from ..modules.mow.mowtags import MowTag
 
 testfolder = (Path(__file__).parent.parent / "tests").absolute().__str__()
 tempsrcfolder = "filestotreat"
@@ -35,6 +35,7 @@ def executeConversionWith(
             maintainFolderStructure=maintainFolderStructure,
             settings=settings,
             filter=filterstring,
+           # writeMetaTagsToSidecar=False
         ),
         jpg_quality=jpg_quality,
     )()
@@ -178,16 +179,16 @@ def test_jpg_conversion_preserves_xmp_and_jpg_metadata():
     with ExifToolHelper() as et:
         et.set_tags(
             srcfile,
-            {MowTags.rating: 3, "EXIF:Model": "Test"},
+            {MowTag.rating.value: 3, "EXIF:Model": "Test"},
             params=["-P", "-overwrite_original", "-v2"],
         )
 
     executeConversionWith(jpg_quality=10)
 
     with ExifToolHelper() as et:
-        rating = et.get_tags(expectedConvertedImageFile, [MowTags.rating])[0]
-        assert MowTags.rating in rating
-        assert rating[MowTags.rating] == 3
+        rating = et.get_tags(expectedConvertedImageFile, [MowTag.rating.value])[0]
+        assert MowTag.rating.value in rating
+        assert rating[MowTag.rating.value] == 3
         tags = et.get_tags(expectedConvertedImageFile, [])[0]
         print(tags)
         assert tags["EXIF:Model"] == "Test"

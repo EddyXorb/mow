@@ -4,38 +4,7 @@ from pathlib import Path
 from exiftool import ExifToolHelper
 from enum import StrEnum
 
-
-class MowTags:
-    date = "XMP:Date"
-    source = "XMP:Source"
-    description = "XMP:Description"
-    rating = "XMP:Rating"
-    subject = "XMP:Subject"
-    hierarchicalsubject = "XMP:HierarchicalSubject"
-    label = "XMP:Label"
-    stagehistory = "XMP:Contributor"
-
-    gps_latitude = "Composite:GPSLatitude"  # this avoids the need to use the GPSLatitudeRef tag when writing
-    gps_longitude = "Composite:GPSLongitude"  # this avoids the need to use the GPSLongitudeRef tag when writing
-
-    # unfortunately, the elevation tags cannot be set using the Composite: prefix. We thus need to distinguish between read-only and write-only tags
-    gps_elevation_write_only = "GPSAltitude"
-    gps_elevationRef_write_only = (
-        "GPSAltitudeRef"  # 0 = Above Sea Level, 1 = Below Sea Level
-    )
-    gps_elevation_read_only = "Composite:GPSAltitude"
-
-    expected = [date, source, description, rating]
-    gps_all = [gps_latitude, gps_longitude, gps_elevation_read_only]
-    optional = [
-        subject,
-        hierarchicalsubject,
-        label,
-        stagehistory,
-        *gps_all,
-    ]
-
-    all = expected + optional
+from ..general.mediafile import MediaFile
 
 
 class MowTag(StrEnum):
@@ -47,6 +16,7 @@ class MowTag(StrEnum):
     hierarchicalsubject = "XMP:HierarchicalSubject"
     label = "XMP:Label"
     stagehistory = "XMP:Contributor"
+    sourcefile = "SourceFile"  # this is a special tag, as it is not an XMP tag and it contains the filename of the file where the meta tag comes from
 
     gps_latitude = "Composite:GPSLatitude"  # this avoids the need to use the GPSLatitudeRef tag when writing
     gps_longitude = "Composite:GPSLongitude"  # this avoids the need to use the GPSLongitudeRef tag when writing
@@ -64,6 +34,7 @@ tags_optional = [
     MowTag.hierarchicalsubject,
     MowTag.label,
     MowTag.stagehistory,
+    MowTag.sourcefile,
     *tags_gps_all,
 ]
 tags_all = tags_expected + tags_optional
@@ -77,25 +48,29 @@ class MowTagFileManipulator:
     def __init__(self):
         self.et = ExifToolHelper()
 
-    def readTags(
+    def read_tags(
         self,
         file: Path,
         tags: list[MowTag],
     ) -> dict[MowTag, str | int | float]:
         """
-        File can be any media file, also sidecars.
+        File can be any media file, also sidecars. This is the basic read function; every other read function should call this one.
         """
-        out = self.et.get_tags(file, [tag.value for tag in tags])[0]
+        out = self.et.get_tags(
+            file, [tag.value for tag in tags], params=["-n", "-struct"]
+        )[
+            0
+        ]  # -n formats the gps output as decimal numbers (for gps data relevant)
         return {tag: out[tag.value] for tag in tags if tag.value in out}
 
-    def writeTags(
+    def write_tags(
         self,
         file: Path,
         tags: dict[MowTag, str | int | float],
         overwrite_original: bool = True,
     ):
         """
-        File can be any media file, also sidecars.
+        File can be any media file, also sidecars. This is the basic write function; every other write function should call this one.
         """
         params = ["-P", "-L", "-m"]
 
@@ -111,31 +86,56 @@ class MowTagFileManipulator:
         )
 
     def write_to_sidecar(
-        self, file: Path, tags: dict[MowTag, int | str | float]
+        self, mFile: MediaFile, tags: dict[MowTag, int | str | float]
     ) -> Path:
-        sidecar = file.with_suffix(".xmp")
-        self.writeTags(sidecar, tags)
+        """
+        Writes to sidecar and adds it to Mediafile if not already present.
+        """
+        sidecar = Path(mFile.pathnoext + ".xmp")
+        self.write_tags(sidecar, tags)
+        if not mFile.has_sidecar():
+            mFile.extensions.append(sidecar.suffix)
         return sidecar
 
     def read_from_sidecar(
-        self, file: Path, tags: list[MowTag]
+        self, file: MediaFile, tags: list[MowTag]
     ) -> dict[MowTag, str | int | float]:
-        sidecar = file.with_suffix(".xmp")
-        return self.readTags(sidecar, tags)
 
-    def create_sidecar_from_file(self, file: Path) -> Path:
-        sidecar = file.with_suffix(".xmp")
-        tags = self.readTags(file, tags_all)
-        self.writeTags(sidecar, tags)
+        sidecar = file.get_sidecar()
+        if os.path.exists(sidecar):
+            return self.read_tags(sidecar, tags)
+
+        raise FileNotFoundError(f"No sidecar found for {file}")
+
+    def create_sidecar_from_file(self, mFile: MediaFile) -> Path:
+
+        if mFile.has_sidecar():
+            raise ValueError("Mediafile already has a sidecar.")
+
+        tags = self._get_combined_file_tags_from(mFile)
+        sidecar = Path(mFile.get_sidecar())
+        self.write_tags(sidecar, tags)
+        mFile.extensions.append(".xmp")
+
         return sidecar
 
-    def merge_sidecar_into_file(self, file: Path):
+    def merge_sidecar_into_mediafile(self, mFile: MediaFile):
         """
-        Copies all tags from the sidecar to the file and removes the sidecar.
+        Copies all tags from the sidecar to the file(s) and removes the sidecar.
         """
-        sidecar = file.with_suffix(".xmp")
-        tags = self.readTags(sidecar, tags_all)
-        self.writeTags(file, tags)
+        if not mFile.has_sidecar():
+            return
+
+        sidecar = mFile.get_sidecar()
+        tags = self.read_tags(sidecar, tags_all)
+
+        for file in mFile.getAllFileNames():
+            if file == sidecar:
+                continue
+
+            self.write_tags(file, tags)
+
+        mFile.extensions.remove(".xmp")
         os.remove(sidecar)
 
     def _treat_elevation_writing(
@@ -160,3 +160,19 @@ class MowTagFileManipulator:
         new_tags.pop(MowTag.gps_elevation)
 
         return new_tags
+
+    def _get_combined_file_tags_from(self, mFile: MediaFile) -> dict[MowTag, str]:
+        tags = {}
+        for file in mFile.getAllFileNames():
+            new_tags = self.read_tags(file, tags_all)
+
+            for tag in new_tags.keys():
+                if tag == MowTag.sourcefile:
+                    continue
+                if tag in tags and tags[tag] != new_tags[tag]:
+                    raise ValueError(
+                        f"Tag {tag} has different values in different files of the same media file: {tags[tag]} and {new_tags[tag]}"
+                    )
+
+            tags.update(new_tags)
+        return tags
