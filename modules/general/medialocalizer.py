@@ -12,7 +12,7 @@ import folium
 
 from ..general.mediafile import MediaFile
 from ..general.filenamehelper import extractDatetimeFromFileName
-from ..mow.mowtags import MowTag,  tags_gps_all
+from ..mow.mowtags import MowTag, tags_gps_all
 from ..general.medafilefactories import createAnyValidMediaFile
 from .mediatransitioner import MediaTransitioner, TransitionTask, TransitionerInput
 

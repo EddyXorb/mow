@@ -35,7 +35,13 @@ def test_fileisrenamed():
     prepareTest()
 
     renamer = VideoRenamer(
-        RenamerInput(src=src, dst=dst, move=True, writeMetaTags=True,writeMetaTagsToSidecar=False)
+        RenamerInput(
+            src=src,
+            dst=dst,
+            move=True,
+            writeMetaTags=True,
+            writeMetaTagsToSidecar=False,
+        )
     )
     renamer()
     assert len(os.listdir(targetDir)) > 0

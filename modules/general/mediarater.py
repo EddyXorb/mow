@@ -77,7 +77,7 @@ class MediaRater(MediaTransitioner):
                         overruled_ratings = {
                             os.path.basename(key): value
                             for key, value in ratings.items()
-                            if key.suffix.replace(".","") == self.overrulingfiletype
+                            if key.suffix.replace(".", "") == self.overrulingfiletype
                         }
                         if len(set(overruled_ratings.values())) == 1:
                             self.print_info(
