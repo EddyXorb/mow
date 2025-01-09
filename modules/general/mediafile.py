@@ -94,3 +94,9 @@ class MediaFile:
 
     def empty(self):
         return len(self.extensions) == 0
+    
+    def has_sidecar(self):
+        return ".xmp" in self.extensions
+    
+    def get_sidecar(self):
+        return self.pathnoext + ".xmp"

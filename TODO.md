@@ -9,3 +9,9 @@
 - [ ] feature: check if all stages were passed during **aggregation** using history of xmp:contributor
 - [ ] feature: make it possible to disable interpolation in localize
 - [x] define an entrypoint for mow in order to make it possible to install mow globally and create distributions
+- [ ] add option to use xmp sidecars files instead direct writing to file in every stage except aggregate. Advantages:
+  - increases sync performance (no big file will be changed then, so moving is enough for cloud clients).
+  - increases the overall performance of the program, as only little files have to be rewritten. In the aggregate-stage the xmp files could be baked into the mediafiles. 
+  - what's in the xmp data is much more easily readable (and also writable!), especially from mobile devices.
+  - during rewriting, mediafiles could get corrupted (e.g. when the pc crashes). To reduce the risk of data loss, only moving but never touching (except from the last stage) the mediafiles reduces the risk of data loss
+  - the problem of multiple files having different xmp-data would vanish. E.g. jpg and raw-images with the same name would share the same xmp-file and therefore the problem of diverging xmp-infos between raw and jpg would never occur.
