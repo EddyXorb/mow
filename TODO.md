@@ -16,3 +16,4 @@
   - during rewriting, mediafiles could get corrupted (e.g. when the pc crashes). To reduce the risk of data loss, only moving but never touching (except from the last stage) the mediafiles reduces the risk of data loss
   - the problem of multiple files having different xmp-data would vanish. E.g. jpg and raw-images with the same name would share the same xmp-file and therefore the problem of diverging xmp-infos between raw and jpg would never occur.
 - [ ] change tests to use sidecar files in all stages except aggregate
+- [ ] introduce .mow-folder where all metadata lies and make it copyable and location-agnostic such as git

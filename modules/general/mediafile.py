@@ -102,5 +102,5 @@ class MediaFile:
     def has_sidecar(self):
         return ".xmp" in self.extensions
 
-    def get_sidecar(self):
-        return self.pathnoext + ".xmp"
+    def get_sidecar(self) -> Path:
+        return Path(self.pathnoext + ".xmp")

@@ -9,7 +9,7 @@ import os
 testfolder = Path("tests").absolute()
 basefile = testfolder / "test.JPG"
 src = testfolder / "filestotreat"
-testfile = src / "test.JPG"
+testfile = Path(src / "test.JPG")
 testmfile = ImageFile(testfile)
 
 complex_tags = {
@@ -23,12 +23,15 @@ complex_tags = {
 }
 
 
-def prepareTest(folder=src):
+def prepareTest(folder=src, copy_raw=False):
     shutil.rmtree(folder, ignore_errors=True)
     os.makedirs(folder)
     shutil.copy(basefile, testfile)
+    if copy_raw:
+        shutil.copy(basefile.with_suffix(".ORF"), testfile.with_suffix(".ORF"))
     global testmfile
     testmfile = ImageFile(testfile)
+
 
 
 def test_read_tags_mowfilemanipulator():
@@ -79,6 +82,27 @@ def test_complex_write_tags_mowfilemanipulator():
         assert result[tag] == complex_tags[tag]
 
 
+def test_complex_write_tags_mowfilemanipulator_sidecar():
+    prepareTest()
+    fm = MowTagFileManipulator()
+    fm.write_to_sidecar(testmfile, complex_tags)
+    result = fm.read_from_sidecar(
+        testmfile,
+        tags=[
+            MowTag.rating,
+            MowTag.description,
+            MowTag.stagehistory,
+            MowTag.hierarchicalsubject,
+            MowTag.gps_elevation,
+            MowTag.gps_latitude,
+            MowTag.gps_longitude,
+        ],
+    )
+    for tag in complex_tags.keys():
+        assert tag in result
+        assert result[tag] == complex_tags[tag]
+
+
 def test_negative_gps_elevation_works():
     prepareTest()
     fm = MowTagFileManipulator()
@@ -88,6 +112,61 @@ def test_negative_gps_elevation_works():
     )
     result = fm.read_tags(testfile, tags=[MowTag.gps_elevation])
     assert result[MowTag.gps_elevation] == -100
+
+    fm.write_to_sidecar(
+        testmfile,
+        {MowTag.gps_elevation: -100},
+    )
+    result = fm.read_from_sidecar(testmfile, tags=[MowTag.gps_elevation])
+    assert result[MowTag.gps_elevation] == -100
+
+
+def test_gps_latitude_longitude_works():
+    prepareTest()
+    fm = MowTagFileManipulator()
+    fm.write_tags(
+        testmfile.getAllFileNames()[0],
+        {MowTag.gps_latitude: 1.1, MowTag.gps_longitude: 2.2},
+    )
+    result = fm.read_tags(
+        testmfile.getAllFileNames()[0], tags=[MowTag.gps_latitude, MowTag.gps_longitude]
+    )
+    assert result[MowTag.gps_latitude] == 1.1
+    assert result[MowTag.gps_longitude] == 2.2
+
+    fm.write_to_sidecar(
+        testmfile,
+        {MowTag.gps_latitude: 1.1, MowTag.gps_longitude: 2.2},
+    )
+    result = fm.read_from_sidecar(
+        testmfile, tags=[MowTag.gps_latitude, MowTag.gps_longitude]
+    )
+    assert result[MowTag.gps_latitude] == 1.1
+    assert result[MowTag.gps_longitude] == 2.2
+
+
+def test_gps_latitude_longitude_negative_works():
+    prepareTest()
+    fm = MowTagFileManipulator()
+    fm.write_tags(
+        Path(testfile),
+        {MowTag.gps_latitude: -1.1, MowTag.gps_longitude: -2.2},
+    )
+    result = fm.read_tags(
+        Path(testfile), tags=[MowTag.gps_latitude, MowTag.gps_longitude]
+    )
+    assert result[MowTag.gps_latitude] == -1.1
+    assert result[MowTag.gps_longitude] == -2.2
+
+    fm.write_to_sidecar(
+        testmfile,
+        {MowTag.gps_latitude: -1.1, MowTag.gps_longitude: -2.2},
+    )
+    result = fm.read_from_sidecar(
+        testmfile, tags=[MowTag.gps_latitude, MowTag.gps_longitude]
+    )
+    assert result[MowTag.gps_latitude] == -1.1
+    assert result[MowTag.gps_longitude] == -2.2
 
 
 def test_write_to_sidecar():
@@ -180,3 +259,43 @@ def test_create_sidecar_from_file():
     read_tags.pop(MowTag.sourcefile)
     read_tags_sidecar.pop(MowTag.sourcefile)
     assert read_tags == read_tags_sidecar
+
+
+def test_create_manipulate_and_merge_sidecar():
+    prepareTest()
+    fm = MowTagFileManipulator()
+
+    fm.create_sidecar_from_file(testmfile)
+
+    fm.write_to_sidecar(testmfile, complex_tags)
+
+    fm.merge_sidecar_into_mediafile(testmfile)
+    read_tags = fm.read_tags(testfile, tags=list(complex_tags.keys()))
+
+    assert read_tags == complex_tags
+
+
+def test_merge_sidecar_into_mediafile_with_raw():
+    prepareTest(copy_raw=True)
+    fm = MowTagFileManipulator()
+
+    fm.write_to_sidecar(testmfile, complex_tags)
+    
+    fm.merge_sidecar_into_mediafile(testmfile)
+    read_tags_jpg = fm.read_tags(testfile, tags=list(complex_tags.keys()))
+    read_tags_raw = fm.read_tags(testfile.with_suffix(".ORF"), tags=list(complex_tags.keys()))
+
+    assert read_tags_jpg == complex_tags
+    assert read_tags_raw == complex_tags
+
+def test_write_to_mediafile():
+    prepareTest(copy_raw=True)
+    fm = MowTagFileManipulator()
+
+    fm.write_to_mediafile(testmfile, complex_tags)
+
+    read_tags_jpg = fm.read_tags(testfile, tags=list(complex_tags.keys()))
+    read_tags_raw = fm.read_tags(testfile.with_suffix(".ORF"), tags=list(complex_tags.keys()))
+
+    assert read_tags_jpg == complex_tags
+    assert read_tags_raw == complex_tags

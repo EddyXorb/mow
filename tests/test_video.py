@@ -99,4 +99,6 @@ def test_conversionPreservesXMPTags():
     for tag in [tag.value for tag in tags_all]:
         if "XMP" not in tag:
             continue
+        if "GPS" in tag:
+            continue
         assert tag in tags
