@@ -310,6 +310,7 @@ class MediaTransitioner(VerbosePrinterClass):
                     self.fm.write_to_sidecar(mFile, task.metaTags)
                 else:
                     for file in files:
+                        self.print_info(f"Write meta tags {task.metaTags} to {file}")
                         self.fm.write_tags(file, task.metaTags)
 
             except Exception as e:

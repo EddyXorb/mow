@@ -18,6 +18,10 @@ import traceback
 
 
 class MediaRater(MediaTransitioner):
+    """
+    If a file has a sidecar, it overrules the rating of all other files of the same mediafile.
+    """
+
     def __init__(
         self,
         input: TransitionerInput,
@@ -35,14 +39,12 @@ class MediaRater(MediaTransitioner):
 
         out: list[TransitionTask] = []
 
-        with ExifToolHelper() as et:
-            for index, file in track(enumerate(self.toTreat), total=len(self.toTreat)):
-                out.append(self.getTransitionTask(et, index, file))
+        for index, file in track(enumerate(self.toTreat), total=len(self.toTreat)):
+            out.append(self.getTransitionTask(index, file))
+
         return out
 
-    def getTransitionTask(
-        self, et: ExifToolHelper, index: int, file: MediaFile
-    ) -> TransitionTask:
+    def getTransitionTask(self, index: int, file: MediaFile) -> TransitionTask:
         try:
             if self.enforced_rating and self.enforced_rating in range(1, 6):
                 return TransitionTask(
@@ -54,20 +56,15 @@ class MediaRater(MediaTransitioner):
             ):  # TODO: remove this special case for videos: always rating 2
                 return TransitionTask(index, metaTags={MowTag.rating: 2})
 
-            filenames = file.getAllFileNames()
-            tags = [self.fm.read_tags(file, tags=[MowTag.rating]) for file in filenames]
-            ratings = {
-                file: filetags[MowTag.rating]
-                for file, filetags in zip(filenames, tags)
-                if MowTag.rating in filetags
-            }
-
+            ratings = self.get_ratings_from(file)
             all_ratings = list(set(ratings.values()))
+
             match len(all_ratings):
                 case 0:
                     return TransitionTask.getFailed(index, "No rating found!")
                 case 1:
-                    if len(tags) > 1:
+                    if len(file.extensions) > 1 and not file.has_sidecar():
+                        # if there is only one rating, but multiple files, we write the rating to all files
                         return TransitionTask(
                             index, metaTags={MowTag.rating: all_ratings[0]}
                         )
@@ -107,3 +104,22 @@ class MediaRater(MediaTransitioner):
                 index,
                 f"Problem during reading rating from meta tags: {e}, stacktrace: {stacktrace}",
             )
+
+    def get_ratings_from(self, file: MediaFile) -> dict[Path, int]:
+
+        if file.has_sidecar():
+            ratings = {
+                file.get_sidecar(): value
+                for _, value in self.fm.read_from_sidecar(
+                    file, tags=[MowTag.rating]
+                ).items()
+            }
+            return ratings
+
+        ratings = {
+            _file: value
+            for _file in file.getAllFileNames()
+            for _, value in self.fm.read_tags(_file, tags=[MowTag.rating]).items()
+        }
+
+        return ratings

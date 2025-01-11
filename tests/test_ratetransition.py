@@ -133,7 +133,7 @@ def test_copiedRatingFromORFToJPG():
                 dst=dst,
                 dry=False,
                 writeMetaTags=True,
-                writeMetaTagsToSidecar=True,
+                writeMetaTagsToSidecar=False,
             )
         )()
 
@@ -143,7 +143,7 @@ def test_copiedRatingFromORFToJPG():
         assert exists(join(dst, groupname, "test.ORF"))
 
         ratingJPG = et.get_tags(
-            join(dst, groupname, "test.xmp"), [MowTag.rating.value]
+            join(dst, groupname, "test.JPG"), [MowTag.rating.value]
         )[0]
         assert MowTag.rating.value in ratingJPG
         assert ratingJPG[MowTag.rating.value] == 3
