@@ -3,7 +3,6 @@ from typing import Dict, Set
 
 from pathlib import Path
 from os.path import basename, splitext
-from exiftool import ExifToolHelper
 from rich.progress import track
 
 from ..mow.mowtags import MowTag, MowTagFileManipulator, tags_all, tags_expected

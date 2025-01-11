@@ -13,7 +13,6 @@ from ..video.videofile import (
     VideoFile,
 )  # replace this. The rater should be agnostic to concrete filetype
 
-from exiftool import ExifToolHelper
 import traceback
 
 

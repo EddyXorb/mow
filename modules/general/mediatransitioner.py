@@ -7,7 +7,6 @@ from shutil import move
 import sys
 import traceback
 from typing import Dict, Callable
-from exiftool import ExifToolHelper
 from math import sqrt
 import re
 from rich.progress import track
