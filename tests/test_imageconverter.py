@@ -8,7 +8,8 @@ import os
 import yaml
 
 from ..modules.general.mediatransitioner import TransitionerInput
-from ..modules.image.imageconverter import ImageConverter
+from ..modules.image.imagefile import ImageFile
+from ..modules.image.imageconverter import ImageConverter, convertImage
 from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME
 from ..modules.mow.mowtags import MowTag
 
@@ -41,19 +42,21 @@ def executeConversionWith(
     )()
 
 
-def prepareTest(n: int = 1):
+def prepareTest(n: int = 1, copy_raw=True, copy_jpg=True):
     shutil.rmtree(src, ignore_errors=True)
     shutil.rmtree(dst, ignore_errors=True)
     os.makedirs(os.path.dirname(srcfile))
     for i in range(0, n):
-        shutil.copy(
-            join(testfolder, "test.jpg"),
-            os.path.join(os.path.dirname(srcfile), f"test{i if n > 1 else ''}.jpg"),
-        )
-        shutil.copy(
-            join(testfolder, "test.ORF"),
-            os.path.join(os.path.dirname(srcfile), f"test{i if n > 1 else ''}.ORF"),
-        )
+        if copy_jpg:
+            shutil.copy(
+                join(testfolder, "test.jpg"),
+                os.path.join(os.path.dirname(srcfile), f"test{i if n > 1 else ''}.jpg"),
+            )
+        if copy_raw:
+            shutil.copy(
+                join(testfolder, "test.ORF"),
+                os.path.join(os.path.dirname(srcfile), f"test{i if n > 1 else ''}.ORF"),
+            )
 
 
 def test_moveworks():
@@ -196,3 +199,58 @@ def test_jpg_conversion_preserves_xmp_and_jpg_metadata():
         tags = et.get_tags(expectedConvertedImageFile, [])[0]
         print(tags)
         assert tags["EXIF:Model"] == "Test"
+
+
+def test_convertImage_jpg():
+    prepareTest(copy_raw=False, copy_jpg=True)
+    os.makedirs(targetDir, exist_ok=True)
+    imagefile = convertImage(
+        ImageFile(Path(srcfile).with_suffix(".jpg")),
+        targetDir,
+        {
+            "dng_converter_exe": "C:/Program Files/Adobe/Adobe DNG Converter/Adobe DNG Converter.exe"
+        },
+    )
+
+    assert not exists(srcfile)
+    assert exists(expectedConvertedImageFile)
+    assert len(imagefile.getAllFileNames()) == 1
+    assert imagefile.getAllFileNames()[0] == expectedConvertedImageFile
+
+
+def test_convertImage_raw():
+    prepareTest(copy_raw=True, copy_jpg=False)
+    os.makedirs(targetDir, exist_ok=True)
+
+    imagefile = convertImage(
+        ImageFile(Path(srcfile).with_suffix(".ORF")),
+        targetDir,
+        {
+            "dng_converter_exe": "C:/Program Files/Adobe/Adobe DNG Converter/Adobe DNG Converter.exe"
+        },
+    )
+
+    assert not exists(srcfile)
+    assert exists(expectedConvertedImageFile.with_suffix(".dng"))
+    assert len(imagefile.getAllFileNames()) == 1
+    assert imagefile.getAllFileNames()[0] == expectedConvertedImageFile.with_suffix(
+        ".dng"
+    )
+
+
+def test_convertImage_both():
+    prepareTest(copy_raw=True, copy_jpg=True)
+    os.makedirs(targetDir, exist_ok=True)
+
+    imagefile = convertImage(
+        ImageFile(srcfile),
+        targetDir,
+        {
+            "dng_converter_exe": "C:/Program Files/Adobe/Adobe DNG Converter/Adobe DNG Converter.exe"
+        },
+    )
+
+    assert not exists(srcfile)
+    assert exists(expectedConvertedImageFile.with_suffix(".jpg"))
+    assert exists(expectedConvertedImageFile.with_suffix(".dng"))
+    assert len(imagefile.getAllFileNames()) == 2
