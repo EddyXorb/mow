@@ -42,7 +42,11 @@ def test_ratedImageIsMoved():
             params=["-P", "-overwrite_original", "-v2"],
         )
 
-        MediaRater(input=TransitionerInput(src=src, dst=dst, dry=False))()
+        MediaRater(
+            input=TransitionerInput(
+                src=src, dst=dst, dry=False, writeMetaTagsToSidecar=True
+            )
+        )()
 
         assert not exists(fullname)
         assert exists(join(dst, groupname, "test.JPG"))
@@ -87,7 +91,7 @@ def test_copiedRatingFromJPGToORF():
                 dst=dst,
                 dry=False,
                 writeMetaTags=True,
-                writeMetaTagsToSidecar=False,
+                writeMetaTagsToSidecar=True,
             )
         )()
 
@@ -97,7 +101,7 @@ def test_copiedRatingFromJPGToORF():
         assert exists(join(dst, groupname, "test.ORF"))
 
         ratingRaw = et.get_tags(
-            join(dst, groupname, "test.ORF"), [MowTag.rating.value]
+            join(dst, groupname, "test.xmp"), [MowTag.rating.value]
         )[0]
         assert MowTag.rating.value in ratingRaw
         assert ratingRaw[MowTag.rating.value] == 3
@@ -129,7 +133,7 @@ def test_copiedRatingFromORFToJPG():
                 dst=dst,
                 dry=False,
                 writeMetaTags=True,
-                writeMetaTagsToSidecar=False,
+                writeMetaTagsToSidecar=True,
             )
         )()
 
@@ -139,7 +143,7 @@ def test_copiedRatingFromORFToJPG():
         assert exists(join(dst, groupname, "test.ORF"))
 
         ratingJPG = et.get_tags(
-            join(dst, groupname, "test.JPG"), [MowTag.rating.value]
+            join(dst, groupname, "test.xmp"), [MowTag.rating.value]
         )[0]
         assert MowTag.rating.value in ratingJPG
         assert ratingJPG[MowTag.rating.value] == 3
@@ -176,7 +180,7 @@ def test_differentRatingBetweenJPGandRawpreventsTransition():
                 dst=dst,
                 dry=False,
                 writeMetaTags=True,
-                writeMetaTagsToSidecar=False,
+                writeMetaTagsToSidecar=True,
             )
         )()
 
@@ -350,7 +354,7 @@ def test_enforced_rating_works():
             src=src,
             dst=dst,
             dry=False,
-            writeMetaTagsToSidecar=False,
+            writeMetaTagsToSidecar=True,
         ),
         enforced_rating=5,
     )()
@@ -359,6 +363,6 @@ def test_enforced_rating_works():
     assert exists(join(dst, groupname, "test.JPG"))
 
     with ExifToolHelper() as et:
-        rating = et.get_tags(join(dst, groupname, "test.JPG"), [MowTag.rating.value])[0]
+        rating = et.get_tags(join(dst, groupname, "test.xmp"), [MowTag.rating.value])[0]
         assert MowTag.rating.value in rating
         assert rating[MowTag.rating.value] == 5

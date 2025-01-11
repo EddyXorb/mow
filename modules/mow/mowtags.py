@@ -89,6 +89,12 @@ class MowTagFileManipulator:
         """
         params = ["-P", "-L", "-m"]
 
+        if MowTag.sourcefile in tags:
+            tags.pop(MowTag.sourcefile)
+
+        if len(tags) == 0:
+            return
+
         if overwrite_original:
             params.append("-overwrite_original")
 
@@ -140,6 +146,10 @@ class MowTagFileManipulator:
             raise ValueError("Mediafile already has a sidecar.")
 
         tags = self._get_combined_file_tags_from(mFile)
+
+        if len(tags) == 0:
+            tags = {MowTag.label: "created by mow"}
+
         self.write_to_sidecar(mFile, tags)
 
         return Path(mFile.get_sidecar())
@@ -230,6 +240,9 @@ class MowTagFileManipulator:
         tags = {}
         for file in mFile.getAllFileNames():
             new_tags = self.read_tags(file, tags_all)
+
+            if MowTag.sourcefile in new_tags:
+                new_tags.pop(MowTag.sourcefile)
 
             for tag in new_tags.keys():
                 if tag == MowTag.sourcefile:

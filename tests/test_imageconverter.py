@@ -19,7 +19,7 @@ dst = os.path.abspath("./tests/test_converted")
 imagename = "test.jpg"
 srcfile = join(src, "subsubfolder", imagename)
 targetDir = join(dst, "subsubfolder")
-expectedConvertedImageFile = join(targetDir, imagename)
+expectedConvertedImageFile = Path(targetDir) / imagename
 
 
 def executeConversionWith(
@@ -35,7 +35,7 @@ def executeConversionWith(
             maintainFolderStructure=maintainFolderStructure,
             settings=settings,
             filter=filterstring,
-           # writeMetaTagsToSidecar=False
+            writeMetaTagsToSidecar=True,
         ),
         jpg_quality=jpg_quality,
     )()
@@ -186,9 +186,13 @@ def test_jpg_conversion_preserves_xmp_and_jpg_metadata():
     executeConversionWith(jpg_quality=10)
 
     with ExifToolHelper() as et:
-        rating = et.get_tags(expectedConvertedImageFile, [MowTag.rating.value])[0]
+        rating = et.get_tags(
+            expectedConvertedImageFile.with_suffix(".xmp"), [MowTag.rating.value]
+        )[0]
+
         assert MowTag.rating.value in rating
         assert rating[MowTag.rating.value] == 3
+
         tags = et.get_tags(expectedConvertedImageFile, [])[0]
         print(tags)
         assert tags["EXIF:Model"] == "Test"

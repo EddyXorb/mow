@@ -1,3 +1,4 @@
+from pathlib import Path
 import shutil
 from os.path import join, exists
 import os
@@ -275,15 +276,16 @@ def test_XMPisWritten():
             dst=dst,
             dry=False,
             writeMetaTags=True,
-            writeMetaTagsToSidecar=False,
+            writeMetaTagsToSidecar=True,
         )
     )()
 
     assert not exists(fullname)
-    newname = join(dst, "2022-12-12@120000 TEST", "2022-12-12@120000_test.JPG")
+    newname = Path(dst) / "2022-12-12@120000 TEST" / "2022-12-12@120000_test.JPG"
     assert exists(newname)
+
     with ExifToolHelper() as et:
-        tags = et.get_tags(newname, [MowTag.description.value])[0]
+        tags = et.get_tags(newname.with_suffix(".xmp"), [MowTag.description.value])[0]
         print(tags)
         assert tags[MowTag.description.value] == "2022-12-12@120000 TEST"
 
@@ -305,20 +307,21 @@ def test_XMPDescriptionContainsAllSuperfolders():
             dst=dst,
             dry=False,
             writeMetaTags=True,
-            writeMetaTagsToSidecar=False,
+            writeMetaTagsToSidecar=True,
         )
     )()
 
     assert not exists(fullname)
-    newname = join(
-        dst,
-        "2022-12-12@120000 TEST",
-        "2022-12-12@120000 TEST2",
-        "2022-12-12@120000_test.JPG",
+    newname = (
+        Path(dst)
+        / "2022-12-12@120000 TEST"
+        / "2022-12-12@120000 TEST2"
+        / "2022-12-12@120000_test.JPG"
     )
+
     assert exists(newname)
     with ExifToolHelper() as et:
-        tags = et.get_tags(newname, ["XMP:Description"])[0]
+        tags = et.get_tags(newname.with_suffix(".xmp"), ["XMP:Description"])[0]
         print(tags)
         assert (
             tags["XMP:Description"] == "2022-12-12@120000 TEST/2022-12-12@120000 TEST2"

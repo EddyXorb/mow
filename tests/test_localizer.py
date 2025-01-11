@@ -1,4 +1,5 @@
 import datetime
+from pathlib import Path
 import shutil
 from os.path import join, exists
 import os
@@ -21,8 +22,8 @@ dst = os.path.abspath("./tests/test_treated")
 targetDir = join(dst, "subsubfolder")
 IMAGENAME = "2022-01-01@101015.JPG"
 
-untransitionedFile = join(src, "subsubfolder", IMAGENAME)
-transitionedFile = join(dst, "subsubfolder", IMAGENAME)
+untransitionedFile = Path(src) / "subsubfolder" / IMAGENAME
+transitionedFile = Path(dst) / "subsubfolder" / IMAGENAME
 
 
 def prepareTest(image_name=IMAGENAME):
@@ -65,7 +66,7 @@ def perform_transition(
                 maintainFolderStructure=True,
                 src=src,
                 dst=dst,
-                writeMetaTagsToSidecar=False,
+                writeMetaTagsToSidecar=True,
             ),
         )
     )()
@@ -79,7 +80,7 @@ def test_force_gps_works():
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
 
-    tags = MowTagFileManipulator().read_tags(transitionedFile, tags_gps_all)
+    tags = MowTagFileManipulator().read_tags(transitionedFile.with_suffix(".xmp"), tags_gps_all)
     print(tags)
     assert tags[MowTag.gps_latitude] == 1.0
     assert tags[MowTag.gps_longitude] == -2.0
@@ -121,7 +122,9 @@ def test_correct_gps_data_leads_to_transition_and_interpolation():
     assert exists(transitionedFile)
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(transitionedFile, [tag.value for tag in tags_gps_all])[
+        tags = et.get_tags(
+            transitionedFile.with_suffix(".xmp"), [tag.value for tag in tags_gps_all]
+        )[
             0
         ]  # -n formats the gps output as decimal numbers
         print(tags)
@@ -184,7 +187,7 @@ def test_image_made_before_first_gps_entry_works():
     image = "2022-01-01@101005.JPG"
     prepareTest(image_name=image)
     untransitionedFile = join(src, "subsubfolder", image)
-    transitionedFile = join(dst, "subsubfolder", image)
+    transitionedFile = Path(dst) / "subsubfolder" / image
 
     perform_transition(gps_time_tolerance=datetime.timedelta(seconds=10))
 
@@ -192,7 +195,9 @@ def test_image_made_before_first_gps_entry_works():
     assert exists(transitionedFile)
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(transitionedFile, [tag.value for tag in tags_gps_all])[
+        tags = et.get_tags(
+            transitionedFile.with_suffix(".xmp"), [tag.value for tag in tags_gps_all]
+        )[
             0
         ]  # -n formats the gps output as decimal numbers
         print(tags)
@@ -217,7 +222,7 @@ def test_image_made_after_last_gps_entry_works():
     image = "2022-01-01@101025.JPG"
     prepareTest(image_name=image)
     untransitionedFile = join(src, "subsubfolder", image)
-    transitionedFile = join(dst, "subsubfolder", image)
+    transitionedFile = Path(dst) / "subsubfolder"/ image
 
     perform_transition()
 
@@ -225,7 +230,7 @@ def test_image_made_after_last_gps_entry_works():
     assert exists(transitionedFile)
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(transitionedFile, [tag.value for tag in tags_gps_all])[
+        tags = et.get_tags(transitionedFile.with_suffix(".xmp"), [tag.value for tag in tags_gps_all])[
             0
         ]  # -n formats the gps output as decimal numbers
         print(tags)

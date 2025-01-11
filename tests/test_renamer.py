@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 
 from ..modules.audio.audiorenamer import AudioRenamer
 from ..modules.general.mediarenamer import MediaRenamer, RenamerInput
@@ -15,14 +16,14 @@ targetDir = join(dst, "subsubfolder")
 srcimagefile = join(src, "subsubfolder", "test3.JPG")
 srcaudiofile = join(src, "subsubfolder", "test_audio.mp3")
 expectedfilename = "2022-07-27@215555_test3.JPG"
-expectedtargetimagefile = join(targetDir, expectedfilename)
+expectedtargetimagefile = Path(targetDir) / expectedfilename
 
 NR_MEDIAFILES = 2
 
 
 def executeRenamingWith(
     writeMetaTags=False,
-    writeMetaTagsToSidecar=False,
+    writeMetaTagsToSidecar=True,
     move=True,
     recursive=True,
     maintainFolderStructure=True,
@@ -145,7 +146,9 @@ def test_writeXMPDateAndCreationWorks():
     from exiftool import ExifToolHelper
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(expectedtargetimagefile, ["XMP:Source", "XMP:Date"])[0]
+        tags = et.get_tags(
+            str(expectedtargetimagefile.with_suffix(".xmp")), ["XMP:Source", "XMP:Date"]
+        )[0]
         assert tags["XMP:Source"] == "test3.JPG"
         assert tags["XMP:Date"] == "2022:07:27 21:55:55"
 
@@ -201,13 +204,15 @@ def test_useFilenameAsSourceOfTruth():
 
     executeRenamingWith(useCurrentFilename=True, writeMetaTags=True)
 
-    renamedFile = join(targetDir, "2022-11-11@111111_test3.JPG")
+    renamedFile = Path(targetDir) / "2022-11-11@111111_test3.JPG"
     assert exists(renamedFile)
 
     from exiftool import ExifToolHelper
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(renamedFile, ["XMP:Source", "XMP:Date"])[0]
+        tags = et.get_tags(renamedFile.with_suffix(".xmp"), ["XMP:Source", "XMP:Date"])[
+            0
+        ]
         assert tags["XMP:Source"] == "2022-11-11@111111_test3.JPG"
         assert tags["XMP:Date"] == "2022:11:11 11:11:11"
 
