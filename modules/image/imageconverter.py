@@ -48,7 +48,7 @@ from pathlib import Path
 # -o <filename> Specify the name of the output DNG file. Default is the name of the input file with the extension changed to “.dng”.
 
 DESIRED_RAW_PREVIEW_SIZE = (3200, 2400)
-DNG_PREVIEW_IMAGE_QUALITY = 25
+DNG_PREVIEW_IMAGE_QUALITY = 35
 import logging
 
 
