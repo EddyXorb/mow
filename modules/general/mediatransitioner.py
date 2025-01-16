@@ -293,14 +293,15 @@ class MediaTransitioner(VerbosePrinterClass):
         for task in track(tasks) if self.verbosityLevel >= 3 else tasks:
             try:
                 mFile = self.toTreat[task.index]
-                files = mFile.getAllFileNames()
 
                 if self.dry:
                     continue
 
+                self.print_info(f"Set meta tags for {mFile}")
                 if self.writeMetaTagsToSidecar and not mFile.has_sidecar():
                     self.fm.create_sidecar_from_file(mFile)
                 elif not self.writeMetaTagsToSidecar and mFile.has_sidecar():
+                    self.print_info(f"Merge sidecar into {mFile}")
                     self.fm.merge_sidecar_into_mediafile(mFile)
 
                 self.add_transition_to_files_stage_history(task, mFile)
@@ -308,8 +309,7 @@ class MediaTransitioner(VerbosePrinterClass):
                 if self.writeMetaTagsToSidecar:
                     self.fm.write_to_sidecar(mFile, task.metaTags)
                 else:
-                    for file in files:
-                        self.print_info(f"Write meta tags {task.metaTags} to {file}")
+                    for file in mFile.getAllFileNames():
                         self.fm.write_tags(file, task.metaTags)
 
             except Exception as e:

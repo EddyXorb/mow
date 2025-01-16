@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import os
 from pathlib import Path
+from time import sleep
 from exiftool import ExifToolHelper
 from enum import StrEnum
 
@@ -164,7 +165,7 @@ class MowTagFileManipulator:
         mFile.extensions.remove(".xmp")
         self.write_to_mediafile(mFile, tags)
 
-        os.remove(sidecar)
+        sidecar.unlink()
 
     def _convert_to_inner_gps_tags(
         self, tags: dict[MowTag, str | int | float]

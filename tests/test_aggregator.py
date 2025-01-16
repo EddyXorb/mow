@@ -839,3 +839,26 @@ def test_XmpOverrulesIfPresent():
 
     assert transitionTookPlace(fullname)
     assert not jpgWasDeleted(fullname) and not rawWasDeleted(fullname)
+
+
+def test_XmpIsRemovedIfSidecarOptionIsFalse():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = Path(src) / groupname / "2022-12-12@121212_test.jpg"
+    prepareTest(srcname=fullname)
+    ifile = ImageFile(fullname)
+
+    fm = MowTagFileManipulator()
+    fm.create_sidecar_from_file(ifile)
+    fm.write_to_sidecar(ifile, {MowTag.rating: 5})
+    fm.write_tags(fullname, {MowTag.rating: 1})
+
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
+
+    assert not fullname.with_suffix(".xmp").exists()
+    assert not exists(
+        Path(dst) / str(Path(fullname).with_suffix(".xmp").relative_to(src))
+    )
