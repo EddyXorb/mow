@@ -19,6 +19,8 @@ class MediaAggregator(MediaTransitioner):
         self.toTransition: list[TransitionTask] = []
 
     def getAllTagRelevantFilenamesFor(self, file: MediaFile) -> list[Path]:
+        if file.has_sidecar():
+            return [file.get_sidecar()]
         return file.getAllFileNames()
 
     def getTagsFromTasks(self) -> dict[int, list[dict[MowTag, str]]]:
@@ -141,7 +143,9 @@ class MediaAggregator(MediaTransitioner):
     ) -> CheckResult:
         for tag in tags_all:
             allValuesThisTag: Set[str] = set()
-            atLeastOneMissing = False
+            atLeastOneMissing = len(self.toTreat[task.index].getAllFileNames()) > len(
+                tagsDictList
+            )  # if there are more files than tags, we assume that at least one tag is missing and will overwrite every other tag. This is relevant if xmp or jpg is the only source of truth (the latter can e triggered with commandline-argument, the former is the default).
             tagMissingForExtension = []
             actualTagValue = None
 
@@ -155,13 +159,7 @@ class MediaAggregator(MediaTransitioner):
                         splitext(tagsDict[MowTag.sourcefile])[1]
                     )
 
-            if len(allValuesThisTag) == 1 and (
-                (
-                    atLeastOneMissing
-                    or hasattr(self, "jpgSingleSourceOfTruth")
-                    and self.jpgSingleSourceOfTruth
-                )
-            ):
+            if len(allValuesThisTag) == 1 and (atLeastOneMissing):
                 task.metaTags[tag] = actualTagValue
 
             elif len(allValuesThisTag) == 0 and tag in tags_expected:

@@ -16,7 +16,9 @@ class ImageAggregator(MediaAggregator):
 
     def getAllTagRelevantFilenamesFor(self, file: ImageFile) -> list[str]:
         return (
-            [file.getJpg()] if self.jpgSingleSourceOfTruth else file.getAllFileNames()
+            [file.getJpg()]
+            if self.jpgSingleSourceOfTruth
+            else super().getAllTagRelevantFilenamesFor(file)
         )
 
     def treatTaskBasedOnRating(self, task: TransitionTask, rating: int):
@@ -26,9 +28,7 @@ class ImageAggregator(MediaAggregator):
                 self.deleteMediaFile(mfile)
 
                 task.skip = True
-                task.skipReason = (
-                    "deleted file based on rating."
-                )
+                task.skipReason = "deleted file based on rating."
             case 2 | 3:
                 rawfile = mfile.getRaw()
                 if rawfile is None:

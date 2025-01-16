@@ -3,7 +3,7 @@ import shutil
 from os.path import join, exists, splitext, abspath
 import os
 
-from ..modules.mow.mowtags import MowTag, tags_all
+from ..modules.mow.mowtags import MowTag, tags_all, MowTagFileManipulator
 from ..modules.general.mediatransitioner import DELETE_FOLDER_NAME, TransitionerInput
 from ..modules.image.imageaggregator import (
     ImageAggregator,
@@ -809,6 +809,27 @@ def test_rating5BothImagefilesAreTransitioned():
         logging.info(et.execute(*args))
 
     assert bothFilesAreInSRC(fullname)
+
+    ImageAggregator(
+        input=TransitionerInput(
+            src=src, dst=dst, dry=False, writeMetaTagsToSidecar=False
+        )
+    )()
+
+    assert transitionTookPlace(fullname)
+    assert not jpgWasDeleted(fullname) and not rawWasDeleted(fullname)
+
+
+def test_XmpOverrulesIfPresent():
+    groupname = "2022-12-12@121212_TEST"
+    fullname = join(src, groupname, "2022-12-12@121212_test.jpg")
+    prepareTest(srcname=fullname)
+    ifile = ImageFile(fullname)
+
+    fm = MowTagFileManipulator()
+    fm.create_sidecar_from_file(ifile)
+    fm.write_to_sidecar(ifile, {MowTag.rating: 5})
+    fm.write_tags(fullname, {MowTag.rating: 1})
 
     ImageAggregator(
         input=TransitionerInput(
