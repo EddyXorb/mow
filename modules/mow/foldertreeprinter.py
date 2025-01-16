@@ -18,6 +18,7 @@ class FolderTreePrinter:
         description: str = "",
         max_files: int = 300,
         max_same_filetype_per_folder=30,
+        exclude_folders: list[str] = [],
     ):
         """
         Prints the directory tree of the specified folder.
@@ -46,6 +47,7 @@ class FolderTreePrinter:
             max_same_filetype_per_folder=1,
             max_files=300,
             avoid_special_symbols=sys.stdout.encoding != "utf-8",
+            exclude_folders=exclude_folders,
         )
         print(tree)
 
@@ -57,6 +59,7 @@ class FolderTreePrinter:
         max_same_filetype_per_folder=30,
         iterations: list[int] = [0],
         avoid_special_symbols: bool = False,
+        exclude_folders: list[str] = [],
     ) -> Tree:
         """
         Recursively build a Tree with directory contents.
@@ -80,9 +83,12 @@ class FolderTreePrinter:
             The populated Tree object with the directory contents.
 
         """
-        paths = sorted(
-            Path(directory).iterdir(),
-            key=lambda path: (path.is_file(), path.name.lower()),
+        paths = filter(
+            lambda path: path.parts[-1] not in exclude_folders,
+            sorted(
+                Path(directory).iterdir(),
+                key=lambda path: (path.is_file(), path.name.lower()),
+            ),
         )
 
         files_treated_count = 0

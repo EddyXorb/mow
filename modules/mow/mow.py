@@ -14,7 +14,7 @@ from ..image.imagefile import ImageFile
 from ..video.videofile import VideoFile
 from ..general.mediaconverter import PassthroughConverter
 from ..general.mediacopier import MediaCopier
-from ..general.mediatransitioner import TransitionerInput
+from ..general.mediatransitioner import DELETE_FOLDER_NAME, TransitionerInput
 from ..general.tkinterhelper import getInputDir, getInputFile
 from ..general.mediarenamer import RenamerInput
 from ..image.imagerenamer import ImageRenamer
@@ -215,7 +215,11 @@ class Mow:
         if not folder.exists():
             raise Exception(f"Folder {folder} does not exist!")
         FolderTreePrinter().print_tree_of(
-            folder, description=stage, max_files=300, max_same_filetype_per_folder=30
+            folder,
+            description=stage,
+            max_files=300,
+            max_same_filetype_per_folder=30,
+            exclude_folders=[".git", DELETE_FOLDER_NAME],
         )
 
     def _getStageAfter(self, stage: str) -> str:
