@@ -7,7 +7,7 @@ from importlib.metadata import version as get_version
 
 
 parser = ArgumentParser(
-    description=f"M(edia) flo(OW) {get_version("mow")} - helper to automate media workflow. Needs a working dir to be specified into .mowsettings.yml."
+    description=f"M(edia) (flo)OW {get_version("mow")} - helper to automate media workflow. Needs a working dir to be specified into .mowsettings.yml."
 )
 
 parser.add_argument(
