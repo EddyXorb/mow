@@ -298,7 +298,9 @@ class MediaTransitioner(VerbosePrinterClass):
                     continue
 
                 if self.writeMetaTagsToSidecar and not mFile.has_sidecar():
-                    self.fm.create_sidecar_from_file(mFile)
+                    self.fm.create_sidecar_from_file(
+                        mFile, ignore_differing_tags=[MowTag.stagehistory]
+                    )
                 elif not self.writeMetaTagsToSidecar and mFile.has_sidecar():
                     self.print_info(f"Merge sidecar into {mFile}")
                     self.fm.merge_sidecar_into_mediafile(mFile)

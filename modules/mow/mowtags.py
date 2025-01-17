@@ -141,12 +141,18 @@ class MowTagFileManipulator:
 
         raise FileNotFoundError(f"No sidecar found for {file}")
 
-    def create_sidecar_from_file(self, mFile: MediaFile) -> Path:
+    def create_sidecar_from_file(
+        self,
+        mFile: MediaFile,
+        ignore_differing_tags: list[MowTag] = [],
+    ) -> Path:
 
         if mFile.has_sidecar():
             raise ValueError("Mediafile already has a sidecar.")
 
-        tags = self._get_combined_file_tags_from(mFile)
+        tags = self._get_combined_file_tags_from(
+            mFile, ignore_differing_tags=ignore_differing_tags
+        )
 
         if len(tags) == 0:
             tags = {MowTag.label: "created by mow"}
@@ -237,7 +243,11 @@ class MowTagFileManipulator:
 
         return new_tags
 
-    def _get_combined_file_tags_from(self, mFile: MediaFile) -> dict[MowTag, str]:
+    def _get_combined_file_tags_from(
+        self,
+        mFile: MediaFile,
+        ignore_differing_tags: list[MowTag],
+    ) -> dict[MowTag, str]:
         tags = {}
         for file in mFile.getAllFileNames():
             new_tags = self.read_tags(file, tags_all)
@@ -246,9 +256,11 @@ class MowTagFileManipulator:
                 new_tags.pop(MowTag.sourcefile)
 
             for tag in new_tags.keys():
-                if tag == MowTag.sourcefile:
-                    continue
-                if tag in tags and tags[tag] != new_tags[tag]:
+                if (
+                    tag in tags
+                    and tags[tag] != new_tags[tag]
+                    and tag not in ignore_differing_tags
+                ):
                     raise ValueError(
                         f"Tag {tag} has different values in different files of the same media file: {tags[tag]} and {new_tags[tag]}"
                     )

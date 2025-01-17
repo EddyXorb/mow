@@ -33,7 +33,6 @@ def prepareTest(folder=src, copy_raw=False):
     testmfile = ImageFile(testfile)
 
 
-
 def test_read_tags_mowfilemanipulator():
     prepareTest()
     fm = MowTagFileManipulator()
@@ -261,6 +260,34 @@ def test_create_sidecar_from_file():
     assert read_tags == read_tags_sidecar
 
 
+def test_create_sidecar_from_file_ignore_differing():
+    prepareTest(copy_raw=True)
+    fm = MowTagFileManipulator()
+
+    fm.write_tags(testfile, {MowTag.rating: 1})
+    fm.write_tags(testfile, {MowTag.rating: 5})
+
+    sidecar = fm.create_sidecar_from_file(
+        testmfile, ignore_differing_tags=[MowTag.rating]
+    )
+    assert sidecar.exists()
+    assert sidecar.stat().st_size > 0
+
+
+def test_create_sidecar_from_file_dont_ignore_differing():
+    prepareTest(copy_raw=True)
+    fm = MowTagFileManipulator()
+
+    fm.write_tags(testfile, {MowTag.rating: 1})
+    fm.write_tags(testfile.with_suffix(".ORF"), {MowTag.rating: 5})
+
+    try:
+        fm.create_sidecar_from_file(testmfile)
+        assert False
+    except ValueError:
+        assert True
+
+
 def test_create_manipulate_and_merge_sidecar():
     prepareTest()
     fm = MowTagFileManipulator()
@@ -280,13 +307,16 @@ def test_merge_sidecar_into_mediafile_with_raw():
     fm = MowTagFileManipulator()
 
     fm.write_to_sidecar(testmfile, complex_tags)
-    
+
     fm.merge_sidecar_into_mediafile(testmfile)
     read_tags_jpg = fm.read_tags(testfile, tags=list(complex_tags.keys()))
-    read_tags_raw = fm.read_tags(testfile.with_suffix(".ORF"), tags=list(complex_tags.keys()))
+    read_tags_raw = fm.read_tags(
+        testfile.with_suffix(".ORF"), tags=list(complex_tags.keys())
+    )
 
     assert read_tags_jpg == complex_tags
     assert read_tags_raw == complex_tags
+
 
 def test_write_to_mediafile():
     prepareTest(copy_raw=True)
@@ -295,7 +325,9 @@ def test_write_to_mediafile():
     fm.write_to_mediafile(testmfile, complex_tags)
 
     read_tags_jpg = fm.read_tags(testfile, tags=list(complex_tags.keys()))
-    read_tags_raw = fm.read_tags(testfile.with_suffix(".ORF"), tags=list(complex_tags.keys()))
+    read_tags_raw = fm.read_tags(
+        testfile.with_suffix(".ORF"), tags=list(complex_tags.keys())
+    )
 
     assert read_tags_jpg == complex_tags
     assert read_tags_raw == complex_tags
