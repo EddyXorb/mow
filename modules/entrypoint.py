@@ -3,25 +3,18 @@ import re
 from modules.general.medialocalizer import BaseLocalizerInput, GpsData
 from modules.mow.mow import Mow
 from argparse import ArgumentParser, Namespace
-import importlib.metadata
-import toml
-
-
-def get_version():
-    with open("pyproject.toml", "r") as file:
-        pyproject_content = toml.load(file)
-    return pyproject_content["project"]["version"]
+from importlib.metadata import version as get_version
 
 
 parser = ArgumentParser(
-    description=f"M(edia) flo(OW) {get_version()} - helper to automate media workflow. Needs a working dir to be specified into .mowsettings.yml."
+    description=f"M(edia) flo(OW) {get_version("mow")} - helper to automate media workflow. Needs a working dir to be specified into .mowsettings.yml."
 )
 
 parser.add_argument(
     "-v",
     "--version",
     action="version",
-    version=f"{get_version()}",
+    version=f"{get_version("mow")}",
 )
 
 subparsers = parser.add_subparsers(dest="command")
@@ -325,7 +318,7 @@ def get_canonical_command(command: str):
 
 def main():
     args = parser.parse_args()
-    
+
     mow = Mow(
         ".mowsettings.yml",
         dry=not args.execute if hasattr(args, "execute") else True,
