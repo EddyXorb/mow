@@ -297,7 +297,6 @@ class MediaTransitioner(VerbosePrinterClass):
                 if self.dry:
                     continue
 
-                self.print_info(f"Set meta tags for {mFile}")
                 if self.writeMetaTagsToSidecar and not mFile.has_sidecar():
                     self.fm.create_sidecar_from_file(mFile)
                 elif not self.writeMetaTagsToSidecar and mFile.has_sidecar():
