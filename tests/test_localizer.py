@@ -43,18 +43,27 @@ def perform_transition(
     gps_time_tolerance=datetime.timedelta(seconds=5),
     force_gps_data=None,
     time_offset_mediafile=None,  # here we add the offset again
+    interpolate_linearly=True,
+    gps_time_tolerance_before=None,
+    gps_time_tolerance_after=None,
     **kwargs,
 ):
     bli = BaseLocalizerInput(
         suppress_map_open=True,  # we do not want to open a map during unit tests, as it is annoying
         mediafile_timezone=mediafile_timezone,
-        gps_time_tolerance=gps_time_tolerance,
+        gps_time_tolerance_after=gps_time_tolerance,
+        gps_time_tolerance_before=gps_time_tolerance,
+        interpolate_linearly=interpolate_linearly,
     )
 
     if force_gps_data is not None:
         bli.force_gps_data = force_gps_data
     if time_offset_mediafile is not None:
         bli.time_offset_mediafile = time_offset_mediafile
+    if gps_time_tolerance_before:
+        bli.gps_time_tolerance_before = gps_time_tolerance_before
+    if gps_time_tolerance_after:
+        bli.gps_time_tolerance_after = gps_time_tolerance_after
 
     for key, value in kwargs.items():
         setattr(bli, key, value)
@@ -80,7 +89,9 @@ def test_force_gps_works():
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
 
-    tags = MowTagFileManipulator().read_tags(transitionedFile.with_suffix(".xmp"), tags_gps_all)
+    tags = MowTagFileManipulator().read_tags(
+        transitionedFile.with_suffix(".xmp"), tags_gps_all
+    )
     print(tags)
     assert tags[MowTag.gps_latitude] == 1.0
     assert tags[MowTag.gps_longitude] == -2.0
@@ -127,10 +138,28 @@ def test_correct_gps_data_leads_to_transition_and_interpolation():
         )[
             0
         ]  # -n formats the gps output as decimal numbers
-        print(tags)
         assert tags[MowTag.gps_latitude.value] == 15
         assert tags[MowTag.gps_longitude.value] == 0
         assert tags[MowTag.gps_elevation.value] == 1500
+
+
+def test_deactivated_interpolation_works():
+    prepareTest()
+
+    perform_transition(interpolate_linearly=False)
+
+    assert not exists(untransitionedFile)
+    assert exists(transitionedFile)
+
+    with ExifToolHelper() as et:
+        tags = et.get_tags(
+            transitionedFile.with_suffix(".xmp"), [tag.value for tag in tags_gps_all]
+        )[
+            0
+        ]  # -n formats the gps output as decimal numbers
+        assert tags[MowTag.gps_latitude.value] == 10
+        assert tags[MowTag.gps_longitude.value] == -10
+        assert tags[MowTag.gps_elevation.value] == 1000
 
 
 def test_timezone_change_leads_to_no_gps_found():
@@ -177,7 +206,9 @@ def test_gps_time_tolerance_when_too_small_avoids_transition():
 def test_gps_time_tolerance_when_big_enough_transitions():
     prepareTest()
 
-    perform_transition(gps_time_tolerance=datetime.timedelta(seconds=5))
+    perform_transition(
+        gps_time_tolerance=datetime.timedelta(seconds=5),
+    )
 
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
@@ -189,7 +220,10 @@ def test_image_made_before_first_gps_entry_works():
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = Path(dst) / "subsubfolder" / image
 
-    perform_transition(gps_time_tolerance=datetime.timedelta(seconds=10))
+    perform_transition(
+        gps_time_tolerance=datetime.timedelta(seconds=10),
+        gps_time_tolerance_before=datetime.timedelta(seconds=1),
+    )
 
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
@@ -200,7 +234,6 @@ def test_image_made_before_first_gps_entry_works():
         )[
             0
         ]  # -n formats the gps output as decimal numbers
-        print(tags)
         assert tags[MowTag.gps_latitude.value] == 10
         assert tags[MowTag.gps_longitude.value] == -10
         assert tags[MowTag.gps_elevation.value] == 1000
@@ -212,7 +245,10 @@ def test_image_made_before_first_gps_entry_but_too_small_tolerance_does_not_tran
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = join(dst, "subsubfolder", image)
 
-    perform_transition(gps_time_tolerance=datetime.timedelta(seconds=2))
+    perform_transition(
+        gps_time_tolerance=datetime.timedelta(seconds=2),
+        gps_time_tolerance_before=datetime.timedelta(seconds=9999),
+    )
 
     assert exists(untransitionedFile)
     assert not exists(transitionedFile)
@@ -222,18 +258,22 @@ def test_image_made_after_last_gps_entry_works():
     image = "2022-01-01@101025.JPG"
     prepareTest(image_name=image)
     untransitionedFile = join(src, "subsubfolder", image)
-    transitionedFile = Path(dst) / "subsubfolder"/ image
+    transitionedFile = Path(dst) / "subsubfolder" / image
 
-    perform_transition()
+    perform_transition(
+        gps_time_tolerance=datetime.timedelta(seconds=5),
+        gps_time_tolerance_after=datetime.timedelta(seconds=1),
+    )
 
     assert not exists(untransitionedFile)
     assert exists(transitionedFile)
 
     with ExifToolHelper() as et:
-        tags = et.get_tags(transitionedFile.with_suffix(".xmp"), [tag.value for tag in tags_gps_all])[
+        tags = et.get_tags(
+            transitionedFile.with_suffix(".xmp"), [tag.value for tag in tags_gps_all]
+        )[
             0
         ]  # -n formats the gps output as decimal numbers
-        print(tags)
         assert tags[MowTag.gps_latitude.value] == 20
         assert tags[MowTag.gps_longitude.value] == 10
         assert tags[MowTag.gps_elevation.value] == 2000
@@ -245,7 +285,10 @@ def test_image_made_after_last_gps_entry_but_too_small_tolerance_does_not_transi
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = join(dst, "subsubfolder", image)
 
-    perform_transition(gps_time_tolerance=datetime.timedelta(seconds=2))
+    perform_transition(
+        gps_time_tolerance=datetime.timedelta(seconds=2),
+        gps_time_tolerance_after=datetime.timedelta(seconds=9999),
+    )
 
     assert exists(untransitionedFile)
     assert not exists(transitionedFile)

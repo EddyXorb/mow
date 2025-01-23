@@ -193,15 +193,37 @@ localizeparser.add_argument(
     help="Time offset for media files. E.g. if the cameras time is 10 seconds in the future, you can correct it by writing -o=-10s. General format: -o=1h30m15s.",
     type=str,
     dest="localize_time_offset_mediafile",
+    metavar="DURATION",
 )
 
 localizeparser.add_argument(
     "-t",
     "--gps_time_tolerance",
-    help="Time tolerance for GPS data. General format: -t=1h30m15s. If a mediafiles timestamp is within this tolerance of a GPS data timestamp, the GPS data is taken as source of truth for the mediafile.",
+    help="Time tolerance for GPS data. Overwrites both after and before variants of this command. General format: -t=1h30m15s. If a mediafiles timestamp is within this tolerance of a GPS data timestamp, the GPS data is taken as source of truth for the mediafile.",
     type=str,
     dest="localize_gps_time_tolerance",
+    default=None,
+    metavar="DURATION",
+)
+
+localizeparser.add_argument(
+    "-a",
+    "--gps_time_tolerance_after",
+    help="Time tolerance for GPS data after the time of the mediafile. General format: -t=1h30m15s. If a mediafiles timestamp is within this tolerance of a GPS data timestamp, the GPS data is taken as source of truth for the mediafile.",
+    type=str,
+    dest="localize_gps_time_tolerance_after",
     default="10m",
+    metavar="DURATION",
+)
+
+localizeparser.add_argument(
+    "-b",
+    "--gps_time_tolerance_before",
+    help="Time tolerance for GPS data before the time of the mediafile. General format: -t=1h30m15s. If a mediafiles timestamp is within this tolerance of a GPS data timestamp, the GPS data is taken as source of truth for the mediafile.",
+    type=str,
+    dest="localize_gps_time_tolerance_before",
+    default="10m",
+    metavar="DURATION",
 )
 
 localizeparser.add_argument(
@@ -211,6 +233,7 @@ localizeparser.add_argument(
     type=str,
     dest="localize_timezone",
     default="Europe/Berlin",
+    metavar="TIMEZONE",
 )
 
 localizeparser.add_argument(
@@ -218,6 +241,7 @@ localizeparser.add_argument(
     help="Force GPS data. If set, all files get assigned this gps data, independently of gpx information available. Format: --force-gps-data -12,34.45,4556, interpreted as latitude,longitude,height.",
     type=str,
     dest="localize_force_gps_data",
+    metavar="LAT,LON,ELEV",
 )
 
 localizeparser.add_argument(
@@ -226,6 +250,15 @@ localizeparser.add_argument(
     help="Do not open a map with the found GPS data after calling the localizer, which is the default.",
     action="store_true",
     dest="localize_suppress_map_open",
+    default=False,
+)
+
+localizeparser.add_argument(
+    "-p",
+    "--interpolate_linearly",
+    help="Do linear interpolation for gps data if there are missing gps data points and there are two points before and after within the time tolerance specified.",
+    action="store_true",
+    dest="localize_interpolate_linerarly",
     default=False,
 )
 
@@ -364,12 +397,27 @@ def main():
             inp.time_offset_mediafile = parse_timedelta(
                 args.localize_time_offset_mediafile
             )
+        if args.localize_gps_time_tolerance_after is not None:
+            inp.gps_time_tolerance_after = parse_timedelta(
+                args.localize_gps_time_tolerance_after
+            )
+        if args.localize_gps_time_tolerance_before is not None:
+            inp.gps_time_tolerance_before = parse_timedelta(
+                args.localize_gps_time_tolerance_before
+            )
         if args.localize_gps_time_tolerance is not None:
-            inp.gps_time_tolerance = parse_timedelta(args.localize_gps_time_tolerance)
+            inp.gps_time_tolerance_before = parse_timedelta(
+                args.localize_gps_time_tolerance
+            )
+            inp.gps_time_tolerance_after = parse_timedelta(
+                args.localize_gps_time_tolerance
+            )
         if args.localize_force_gps_data is not None:
             inp.force_gps_data = GpsData.fromString(args.localize_force_gps_data)
         if args.localize_suppress_map_open:
             inp.suppress_map_open = True
+
+        inp.interpolate_linearly = args.localize_interpolate_linerarly
 
         mow.localize(localizerInput=inp)
     elif should_execute_stage("aggregate", args):

@@ -51,7 +51,9 @@ class GpsData:
 @dataclass
 class BaseLocalizerInput:
     time_offset_mediafile: datetime.timedelta = datetime.timedelta(seconds=0)
-    gps_time_tolerance: datetime.timedelta = datetime.timedelta(seconds=60)
+    gps_time_tolerance_before: datetime.timedelta = datetime.timedelta(seconds=60)
+    gps_time_tolerance_after: datetime.timedelta = datetime.timedelta(seconds=60)
+    interpolate_linearly: bool = False
     mediafile_timezone: str = "Europe/Berlin"
     force_gps_data: GpsData = None
     transition_even_if_no_gps_data: bool = False
@@ -86,7 +88,9 @@ class MediaLocalizer(MediaTransitioner):
     def __init__(self, input: LocalizerInput):
         input.mediaFileFactory = createAnyValidMediaFile
         super().__init__(input)
-        self.gps_time_tolerance = input.gps_time_tolerance
+        self.gps_time_tolerance_before = input.gps_time_tolerance_before
+        self.gps_time_tolerance_after = input.gps_time_tolerance_after
+        self.interpolate_linearly = input.interpolate_linearly
         self.time_offset_mediafile = input.time_offset_mediafile
         self.mediafile_timezone = input.mediafile_timezone
         self.force_gps_data = input.force_gps_data
@@ -99,7 +103,8 @@ class MediaLocalizer(MediaTransitioner):
             )
             sys.exit(1)
 
-        self.positions = self.getAllPositionsDataframe()
+        if self.force_gps_data is None:
+            self.positions = self.getAllPositionsDataframe()
 
     def getTasks(self) -> list[TransitionTask]:
         out = []
@@ -112,33 +117,34 @@ class MediaLocalizer(MediaTransitioner):
                             metaTags=self.force_gps_data.getGPSMetaTagsForWriting(),
                         )
                     )
-                else:
-                    mediafile_time = extractDatetimeFromFileName(mediafile.pathnoext)
-                    gps_data = self.getGpsDataForTime(mediafile_time)
+                    continue
 
-                    if gps_data is None:
-                        if self.transition_even_if_no_gps_data:
-                            out.append(TransitionTask(index))
-                        else:
-                            out.append(
-                                TransitionTask(
-                                    index,
-                                    skip=True,
-                                    skipReason="Could not localize because of missing GPS data.",
-                                )
-                            )
-                            self.print_debug(
-                                f"Could not find GPS data for file {Path(mediafile.pathnoext).relative_to(self.src)}, with time {mediafile_time} which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
-                            )
+                mediafile_time = extractDatetimeFromFileName(mediafile.pathnoext)
+                gps_data = self.getGpsDataForTime(mediafile_time)
+
+                if gps_data is None:
+                    if self.transition_even_if_no_gps_data:
+                        out.append(TransitionTask(index))
                     else:
-                        self.print_debug(
-                            f"Found GPS data for {os.path.basename(mediafile.pathnoext)} : {gps_data}. File has time {mediafile_time}, which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
-                        )
                         out.append(
                             TransitionTask(
-                                index, metaTags=gps_data.getGPSMetaTagsForWriting()
+                                index,
+                                skip=True,
+                                skipReason="Could not localize because of missing GPS data.",
                             )
                         )
+                        self.print_debug(
+                            f"Could not find GPS data for file {Path(mediafile.pathnoext).relative_to(self.src)}, with time {mediafile_time} which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
+                        )
+                else:
+                    self.print_debug(
+                        f"Found GPS data for {os.path.basename(mediafile.pathnoext)} : {gps_data}. File has time {mediafile_time}, which was corrected to {self.getNormalizedMediaFileTime(mediafile_time)}"
+                    )
+                    out.append(
+                        TransitionTask(
+                            index, metaTags=gps_data.getGPSMetaTagsForWriting()
+                        )
+                    )
             except Exception as e:
                 out.append(
                     TransitionTask(
@@ -260,33 +266,57 @@ class MediaLocalizer(MediaTransitioner):
         mediafile_time_in_gps_time = self.getNormalizedMediaFileTime(mediafile_time)
 
         before_position, after_position = self.getBeforeAfterGpsData(
-            self.gps_time_tolerance, mediafile_time_in_gps_time
+            self.gps_time_tolerance_before,
+            self.gps_time_tolerance_after,
+            mediafile_time_in_gps_time,
         )
 
-        if before_position is not None and after_position is not None:
+        self.assureElevationExists(before_position, after_position)
+
+        if (
+            self.interpolate_linearly
+            and before_position is not None
+            and after_position is not None
+        ):
             return self.getInterpolatedGpsData(
                 mediafile_time_in_gps_time, before_position, after_position
             )
-        elif before_position is not None:
+
+        time_diff_before = (
+            mediafile_time_in_gps_time - before_position.time
+            if before_position is not None
+            else datetime.timedelta.max
+        )
+        time_diff_after = (
+            after_position.time - mediafile_time_in_gps_time
+            if after_position is not None
+            else datetime.timedelta.max
+        )
+
+        if before_position is not None and time_diff_before <= time_diff_after:
             return before_position
-        elif after_position is not None:
+        elif after_position is not None and time_diff_after <= time_diff_before:
             return after_position
         else:
             return None
+
+    def assureElevationExists(self, before_position, after_position):
+        if after_position and before_position:
+            if after_position.elev is None and before_position.elev is not None:
+                after_position.elev = before_position.elev
+            elif before_position.elev is None and after_position.elev is not None:
+                before_position.elev = after_position.elev
+        else:
+            if after_position and after_position.elev is None:
+                after_position.elev = 0
+            if before_position and before_position.elev is None:
+                before_position.elev = 0
 
     def getInterpolatedGpsData(
         self, mediafile_time_in_gps_time, before: GpsData, after: GpsData
     ) -> GpsData:
         if after.time == before.time:
             return before
-
-        if before.elev is None and after.elev is not None:
-            before.elev = after.elev
-        elif after.elev is None and before.elev is not None:
-            after.elev = before.elev
-        elif after.elev is None and before.elev is None:
-            before.elev = 0
-            after.elev = 0
 
         ratio = (mediafile_time_in_gps_time - before.time).total_seconds() / (
             after.time - before.time
@@ -313,11 +343,14 @@ class MediaLocalizer(MediaTransitioner):
         return mediafile_time_in_gps_time
 
     def getBeforeAfterGpsData(
-        self, gps_time_tolerance, mediafile_time_in_gps_time
-    ) -> tuple[pl.DataFrame, pl.DataFrame]:
+        self,
+        gps_time_tolerance_before: datetime.datetime,
+        gps_time_tolerance_after: datetime.datetime,
+        mediafile_time_in_gps_time,
+    ) -> tuple[GpsData, GpsData]:
         before = self.positions.filter(
             pl.col("time") < mediafile_time_in_gps_time,
-            pl.col("time") >= mediafile_time_in_gps_time - gps_time_tolerance,
+            pl.col("time") >= mediafile_time_in_gps_time - gps_time_tolerance_before,
         ).tail(1)
 
         if len(before) > 0:
@@ -332,7 +365,7 @@ class MediaLocalizer(MediaTransitioner):
 
         after = self.positions.filter(
             pl.col("time") > mediafile_time_in_gps_time,
-            pl.col("time") <= mediafile_time_in_gps_time + gps_time_tolerance,
+            pl.col("time") <= mediafile_time_in_gps_time + gps_time_tolerance_after,
         ).head(1)
 
         if len(after) > 0:
