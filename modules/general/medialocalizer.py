@@ -103,7 +103,7 @@ class MediaLocalizer(MediaTransitioner):
             )
             sys.exit(1)
 
-        if self.force_gps_data is None:
+        if self.force_gps_data is None or self.transition_even_if_no_gps_data:
             self.positions = self.getAllPositionsDataframe()
 
     def getTasks(self) -> list[TransitionTask]:
