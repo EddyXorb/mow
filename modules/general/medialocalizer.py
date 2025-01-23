@@ -280,6 +280,14 @@ class MediaLocalizer(MediaTransitioner):
         if after.time == before.time:
             return before
 
+        if before.elev is None and after.elev is not None:
+            before.elev = after.elev
+        elif after.elev is None and before.elev is not None:
+            after.elev = before.elev
+        elif after.elev is None and before.elev is None:
+            before.elev = 0
+            after.elev = 0
+
         ratio = (mediafile_time_in_gps_time - before.time).total_seconds() / (
             after.time - before.time
         ).total_seconds()
