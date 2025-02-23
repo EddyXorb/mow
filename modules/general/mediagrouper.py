@@ -39,6 +39,7 @@ class GrouperInput(TransitionerInput):
     addMissingTimestampsToSubfolders: bool = False
     separationDistanceInHours: bool = 12
     checkSequence: bool = False
+    groupByXmp: bool = False
 
 
 class MediaGrouper(MediaTransitioner):
@@ -125,12 +126,40 @@ class MediaGrouper(MediaTransitioner):
             )
             self.checkCorrectSequence()
             return
+        if self.input.groupByXmp:
+            self.print_info("Start grouping by XMP..")
+            self.groupByXmp()
+            return
 
         self.print_info("Start transitioning from group stage..")
         grouped, self.toTransition = self.getCorrectlyGroupedFiles()
 
         self.printStatisticsOf(grouped)
         self.setOptionalXMP(grouped)
+
+    def groupByXmp(self):
+        fileToGroup: dict[MediaFile, str] = {}
+        for mediaFile in track(self.toTreat):
+            relative_subfolders = (
+                Path(mediaFile.getAllFileNames()[0]).relative_to(self.src).parents
+            )
+            # treat only files in the root folder
+            if len(relative_subfolders) > 1:
+                continue
+            desc = self.fm.read_tags(
+                mediaFile.getAllFileNames()[0], [MowTag.description]
+            )
+            if MowTag.description in desc and desc[MowTag.description] != "":
+                groupname = desc[MowTag.description]
+                fileToGroup[mediaFile] = groupname
+                self.logger.debug(f"Found groupname '{groupname}' for file {mediaFile}")
+
+        self.logger.info(
+            f"Found {len(fileToGroup)} files with groupname in dc:description tag."
+        )
+        if not self.dry:
+            for file, groupname in fileToGroup.items():
+                file.moveTo(join(self.src, groupname, basename(str(file))))
 
     def getTasks(self) -> list[TransitionTask]:
         self.prepareTransition()

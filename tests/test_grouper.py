@@ -6,6 +6,8 @@ from exiftool import ExifToolHelper
 
 from modules.mow.mowtags import MowTag
 
+from modules.mow.mowtags import MowTagFileManipulator
+
 from ..modules.general.mediagrouper import MediaGrouper, GrouperInput
 
 testfolder = "tests"
@@ -636,3 +638,63 @@ def test_addMissingTimestampWillWorkIfSomeNumberAndNotDateDashesArePresent():
     assert exists(
         join(src, "2022-12-12@120000 TEST122-122-122", "2022-12-12@120000_test.JPG")
     )
+
+
+def test_groupByXMPdoesWork():
+    fullname = join(src, "2022-12-12@120000_test.JPG")
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    group = "2022-12-12@120000 Subfolder"
+    MowTagFileManipulator().write_tags(
+        Path(fullname),
+        {MowTag.description: group},
+    )
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            dry=False,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=False,
+            groupByXmp=True,
+        )
+    )()
+
+    assert not exists(fullname)
+    assert exists(join(src, group, "2022-12-12@120000_test.JPG"))
+
+
+def test_groupByXMPNotExecutedIfAlreadyInGroupSubfolder():
+    fullname = join(
+        src, "2022-12-12@120000 TEST122-122-122", "2022-12-12@120000_test.JPG"
+    )
+    prepareTest(srcname=fullname)
+
+    assert exists(fullname)
+
+    group = "2022-12-12@120000 Subfolder"
+    MowTagFileManipulator().write_tags(
+        Path(fullname),
+        {MowTag.description: group},
+    )
+
+    MediaGrouper(
+        input=GrouperInput(
+            src=src,
+            dst=dst,
+            dry=False,
+            separationDistanceInHours=4,
+            automaticGrouping=False,
+            undoAutomatedGrouping=False,
+            addMissingTimestampsToSubfolders=False,
+            groupByXmp=True,
+        )
+    )()
+
+    assert exists(fullname)
+    assert not exists(join(src, group, "2022-12-12@120000_test.JPG"))

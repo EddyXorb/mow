@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import json
 import os
 from pathlib import Path
 from time import sleep
@@ -56,6 +57,7 @@ class MowTagFileManipulator:
 
     def __init__(self):
         self.et = ExifToolHelper()
+        self.et.encoding = "utf8"
 
     def read_tags(
         self,

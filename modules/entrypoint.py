@@ -160,6 +160,13 @@ groupparser.add_argument(
     action="store_true",
 )
 
+groupparser.add_argument(
+    "--group-by-xmp",
+    help="Group by xmp data. If set will look into dc:description. If existent, will use this as groupname. If not, will do nothing.",
+    action="store_true",
+    dest="group_by_xmp",
+)
+
 rateparser.add_argument(
     "-o",
     "--overrule",
@@ -380,6 +387,7 @@ def main():
             undoAutomatedGrouping=args.group_undogrouping,
             addMissingTimestampsToSubfolders=args.group_timestamps,
             checkSequence=args.group_check_seq,
+            groupByXmp=args.group_by_xmp,
         )
     elif should_execute_stage("rate", args):
         mow.rate(

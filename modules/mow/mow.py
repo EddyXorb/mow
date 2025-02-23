@@ -153,6 +153,7 @@ class Mow:
         undoAutomatedGrouping=False,
         addMissingTimestampsToSubfolders=False,
         checkSequence=False,
+        groupByXmp=False,
     ):
         src, dst = self._getSrcDstForStage("group")
         self._printEmphasized("Stage Group")
@@ -165,6 +166,7 @@ class Mow:
                 addMissingTimestampsToSubfolders=addMissingTimestampsToSubfolders,
                 undoAutomatedGrouping=undoAutomatedGrouping,
                 checkSequence=checkSequence,
+                groupByXmp=groupByXmp,
                 **self.basicInputParameter,
             )
         )()
