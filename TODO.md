@@ -17,3 +17,6 @@
   - the problem of multiple files having different xmp-data would vanish. E.g. jpg and raw-images with the same name would share the same xmp-file and therefore the problem of diverging xmp-infos between raw and jpg would never occur.
 - [x] change tests to use sidecar files in all stages except aggregate
 - [ ] introduce .mow-folder where all metadata lies and make it copyable and location-agnostic such as git
+- [ ] Write a helper that creates automatically a photobook from filtered files (filtered according to xmp-data but also date). Possible ways include generation scribus or latex scribus files:
+  - [scribus](https://raw.githubusercontent.com/RaffertyR/PhotoBookTools-for-Scribus/main/PhotoBookTools/Instructions.pdf) has the advantage to be a WYSIWYG-Editor
+  - [latex](https://github.com/flynx/photobook) is better for texts and generally more programmer-friendly, but its difficult to understand it at times
