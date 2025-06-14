@@ -232,6 +232,9 @@ class MediaLocalizer(MediaTransitioner):
 
     def getAllPositionsDataframe(self) -> pl.DataFrame:
         gpx_files = self.getAllGpxFiles()
+        self.logger.info(
+            f"Found {len(gpx_files)} GPX files in {self.src}: {', '.join(gpx_files)}"
+        )
         file_to_gpx_data = {}
 
         for gpx_filepath in gpx_files:
@@ -257,6 +260,13 @@ class MediaLocalizer(MediaTransitioner):
             ).sort("time")
         else:
             self.print_info("No GPS data found.")
+
+        df.write_csv(
+            Path(self.src) / "gps_positions.csv",
+            include_header=True,
+            separator=",",
+        )
+
         return df
 
     def getGpsDataForTime(
