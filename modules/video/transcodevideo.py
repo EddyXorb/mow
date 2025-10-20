@@ -1,7 +1,5 @@
 from subprocess import check_output, run, PIPE
 import argparse
-from tkinter import filedialog
-import tkinter as tk
 import os
 import subprocess
 
@@ -41,6 +39,8 @@ class Transcoder:
 
         if self.inputFile is None or self.inputFile == "":
             print("Choose file..", flush=True)
+            import tkinter as tk
+            from tkinter import filedialog
             root = tk.Tk()
             root.withdraw()
             self.inputFile = filedialog.askopenfilename()
