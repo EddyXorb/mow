@@ -7,6 +7,7 @@ from subprocess import check_output
 from exiftool import ExifTool
 from PIL import Image, ImageOps
 from pathlib import Path
+import platform
 
 # The Adobe DNG Converter supports the following command line options:
 # -c Output lossless compressed DNG files (default).
@@ -113,8 +114,9 @@ def convertImage(
 
 
 def convert_to_dng(target_dir, settings, rawfile):
-    check_output(
-        [
+    cmd : list[str] = []
+    if platform.system() == "Windows":
+        cmd = [
             settings["dng_converter_exe"],
             "-cr11.2",
             "-p2",
@@ -122,6 +124,20 @@ def convert_to_dng(target_dir, settings, rawfile):
             target_dir,
             rawfile,
         ]
+    elif platform.system() == "Linux":
+        cmd = [
+            "wine",
+            settings["dng_converter_exe"],
+            "-cr11.2",
+            "-p2",
+            "-d",
+            'Z:' + target_dir.replace("/", "\\"),
+            'Z:' + rawfile.replace("/", "\\"),
+        ]
+
+
+    check_output(
+        cmd
     )
 
     new_rawfile_location = os.path.join(
