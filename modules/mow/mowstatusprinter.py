@@ -25,6 +25,9 @@ class MowStatusPrinter(VerbosePrinterClass):
         allfiles = self.collectAllMediafiles()
 
         nrallfiles = sum([len(files) for files in allfiles.values()])
+        if nrallfiles == 0:
+            self.print_info("No mediafiles found.")
+            return
         weightedSum = 0
 
         for cnt, stage in enumerate(self.stages):
