@@ -79,7 +79,7 @@ class MediaFile:
         """
         Returns something like 'file(.jpg,.raw)'
         """
-        return f"{os.path.basename(self.pathnoext)}({','.join(self.extensions)})"
+        return f"{os.path.basename(self.pathnoext)}({','.join(sorted(self.extensions))})"
 
     def relocationSanityCheck(self, pathNoExt):
         for ext in self.extensions:
