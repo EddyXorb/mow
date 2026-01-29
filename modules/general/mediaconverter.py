@@ -86,7 +86,9 @@ class MediaConverter(MediaTransitioner):
         if self.rewriteMetaTagsOnConverted:
             self.print_info("Rewrite meta file tags on converted..")
             for toTransition, convertedFile in (
-                track(convertedFiles) if self.verbosityLevel >= 3 else convertedFiles
+                track(convertedFiles, transient=True)
+                if self.verbosityLevel >= 3
+                else convertedFiles
             ):
                 self.performMetaTagRewriteOf(toTransition, convertedFile)
 
@@ -140,7 +142,9 @@ class MediaConverter(MediaTransitioner):
             xmptagstowrite.pop(MowTag.sourcefile)
             self.fm.write_tags(str(convertedFile), xmptagstowrite)
         else:
-            xmptagstowrite = self.fm.read_tags(str(toTransition.getAllFileNames()[0]), tags_all)
+            xmptagstowrite = self.fm.read_tags(
+                str(toTransition.getAllFileNames()[0]), tags_all
+            )
             xmptagstowrite.pop(MowTag.sourcefile)
             for file in convertedFile.getAllFileNames():
                 self.fm.write_tags(str(file), xmptagstowrite)

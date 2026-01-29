@@ -1,4 +1,5 @@
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 import os
 from os.path import join, basename
@@ -18,6 +19,21 @@ from modules.general.mediafile import MediaFile
 from modules.general.verboseprinterclass import VerbosePrinterClass
 
 DELETE_FOLDER_NAME = "_deleted"
+
+
+def readMediaFileFrom(
+    path: str,
+    filter_pattern: re.Pattern,
+    media_file_factory: Callable[[str], MediaFile],
+) -> None | MediaFile:
+    if filter_pattern is not None:
+        if filter_pattern.search(path) is None:
+            return None
+
+    mfile = media_file_factory(path)
+    if not mfile.isValid():
+        return None
+    return mfile
 
 
 @dataclass
@@ -166,38 +182,52 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self.print_info("Collect files..")
 
-        already_found_files = set()
+        with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+            for root, dirs, files in os.walk(self.src, topdown=True):
+                if not self.recursive and root != self.src:
+                    return out
+                # ignore all files in deleteFolder
+                dirs[:] = [d for d in dirs if d != basename(self.deleteFolder)]
+                futures = [
+                    executor.submit(
+                        readMediaFileFrom,
+                        str(Path(root) / file),
+                        self.filter,
+                        self.mediaFileFactory,
+                    )
+                    for file in files
+                ]
 
-        for root, dirs, files in os.walk(self.src, topdown=True):
-            if not self.recursive and root != self.src:
-                return out
-            # ignore all files in deleteFolder
-            dirs[:] = [d for d in dirs if d != basename(self.deleteFolder)]
-
-            filtermatches = 0
-            for file in files:
-                path = Path(join(root, file))
-
-                if self.filter is not None:
-                    if self.filter.search(str(path)) is None:
+                filtermatches = 0
+                already_found_files = set()
+                for future in (
+                    track(
+                        as_completed(futures),
+                        total=len(futures),
+                        description=f"Reading media files from {root}..",
+                        transient=True,
+                    )
+                    if self.verbosityLevel >= 3
+                    else as_completed(futures)
+                ):
+                    mfile = future.result()
+                    if mfile is None:
                         continue
-                    else:
-                        filtermatches += 1
+                    filtermatches += 1
 
-                mfile = self.mediaFileFactory(str(path))
-                if not mfile.isValid():
-                    continue
+                    if not mfile.isValid():
+                        continue
 
-                if mfile.pathnoext in already_found_files:
-                    continue
+                    if mfile.pathnoext in already_found_files:
+                        continue
 
-                already_found_files.add(mfile.pathnoext)
-                out.append(mfile)
+                    already_found_files.add(mfile.pathnoext)
+                    out.append(mfile)
 
-            if self.filter is not None and filtermatches > 0:
-                self.print_info(f"Matched files in {root} {'.'*filtermatches}")
+                if self.filter is not None and filtermatches > 0:
+                    self.print_info(f"Matched files in {root} {'.'*filtermatches}")
 
-        self.print_info(f"Collected {len(out)} files.")
+        self.print_info(f"Collected {len(out)} mediafiles.")
 
         return out
 
@@ -290,7 +320,7 @@ class MediaTransitioner(VerbosePrinterClass):
 
         self.print_info("Set meta file tags..")
 
-        for task in track(tasks) if self.verbosityLevel >= 3 else tasks:
+        for task in track(tasks, transient=True) if self.verbosityLevel >= 3 else tasks:
             try:
                 mFile = self.toTreat[task.index]
 
@@ -340,7 +370,7 @@ class MediaTransitioner(VerbosePrinterClass):
         task.metaTags[MowTag.stagehistory] = tags[MowTag.stagehistory]
 
     def doRelocationOf(self, tasks: list[TransitionTask]):
-        for task in track(tasks):
+        for task in track(tasks, transient=True):
             self.relocateSingleTask(task)
 
     def relocateSingleTask(self, task: TransitionTask):
