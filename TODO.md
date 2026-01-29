@@ -1,5 +1,6 @@
 # Todos
 
+- [ ] Check if copy stage is idempotent, e.g. no change happens if already done (especially not _LAST rename takes place if no new _LAST is present)
 - [ ] Write tests for sequence checker of grouper
 - [ ] Conversion: assure xmp-tags are maintained after conversion (especially for videos: xmp:date is vanished) by reading them before conversion and writing them to result
 - [ ] new flag --filedialog to enable selection of folders/files on which to apply the current stage command
