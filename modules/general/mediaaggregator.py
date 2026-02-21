@@ -39,19 +39,7 @@ class MediaAggregator(MediaTransitioner):
                     fm.read_tags(file, tags=tags_all) for file in files
                 ]
 
-                out[task.index] = [
-                    {
-                        key: (
-                            value.encode("1252").decode(
-                                "utf-8"
-                            )  # to avoid problems with umlauten
-                            if type(value) is str
-                            else value
-                        )
-                        for key, value in tagdict.items()
-                    }
-                    for tagdict in tagdictlist
-                ]
+                out[task.index] = tagdictlist
             except Exception as e:
                 out[task.index] = []
                 task.skip = True

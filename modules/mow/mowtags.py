@@ -58,6 +58,13 @@ class MowTagFileManipulator:
     def __init__(self):
         self.et = ExifToolHelper()
         self.et.encoding = "utf8"
+        self._et_latin: ExifToolHelper | None = None
+
+    def _get_latin_helper(self) -> ExifToolHelper:
+        if self._et_latin is None:
+            self._et_latin = ExifToolHelper()
+            self._et_latin.encoding = "latin-1"
+        return self._et_latin
 
     def read_tags(
         self,
@@ -71,9 +78,16 @@ class MowTagFileManipulator:
         tags = self._prepare_gps_reading(tags)
 
         # -n formats the gps output as decimal numbers (for gps data relevant), -struct makes hierarchical data readable as list
-        out = self.et.get_tags(
-            file, [tag.value for tag in tags], params=["-n", "-struct"]
-        )[0]
+        try:
+            out = self.et.get_tags(
+                file, [tag.value for tag in tags], params=["-n", "-struct"]
+            )[0]
+        except UnicodeDecodeError:
+            # Some XMP files are Latin-1 encoded (invalid per spec, but created by old software).
+            # Fall back to Latin-1 decoding, which maps every byte to the correct Unicode code point.
+            out = self._get_latin_helper().get_tags(
+                file, [tag.value for tag in tags], params=["-n", "-struct"]
+            )[0]
 
         read_tags = {tag: out[tag.value] for tag in tags if tag.value in out}
 
@@ -90,7 +104,7 @@ class MowTagFileManipulator:
         """
         File can be any media file, also sidecars. This is the basic write function; every other write function should call this one.
         """
-        params = ["-P", "-L", "-m"]
+        params = ["-P", "-m"]
 
         if MowTag.sourcefile in tags:
             tags.pop(MowTag.sourcefile)
