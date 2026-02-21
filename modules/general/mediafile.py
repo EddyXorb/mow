@@ -104,3 +104,13 @@ class MediaFile:
 
     def get_sidecar(self) -> Path:
         return Path(self.pathnoext + ".xmp")
+
+
+class MediaFileFactory:
+    """Picklable factory for creating MediaFile instances with specific valid extensions."""
+
+    def __init__(self, valid_extensions: list[str] = None):
+        self.valid_extensions = valid_extensions or []
+
+    def __call__(self, path: str) -> MediaFile:
+        return MediaFile(path, validExtensions=self.valid_extensions)

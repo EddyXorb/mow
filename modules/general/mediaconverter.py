@@ -5,7 +5,7 @@ from typing import Callable
 from rich.progress import track
 
 from ..mow.mowtags import tags_all, MowTag
-from ..general.mediafile import MediaFile
+from ..general.mediafile import MediaFile, MediaFileFactory
 from ..general.mediatransitioner import (
     MediaTransitioner,
     TransitionerInput,
@@ -156,8 +156,6 @@ class PassthroughConverter(MediaConverter):
     """
 
     def __init__(self, input: TransitionerInput, valid_extensions: list[str] = []):
-        input.mediaFileFactory = lambda path: MediaFile(
-            path, validExtensions=valid_extensions
-        )
+        input.mediaFileFactory = MediaFileFactory(valid_extensions)
         input.writeMetaTagsToSidecar = False
         super().__init__(input)
