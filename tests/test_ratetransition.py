@@ -23,14 +23,14 @@ def prepareTest(srcname):
     shutil.rmtree(dst, ignore_errors=True)
     os.makedirs(os.path.dirname(srcname))
     shutil.copy(
-        join(testfolder, "unrated.JPG"),
+        join(testfolder, "unrated.jpg"),
         join(srcname),
     )
 
 
 def test_ratedImageIsMoved():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -49,12 +49,12 @@ def test_ratedImageIsMoved():
         )()
 
         assert not exists(fullname)
-        assert exists(join(dst, groupname, "test.JPG"))
+        assert exists(join(dst, groupname, "test.jpg"))
 
 
 def test_unratedImageIsNotMoved():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -62,12 +62,12 @@ def test_unratedImageIsNotMoved():
     MediaRater(input=TransitionerInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
-    assert not exists(join(dst, groupname, "test.JPG"))
+    assert not exists(join(dst, groupname, "test.jpg"))
 
 
 def test_copiedRatingFromJPGToORF():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     fullnameRaw = join(src, groupname, "test.ORF")
     prepareTest(srcname=fullname)
     shutil.copy(
@@ -97,7 +97,7 @@ def test_copiedRatingFromJPGToORF():
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
-        assert exists(join(dst, groupname, "test.JPG"))
+        assert exists(join(dst, groupname, "test.jpg"))
         assert exists(join(dst, groupname, "test.ORF"))
 
         ratingRaw = et.get_tags(
@@ -109,7 +109,7 @@ def test_copiedRatingFromJPGToORF():
 
 def test_copiedRatingFromORFToJPG():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     fullnameRaw = join(src, groupname, "test.ORF")
     prepareTest(srcname=fullname)
     shutil.copy(
@@ -139,11 +139,11 @@ def test_copiedRatingFromORFToJPG():
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
-        assert exists(join(dst, groupname, "test.JPG"))
+        assert exists(join(dst, groupname, "test.jpg"))
         assert exists(join(dst, groupname, "test.ORF"))
 
         ratingJPG = et.get_tags(
-            join(dst, groupname, "test.JPG"), [MowTag.rating.value]
+            join(dst, groupname, "test.jpg"), [MowTag.rating.value]
         )[0]
         assert MowTag.rating.value in ratingJPG
         assert ratingJPG[MowTag.rating.value] == 3
@@ -151,7 +151,7 @@ def test_copiedRatingFromORFToJPG():
 
 def test_differentRatingBetweenJPGandRawpreventsTransition():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     fullnameRaw = join(src, groupname, "test.ORF")
     prepareTest(srcname=fullname)
     shutil.copy(
@@ -186,13 +186,13 @@ def test_differentRatingBetweenJPGandRawpreventsTransition():
 
         assert exists(fullname)
         assert exists(fullnameRaw)
-        assert not exists(join(dst, groupname, "test.JPG"))
+        assert not exists(join(dst, groupname, "test.jpg"))
         assert not exists(join(dst, groupname, "test.ORF"))
 
 
 def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFileendingIsSet():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     fullnameRaw = join(src, groupname, "test.ORF")
     prepareTest(srcname=fullname)
     shutil.copy(
@@ -228,7 +228,7 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
-        assert exists(join(dst, groupname, "test.JPG"))
+        assert exists(join(dst, groupname, "test.jpg"))
         assert exists(join(dst, groupname, "test.ORF"))
 
         assert (
@@ -238,7 +238,7 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
             == 2
         )
         assert (
-            et.get_tags(join(dst, groupname, "test.JPG"), MowTag.rating.value)[0][
+            et.get_tags(join(dst, groupname, "test.jpg"), MowTag.rating.value)[0][
                 MowTag.rating.value
             ]
             == 2
@@ -247,7 +247,7 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
 
 def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFileendingIsSetButFileHasNoRating():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     fullnameRaw = join(src, groupname, "test.ORF")
     prepareTest(srcname=fullname)
     shutil.copy(
@@ -283,7 +283,7 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
 
         assert not exists(fullname)
         assert not exists(fullnameRaw)
-        assert exists(join(dst, groupname, "test.JPG"))
+        assert exists(join(dst, groupname, "test.jpg"))
         assert exists(join(dst, groupname, "test.ORF"))
 
         assert (
@@ -293,7 +293,7 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
             == 3
         )
         assert (
-            et.get_tags(join(dst, groupname, "test.JPG"), MowTag.rating.value)[0][
+            et.get_tags(join(dst, groupname, "test.jpg"), MowTag.rating.value)[0][
                 MowTag.rating.value
             ]
             == 3
@@ -302,7 +302,7 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
 
 def test_differentRatingBetweenJPGandRawPreventsTransitionIfOverrulingFileendingIsSetButFileendingNotExistent():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     fullnameRaw = join(src, groupname, "test.ORF")
     prepareTest(srcname=fullname)
     shutil.copy(
@@ -338,13 +338,13 @@ def test_differentRatingBetweenJPGandRawPreventsTransitionIfOverrulingFileending
 
         assert exists(fullname)
         assert exists(fullnameRaw)
-        assert not exists(join(dst, groupname, "test.JPG"))
+        assert not exists(join(dst, groupname, "test.jpg"))
         assert not exists(join(dst, groupname, "test.ORF"))
 
 
 def test_enforced_rating_works():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -360,7 +360,7 @@ def test_enforced_rating_works():
     )()
 
     assert not exists(fullname)
-    assert exists(join(dst, groupname, "test.JPG"))
+    assert exists(join(dst, groupname, "test.jpg"))
 
     with ExifToolHelper() as et:
         rating = et.get_tags(join(dst, groupname, "test.xmp"), [MowTag.rating.value])[0]

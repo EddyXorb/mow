@@ -34,7 +34,7 @@ class Cached:
 cached = Cached()
 
 
-def prepareTest(srcname="test.JPG", xmp_description="2022-12-12@121212_TEST"):
+def prepareTest(srcname="test.jpg", xmp_description="2022-12-12@121212_TEST"):
     """
     Here we create a test_aggregate version of each file, which we cache in 'testsfolder'. Without caching, we had to call exiftoolhelper too often which would slowdown a lot.
     """

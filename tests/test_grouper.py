@@ -14,24 +14,24 @@ testfolder = "tests"
 tempsrcfolder = "filestotreat"
 src = os.path.abspath(join(testfolder, tempsrcfolder))
 dst = os.path.abspath("./tests/test_treated")
-imagename = "test3.JPG"
+imagename = "test3.jpg"
 srcfile = join(src, imagename)
 expectedConvertedImageFile = join(dst, "subsubfolder", imagename)
 
 
-def prepareTest(srcname="test.JPG"):
+def prepareTest(srcname="test.jpg"):
     shutil.rmtree(src, ignore_errors=True)
     shutil.rmtree(dst, ignore_errors=True)
     os.makedirs(os.path.dirname(srcname))
     shutil.copy(
-        join(testfolder, "test3.JPG"),
+        join(testfolder, "test3.jpg"),
         join(srcname),
     )
 
 
 def test_correctlyNamedGroupIsRecognized():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -39,12 +39,12 @@ def test_correctlyNamedGroupIsRecognized():
     MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert not exists(fullname)
-    assert exists(join(dst, groupname, "test.JPG"))
+    assert exists(join(dst, groupname, "test.jpg"))
 
 
 def test_GroupWithoutDescriptionIsRejected():
     groupname = "2022-12-12@121212_"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -52,12 +52,12 @@ def test_GroupWithoutDescriptionIsRejected():
     MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
-    assert not exists(join(dst, groupname, "test.JPG"))
+    assert not exists(join(dst, groupname, "test.jpg"))
 
 
 def test_GroupWithVeryShortDescriptionIsAccepted():
     groupname = "2022-12-12@121212_T"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -65,12 +65,12 @@ def test_GroupWithVeryShortDescriptionIsAccepted():
     MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert not exists(fullname)
-    assert exists(join(dst, groupname, "test.JPG"))
+    assert exists(join(dst, groupname, "test.jpg"))
 
 
 def test_correctlyNamedGroupIsRecognizedButDryDoesNotMove():
     groupname = "2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -78,12 +78,12 @@ def test_correctlyNamedGroupIsRecognizedButDryDoesNotMove():
     MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=True))()
 
     assert exists(fullname)
-    assert not exists(join(dst, groupname, "test.JPG"))
+    assert not exists(join(dst, groupname, "test.jpg"))
 
 
 def test_WrongTimestampHoursAreRecognized():
     groupname = "2022-12-12@991212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -91,12 +91,12 @@ def test_WrongTimestampHoursAreRecognized():
     MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
-    assert not exists(join(dst, groupname, "test.JPG"))
+    assert not exists(join(dst, groupname, "test.jpg"))
 
 
 def test_TimestampStartingTooLateIsRecognized():
     groupname = "TODO_2022-12-12@121212_TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -104,12 +104,12 @@ def test_TimestampStartingTooLateIsRecognized():
     MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
-    assert not exists(join(dst, groupname, "test.JPG"))
+    assert not exists(join(dst, groupname, "test.jpg"))
 
 
 def test_AtInGroupnameIsRecognizedAndWillBeRefused():
     groupname = "2022-12-12@121212_TEST@TEST"
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -117,12 +117,12 @@ def test_AtInGroupnameIsRecognizedAndWillBeRefused():
     MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
-    assert not exists(join(dst, groupname, "test.JPG"))
+    assert not exists(join(dst, groupname, "test.jpg"))
 
 
 def test_CorrectSubsubfolderIsRecognized():
     groupname = join("2022-12-12@121212_Supergroup", "2022-12-12@121212_Subgroup")
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -130,12 +130,12 @@ def test_CorrectSubsubfolderIsRecognized():
     MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert not exists(fullname)
-    assert exists(join(dst, groupname, "test.JPG"))
+    assert exists(join(dst, groupname, "test.jpg"))
 
 
 def test_WrongSupergroupIsRecognized():
     groupname = join("_2022-12-12@121212_Supergroup", "2022-12-12@121212_Subgroup")
-    fullname = join(src, groupname, "test.JPG")
+    fullname = join(src, groupname, "test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -143,11 +143,11 @@ def test_WrongSupergroupIsRecognized():
     MediaGrouper(input=GrouperInput(src=src, dst=dst, dry=False))()
 
     assert exists(fullname)
-    assert not exists(join(dst, groupname, "test.JPG"))
+    assert not exists(join(dst, groupname, "test.jpg"))
 
 
 def test_createdGroupOfUnGrouped():
-    fullname = join(src, "2022-12-12@121212_test.JPG")
+    fullname = join(src, "2022-12-12@121212_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -161,11 +161,11 @@ def test_createdGroupOfUnGrouped():
         )
     )()
 
-    assert exists(join(src, "TODO_2022-12-12@121212", "2022-12-12@121212_test.JPG"))
+    assert exists(join(src, "TODO_2022-12-12@121212", "2022-12-12@121212_test.jpg"))
 
 
 def test_shouldNotMoveAutomaticallyGroupedFilesIntoDst():
-    fullname = join(src, "2022-12-12@121212_test.JPG")
+    fullname = join(src, "2022-12-12@121212_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -180,15 +180,15 @@ def test_shouldNotMoveAutomaticallyGroupedFilesIntoDst():
     )()
 
     assert not exists(fullname)
-    assert not exists(join(dst, "TODO_2022-12-12@121212", "2022-12-12@121212_test.JPG"))
+    assert not exists(join(dst, "TODO_2022-12-12@121212", "2022-12-12@121212_test.jpg"))
 
 
 def test_connectsTwoFileIfNotTooDistant():
-    fullname = join(src, "2022-12-12@120000_test.JPG")
+    fullname = join(src, "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
     shutil.copy(
-        join(testfolder, "test3.JPG"),
-        join(src, "2022-12-12@155959_test.JPG"),
+        join(testfolder, "test3.jpg"),
+        join(src, "2022-12-12@155959_test.jpg"),
     )
 
     assert exists(fullname)
@@ -204,17 +204,17 @@ def test_connectsTwoFileIfNotTooDistant():
     )()
 
     assert not exists(fullname)
-    assert not exists(join(src, "2022-12-12@155959_test.JPG"))
-    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.JPG"))
-    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@155959_test.JPG"))
+    assert not exists(join(src, "2022-12-12@155959_test.jpg"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.jpg"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@155959_test.jpg"))
 
 
 def test_doesNotconnectTwoFileIfTooDistant():
-    fullname = join(src, "2022-12-12@120000_test.JPG")
+    fullname = join(src, "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
     shutil.copy(
-        join(testfolder, "test3.JPG"),
-        join(src, "2022-12-12@160000_test.JPG"),
+        join(testfolder, "test3.jpg"),
+        join(src, "2022-12-12@160000_test.jpg"),
     )
 
     assert exists(fullname)
@@ -230,21 +230,21 @@ def test_doesNotconnectTwoFileIfTooDistant():
     )()
 
     assert not exists(fullname)
-    assert not exists(join(src, "2022-12-12@160000_test.JPG"))
-    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.JPG"))
-    assert exists(join(src, "TODO_2022-12-12@160000", "2022-12-12@160000_test.JPG"))
+    assert not exists(join(src, "2022-12-12@160000_test.jpg"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.jpg"))
+    assert exists(join(src, "TODO_2022-12-12@160000", "2022-12-12@160000_test.jpg"))
 
 
 def test_intermediateFileProlongsGroup():
-    fullname = join(src, "2022-12-12@120000_test.JPG")
+    fullname = join(src, "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
     shutil.copy(
-        join(testfolder, "test3.JPG"),
-        join(src, "2022-12-12@150000_test.JPG"),
+        join(testfolder, "test3.jpg"),
+        join(src, "2022-12-12@150000_test.jpg"),
     )
     shutil.copy(
-        join(testfolder, "test3.JPG"),
-        join(src, "2022-12-12@180000_test.JPG"),
+        join(testfolder, "test3.jpg"),
+        join(src, "2022-12-12@180000_test.jpg"),
     )
 
     assert exists(fullname)
@@ -260,14 +260,14 @@ def test_intermediateFileProlongsGroup():
     )()
 
     assert not exists(fullname)
-    assert not exists(join(src, "2022-12-12@160000_test.JPG"))
-    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.JPG"))
-    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@150000_test.JPG"))
-    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@180000_test.JPG"))
+    assert not exists(join(src, "2022-12-12@160000_test.jpg"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.jpg"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@150000_test.jpg"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@180000_test.jpg"))
 
 
 def test_XMPisWritten():
-    fullname = join(src, "2022-12-12@120000 TEST", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "2022-12-12@120000 TEST", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -283,7 +283,7 @@ def test_XMPisWritten():
     )()
 
     assert not exists(fullname)
-    newname = Path(dst) / "2022-12-12@120000 TEST" / "2022-12-12@120000_test.JPG"
+    newname = Path(dst) / "2022-12-12@120000 TEST" / "2022-12-12@120000_test.jpg"
     assert exists(newname)
 
     with ExifToolHelper() as et:
@@ -297,7 +297,7 @@ def test_XMPDescriptionContainsAllSuperfolders():
         src,
         "2022-12-12@120000 TEST",
         "2022-12-12@120000 TEST2",
-        "2022-12-12@120000_test.JPG",
+        "2022-12-12@120000_test.jpg",
     )
     prepareTest(srcname=fullname)
 
@@ -318,7 +318,7 @@ def test_XMPDescriptionContainsAllSuperfolders():
         Path(dst)
         / "2022-12-12@120000 TEST"
         / "2022-12-12@120000 TEST2"
-        / "2022-12-12@120000_test.JPG"
+        / "2022-12-12@120000_test.jpg"
     )
 
     assert exists(newname)
@@ -331,10 +331,10 @@ def test_XMPDescriptionContainsAllSuperfolders():
 
 
 def test_groupingMovesJpgAndRAWFiles():
-    fullname = join(src, "2022-12-12@120000_test.JPG")
+    fullname = join(src, "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
     shutil.copy(
-        join(testfolder, "test3.JPG"),
+        join(testfolder, "test3.jpg"),
         join(src, "2022-12-12@120000_test.ORF"),
     )
     assert exists(fullname)
@@ -351,12 +351,12 @@ def test_groupingMovesJpgAndRAWFiles():
 
     assert not exists(fullname)
     assert not exists(join(src, "2022-12-12@120000_test.ORF"))
-    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.JPG"))
+    assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.jpg"))
     assert exists(join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.ORF"))
 
 
 def test_undoGroupingWorks():
-    fullname = join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "TODO_2022-12-12@120000", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
     assert exists(fullname)
 
@@ -372,11 +372,11 @@ def test_undoGroupingWorks():
     )()
 
     assert not exists(fullname)
-    assert exists(join(src, "2022-12-12@120000_test.JPG"))
+    assert exists(join(src, "2022-12-12@120000_test.jpg"))
 
 
 def test_undoGroupingDoesNotTouchGroupsWithoutTODOPrefix():
-    fullname = join(src, "2022-12-12@120000", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "2022-12-12@120000", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
     assert exists(fullname)
 
@@ -392,11 +392,11 @@ def test_undoGroupingDoesNotTouchGroupsWithoutTODOPrefix():
     )()
 
     assert exists(fullname)
-    assert not exists(join(src, "2022-12-12@120000_test.JPG"))
+    assert not exists(join(src, "2022-12-12@120000_test.jpg"))
 
 
 def test_undoGroupingDoesNotTouchTODO_GroupsWithDescription():
-    fullname = join(src, "2022-12-12@120000 TEST", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "2022-12-12@120000 TEST", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
     assert exists(fullname)
 
@@ -412,11 +412,11 @@ def test_undoGroupingDoesNotTouchTODO_GroupsWithDescription():
     )()
 
     assert exists(fullname)
-    assert not exists(join(src, "2022-12-12@120000_test.JPG"))
+    assert not exists(join(src, "2022-12-12@120000_test.jpg"))
 
 
 def test_addMissingTimestampWorks():
-    fullname = join(src, "TEST", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "TEST", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -434,11 +434,11 @@ def test_addMissingTimestampWorks():
     )()
 
     assert not exists(fullname)
-    assert exists(join(src, "2022-12-12@120000 TEST", "2022-12-12@120000_test.JPG"))
+    assert exists(join(src, "2022-12-12@120000 TEST", "2022-12-12@120000_test.jpg"))
 
 
 def test_addMissingTimestampWorksRecursively():
-    fullname = join(src, "TEST", "TEST2", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "TEST", "TEST2", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -461,21 +461,21 @@ def test_addMissingTimestampWorksRecursively():
             src,
             "2022-12-12@120000 TEST",
             "2022-12-12@120000 TEST2",
-            "2022-12-12@120000_test.JPG",
+            "2022-12-12@120000_test.jpg",
         )
     )
 
 
 def test_addMissingTimestampTakesLowestDatetime():
-    fullname = join(src, "TEST", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "TEST", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
     shutil.copy(
-        join(testfolder, "test3.JPG"),
-        join(src, "TEST", "2022-12-12@180000_test.JPG"),
+        join(testfolder, "test3.jpg"),
+        join(src, "TEST", "2022-12-12@180000_test.jpg"),
     )
     shutil.copy(
-        join(testfolder, "test3.JPG"),
-        join(src, "TEST", "2022-11-12@180000_test.JPG"),
+        join(testfolder, "test3.jpg"),
+        join(src, "TEST", "2022-11-12@180000_test.jpg"),
     )
 
     assert exists(fullname)
@@ -493,13 +493,13 @@ def test_addMissingTimestampTakesLowestDatetime():
     )()
 
     assert not exists(fullname)
-    assert exists(join(src, "2022-11-12@180000 TEST", "2022-12-12@120000_test.JPG"))
-    assert exists(join(src, "2022-11-12@180000 TEST", "2022-12-12@180000_test.JPG"))
-    assert exists(join(src, "2022-11-12@180000 TEST", "2022-11-12@180000_test.JPG"))
+    assert exists(join(src, "2022-11-12@180000 TEST", "2022-12-12@120000_test.jpg"))
+    assert exists(join(src, "2022-11-12@180000 TEST", "2022-12-12@180000_test.jpg"))
+    assert exists(join(src, "2022-11-12@180000 TEST", "2022-11-12@180000_test.jpg"))
 
 
 def test_addMissingTimestampWillNotRenameIfDateIsPresent():
-    fullname = join(src, "2022-12-12 TEST", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "2022-12-12 TEST", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -518,12 +518,12 @@ def test_addMissingTimestampWillNotRenameIfDateIsPresent():
 
     assert exists(fullname)
     assert not exists(
-        join(src, "2022-12-12@120000 2022-12-12 TEST", "2022-12-12@120000_test.JPG")
+        join(src, "2022-12-12@120000 2022-12-12 TEST", "2022-12-12@120000_test.jpg")
     )
 
 
 def test_addMissingTimestampWillNotRenameIfDateIsSomewhereInTheMiddle():
-    fullname = join(src, "TEST2022-12-12TEST", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "TEST2022-12-12TEST", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -542,12 +542,12 @@ def test_addMissingTimestampWillNotRenameIfDateIsSomewhereInTheMiddle():
 
     assert exists(fullname)
     assert not exists(
-        join(src, "2022-12-12@120000 TEST2022-12-12TEST", "2022-12-12@120000_test.JPG")
+        join(src, "2022-12-12@120000 TEST2022-12-12TEST", "2022-12-12@120000_test.jpg")
     )
 
 
 def test_addMissingTimestampWillNotRenameIfShortDateIsPresent():
-    fullname = join(src, "TEST22-12-12TEST", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "TEST22-12-12TEST", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -566,12 +566,12 @@ def test_addMissingTimestampWillNotRenameIfShortDateIsPresent():
 
     assert exists(fullname)
     assert not exists(
-        join(src, "2022-12-12@120000 TEST22-12-12TEST", "2022-12-12@120000_test.JPG")
+        join(src, "2022-12-12@120000 TEST22-12-12TEST", "2022-12-12@120000_test.jpg")
     )
 
 
 def test_addMissingTimestampWillNotRenameIfAtIsPresent():
-    fullname = join(src, "TEST@", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "TEST@", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -590,12 +590,12 @@ def test_addMissingTimestampWillNotRenameIfAtIsPresent():
 
     assert exists(fullname)
     assert not exists(
-        join(src, "2022-12-12@120000 TEST@", "2022-12-12@120000_test.JPG")
+        join(src, "2022-12-12@120000 TEST@", "2022-12-12@120000_test.jpg")
     )
 
 
 def test_addMissingTimestampWillWorkIfSomeNumberIsPresent():
-    fullname = join(src, "TEST12", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "TEST12", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -613,11 +613,11 @@ def test_addMissingTimestampWillWorkIfSomeNumberIsPresent():
     )()
 
     assert not exists(fullname)
-    assert exists(join(src, "2022-12-12@120000 TEST12", "2022-12-12@120000_test.JPG"))
+    assert exists(join(src, "2022-12-12@120000 TEST12", "2022-12-12@120000_test.jpg"))
 
 
 def test_addMissingTimestampWillWorkIfSomeNumberAndNotDateDashesArePresent():
-    fullname = join(src, "TEST122-122-122", "2022-12-12@120000_test.JPG")
+    fullname = join(src, "TEST122-122-122", "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -636,12 +636,12 @@ def test_addMissingTimestampWillWorkIfSomeNumberAndNotDateDashesArePresent():
 
     assert not exists(fullname)
     assert exists(
-        join(src, "2022-12-12@120000 TEST122-122-122", "2022-12-12@120000_test.JPG")
+        join(src, "2022-12-12@120000 TEST122-122-122", "2022-12-12@120000_test.jpg")
     )
 
 
 def test_groupByXMPdoesWork():
-    fullname = join(src, "2022-12-12@120000_test.JPG")
+    fullname = join(src, "2022-12-12@120000_test.jpg")
     prepareTest(srcname=fullname)
 
     assert exists(fullname)
@@ -666,12 +666,12 @@ def test_groupByXMPdoesWork():
     )()
 
     assert not exists(fullname)
-    assert exists(join(src, group, "2022-12-12@120000_test.JPG"))
+    assert exists(join(src, group, "2022-12-12@120000_test.jpg"))
 
 
 def test_groupByXMPNotExecutedIfAlreadyInGroupSubfolder():
     fullname = join(
-        src, "2022-12-12@120000 TEST122-122-122", "2022-12-12@120000_test.JPG"
+        src, "2022-12-12@120000 TEST122-122-122", "2022-12-12@120000_test.jpg"
     )
     prepareTest(srcname=fullname)
 
@@ -697,4 +697,4 @@ def test_groupByXMPNotExecutedIfAlreadyInGroupSubfolder():
     )()
 
     assert exists(fullname)
-    assert not exists(join(src, group, "2022-12-12@120000_test.JPG"))
+    assert not exists(join(src, group, "2022-12-12@120000_test.jpg"))

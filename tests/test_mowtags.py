@@ -7,9 +7,9 @@ import shutil
 import os
 
 testfolder = Path("tests").absolute()
-basefile = testfolder / "test.JPG"
+basefile = testfolder / "test.jpg"
 src = testfolder / "filestotreat"
-testfile = Path(src / "test.JPG")
+testfile = Path(src / "test.jpg")
 testmfile = ImageFile(testfile)
 
 complex_tags = {

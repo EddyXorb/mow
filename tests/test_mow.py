@@ -20,7 +20,7 @@ ratedir = join(workingdir, "5.1_rate")
 groupdir = join(workingdir, "4_group")
 convertdir = join(workingdir, "3_convert")
 renamedir = join(workingdir, "2_rename")
-expectedtargetsrcfile = join(convertdir, "subfolder", "2022-07-27@215555_test3.JPG")
+expectedtargetsrcfile = join(convertdir, "subfolder", "2022-07-27@215555_test3.jpg")
 settingsfile = ".mow_test_settings.yml"
 
 
@@ -33,16 +33,16 @@ def prepareTest(targetdir, untouchedfile, starttransitionfile):
 def prepareRenameTest():
     prepareTest(
         targetdir=join(workingdir, "3_convert", "subfolder"),
-        untouchedfile=join(testfolder, "test3.JPG"),
-        starttransitionfile=join(workingdir, "2_rename", "subfolder", "test3.JPG"),
+        untouchedfile=join(testfolder, "test3.jpg"),
+        starttransitionfile=join(workingdir, "2_rename", "subfolder", "test3.jpg"),
     )
 
 
 def prepareImageConversionTest():
     prepareTest(
         targetdir=join(workingdir, "4_group", "subfolder"),
-        untouchedfile=join(testfolder, "test3.JPG"),
-        starttransitionfile=join(workingdir, "3_convert", "subfolder", "test3.JPG"),
+        untouchedfile=join(testfolder, "test3.jpg"),
+        starttransitionfile=join(workingdir, "3_convert", "subfolder", "test3.jpg"),
     )
 
 
@@ -58,12 +58,12 @@ def prepareVideoConversionTest():
 def prepareGroupingTest():
     prepareTest(
         targetdir=join(workingdir, "5.1_rate", "2022-12-12@121212 TEST"),
-        untouchedfile=join(testfolder, "test3.JPG"),
+        untouchedfile=join(testfolder, "test3.jpg"),
         starttransitionfile=join(
             workingdir,
             "4_group",
             "2022-12-12@121212 TEST",
-            "2022-12-12@121212_test3.JPG",
+            "2022-12-12@121212_test3.jpg",
         ),
     )
 
@@ -106,26 +106,26 @@ def prepareAggregateTransitionTest(filename: str, groupname: str):
 def test_filewasmoved():
     prepareRenameTest()
 
-    srcfile = join(workingdir, "2_rename", "subfolder", "test3.JPG")
+    srcfile = join(workingdir, "2_rename", "subfolder", "test3.jpg")
 
     assert exists(srcfile)
 
     Mow(settingsfile=settingsfile, dry=False).rename()
     assert not exists(srcfile)
-    assert exists(join(convertdir, "subfolder", "2022-07-27@215555_test3.JPG"))
+    assert exists(join(convertdir, "subfolder", "2022-07-27@215555_test3.jpg"))
 
 
 def test_stage_history_was_added():
     prepareImageConversionTest()
     prepareRenameTest()
 
-    srcfile = join(workingdir, "2_rename", "subfolder", "test3.JPG")
+    srcfile = join(workingdir, "2_rename", "subfolder", "test3.jpg")
 
     assert exists(srcfile)
 
     Mow(settingsfile=settingsfile, dry=False).rename()
     assert not exists(srcfile)
-    target_file_renaming = join(convertdir, "subfolder", "2022-07-27@215555_test3.JPG")
+    target_file_renaming = join(convertdir, "subfolder", "2022-07-27@215555_test3.jpg")
     assert exists(target_file_renaming)
 
     with ExifToolHelper() as et:
@@ -141,7 +141,7 @@ def test_stage_history_was_added():
 
     assert not exists(target_file_renaming)
     target_file_conversion = join(
-        workingdir, "4_group", "subfolder", "2022-07-27@215555_test3.JPG"
+        workingdir, "4_group", "subfolder", "2022-07-27@215555_test3.jpg"
     )
     assert exists(target_file_conversion)
 
@@ -160,7 +160,7 @@ def test_groupingMovesDirectoriesIntoRateFolder():
     prepareGroupingTest()
 
     srcfile = join(
-        workingdir, "4_group", "2022-12-12@121212 TEST", "2022-12-12@121212_test3.JPG"
+        workingdir, "4_group", "2022-12-12@121212 TEST", "2022-12-12@121212_test3.jpg"
     )
 
     assert exists(srcfile)
@@ -169,7 +169,7 @@ def test_groupingMovesDirectoriesIntoRateFolder():
 
     assert not exists(srcfile)
     assert exists(
-        join(ratedir, "2022-12-12@121212 TEST", "2022-12-12@121212_test3.JPG")
+        join(ratedir, "2022-12-12@121212 TEST", "2022-12-12@121212_test3.jpg")
     )
 
 
@@ -183,13 +183,13 @@ def test_emptyDirsAreremovedInRenameFolder():
 
 def test_conversionOfImageWorks():
     prepareImageConversionTest()
-    srcfile = join(workingdir, "3_convert", "subfolder", "test3.JPG")
+    srcfile = join(workingdir, "3_convert", "subfolder", "test3.jpg")
     assert exists(srcfile)
 
     Mow(settingsfile=settingsfile, dry=False).convert()
 
     assert not exists(srcfile)
-    assert exists(join(workingdir, "4_group", "subfolder", "test3.JPG"))
+    assert exists(join(workingdir, "4_group", "subfolder", "test3.jpg"))
 
 
 def test_conversionOfVideoWorks():

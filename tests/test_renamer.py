@@ -13,9 +13,9 @@ tempsrcfolder = "filestorename"
 src = os.path.abspath(join(testfolder, tempsrcfolder))
 dst = os.path.abspath("./tests/test_renamed")
 targetDir = join(dst, "subsubfolder")
-srcimagefile = join(src, "subsubfolder", "test3.JPG")
+srcimagefile = join(src, "subsubfolder", "test3.jpg")
 srcaudiofile = join(src, "subsubfolder", "test_audio.mp3")
-expectedfilename = "2022-07-27@215555_test3.JPG"
+expectedfilename = "2022-07-27@215555_test3.jpg"
 expectedtargetimagefile = Path(targetDir) / expectedfilename
 
 NR_MEDIAFILES = 2
@@ -58,7 +58,7 @@ def prepareTest():
     os.makedirs(os.path.dirname(srcimagefile), exist_ok=True)
     os.makedirs(os.path.dirname(srcaudiofile), exist_ok=True)
     shutil.copy(
-        join(testfolder, "test3.JPG"),
+        join(testfolder, "test3.jpg"),
         srcimagefile,
     )
     shutil.copy(
@@ -149,7 +149,7 @@ def test_writeXMPDateAndCreationWorks():
         tags = et.get_tags(
             str(expectedtargetimagefile.with_suffix(".xmp")), ["XMP:Source", "XMP:Date"]
         )[0]
-        assert tags["XMP:Source"] == "test3.JPG"
+        assert tags["XMP:Source"] == "test3.jpg"
         assert tags["XMP:Date"] == "2022:07:27 21:55:55"
 
 
@@ -196,15 +196,15 @@ def test_disableMaintainFolderStructureWorks():
 def test_useFilenameAsSourceOfTruth():
     prepareTest()
 
-    srcfile = join(src, "subsubfolder", "test3.JPG")
-    newfile = join(os.path.dirname(srcfile), "2022-11-11@111111_test3.JPG")
+    srcfile = join(src, "subsubfolder", "test3.jpg")
+    newfile = join(os.path.dirname(srcfile), "2022-11-11@111111_test3.jpg")
     os.rename(srcfile, newfile)
 
     assert exists(newfile)
 
     executeRenamingWith(useCurrentFilename=True, writeMetaTags=True)
 
-    renamedFile = Path(targetDir) / "2022-11-11@111111_test3.JPG"
+    renamedFile = Path(targetDir) / "2022-11-11@111111_test3.jpg"
     assert exists(renamedFile)
 
     from exiftool import ExifToolHelper
@@ -213,7 +213,7 @@ def test_useFilenameAsSourceOfTruth():
         tags = et.get_tags(renamedFile.with_suffix(".xmp"), ["XMP:Source", "XMP:Date"])[
             0
         ]
-        assert tags["XMP:Source"] == "2022-11-11@111111_test3.JPG"
+        assert tags["XMP:Source"] == "2022-11-11@111111_test3.jpg"
         assert tags["XMP:Date"] == "2022:11:11 11:11:11"
 
 

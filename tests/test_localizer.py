@@ -31,7 +31,7 @@ def prepareTest(image_name=IMAGENAME):
     shutil.rmtree(dst, ignore_errors=True)
     os.makedirs(os.path.dirname(untransitionedFile))
     shutil.copy(
-        join(testfolder, "test3.JPG"),
+        join(testfolder, "test3.jpg"),
         join(src, "subsubfolder", image_name),
     )
     if not os.path.exists(join(src, "test.gpx")):
