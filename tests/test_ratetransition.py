@@ -223,7 +223,7 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
                 writeMetaTags=True,
                 writeMetaTagsToSidecar=False,
             ),
-            overrulingfiletype="JPG",
+            overrulingfiletype="jpg",
         )()
 
         assert not exists(fullname)
@@ -278,7 +278,7 @@ def test_differentRatingBetweenJPGandRawDoesNotPreventTransitionIfOverrulingFile
                 writeMetaTags=True,
                 writeMetaTagsToSidecar=False,
             ),
-            overrulingfiletype="JPG",
+            overrulingfiletype="jpg",
         )()
 
         assert not exists(fullname)

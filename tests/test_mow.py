@@ -98,7 +98,7 @@ def prepareLocalizeTransitionTest():
 def prepareAggregateTransitionTest(filename: str, groupname: str):
     prepareTest(
         targetdir=join(archivedir, groupname),
-        untouchedfile=join(testfolder, "2022-12-12@121212_FINISHED.JPG"),
+        untouchedfile=join(testfolder, "2022-12-12@121212_FINISHED.jpg"),
         starttransitionfile=join(aggregatedir, groupname, filename),
     )
 

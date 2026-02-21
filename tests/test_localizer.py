@@ -20,7 +20,7 @@ testfolder = "tests"
 src = os.path.abspath(join(testfolder, "filestotreat"))
 dst = os.path.abspath("./tests/test_treated")
 targetDir = join(dst, "subsubfolder")
-IMAGENAME = "2022-01-01@101015.JPG"
+IMAGENAME = "2022-01-01@101015.jpg"
 
 untransitionedFile = Path(src) / "subsubfolder" / IMAGENAME
 transitionedFile = Path(dst) / "subsubfolder" / IMAGENAME
@@ -113,7 +113,7 @@ def test_force_gps_works():
 
 
 def test_no_gps_data_leads_to_no_transition():
-    image = "2099-11-11@444444.JPG"
+    image = "2099-11-11@444444.jpg"
     prepareTest(image_name=image)
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = join(dst, "subsubfolder", image)
@@ -215,7 +215,7 @@ def test_gps_time_tolerance_when_big_enough_transitions():
 
 
 def test_image_made_before_first_gps_entry_works():
-    image = "2022-01-01@101005.JPG"
+    image = "2022-01-01@101005.jpg"
     prepareTest(image_name=image)
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = Path(dst) / "subsubfolder" / image
@@ -240,7 +240,7 @@ def test_image_made_before_first_gps_entry_works():
 
 
 def test_image_made_before_first_gps_entry_but_too_small_tolerance_does_not_transition():
-    image = "2022-01-01@101005.JPG"
+    image = "2022-01-01@101005.jpg"
     prepareTest(image_name=image)
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = join(dst, "subsubfolder", image)
@@ -255,7 +255,7 @@ def test_image_made_before_first_gps_entry_but_too_small_tolerance_does_not_tran
 
 
 def test_image_made_after_last_gps_entry_works():
-    image = "2022-01-01@101025.JPG"
+    image = "2022-01-01@101025.jpg"
     prepareTest(image_name=image)
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = Path(dst) / "subsubfolder" / image
@@ -280,7 +280,7 @@ def test_image_made_after_last_gps_entry_works():
 
 
 def test_image_made_after_last_gps_entry_but_too_small_tolerance_does_not_transition():
-    image = "2022-01-01@101025.JPG"
+    image = "2022-01-01@101025.jpg"
     prepareTest(image_name=image)
     untransitionedFile = join(src, "subsubfolder", image)
     transitionedFile = join(dst, "subsubfolder", image)

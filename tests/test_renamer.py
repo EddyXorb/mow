@@ -223,7 +223,7 @@ def test_replaceWorks():
     executeRenamingWith(move=True, replace="test,qwert")
 
     assert not exists(srcimagefile)
-    assert exists(join(src, "subsubfolder", "qwert3.JPG"))
+    assert exists(join(src, "subsubfolder", "qwert3.jpg"))
 
 
 def test_replaceWithRegexWorks():
@@ -232,4 +232,4 @@ def test_replaceWithRegexWorks():
     renamers = executeRenamingWith(move=True, replace=r"\d,99")
     print(renamers[0].getFinishedTasks())
 
-    assert exists(join(src, "subsubfolder", "test99.JPG"))
+    assert exists(join(src, "subsubfolder", "test99.jpg"))
