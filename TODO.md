@@ -1,5 +1,7 @@
 # Todos
 
+- [ ] Deletion of converted mediafiles should happen within every conversion function, that when something goes wrong for one file the rest of the files are still deleted correctly (moved into the delete folder)
+- [ ] BUG: when copying, it can happen that already copied files are copied again for some reason (happened 2026-05-16 with sd-card import)
 - [ ] Check if copy stage is idempotent, e.g. no change happens if already done (especially not _LAST rename takes place if no new _LAST is present)
 - [ ] Write tests for sequence checker of grouper
 - [ ] Conversion: assure xmp-tags are maintained after conversion (especially for videos: xmp:date is vanished) by reading them before conversion and writing them to result

@@ -26,16 +26,15 @@ class MediaConverter(MediaTransitioner):
         converter,
         settings: dict[str, str],
     ) -> tuple[MediaFile, MediaFile | None, int]:
-
-        os.makedirs(os.path.dirname(newPath), exist_ok=True)
-
-        sidecar_present = toTransition.has_sidecar()
-
-        if sidecar_present:
-            shutil.move(toTransition.get_sidecar(), os.path.dirname(newPath))
-            toTransition.extensions.remove(".xmp")
-
         try:
+            os.makedirs(os.path.dirname(newPath), exist_ok=True)
+
+            sidecar_present = toTransition.has_sidecar()
+
+            if sidecar_present:
+                shutil.move(toTransition.get_sidecar(), os.path.dirname(newPath))
+                toTransition.extensions.remove(".xmp")
+
             convertedFile = converter(toTransition, os.path.dirname(newPath), settings)
             if sidecar_present and not convertedFile.has_sidecar():
                 convertedFile.extensions.append(".xmp")
